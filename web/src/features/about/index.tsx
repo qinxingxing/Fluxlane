@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { isHttpUrl, isLikelyHtml } from '@/lib/content-format'
 
 import { getAboutContent } from './api'
+import { FluxlaneAbout } from './fluxlane-about'
 
 function EmptyAboutState() {
   const { t } = useTranslation()
@@ -139,8 +140,8 @@ export function About() {
 
   if (!hasContent) {
     return (
-      <PublicLayout>
-        <EmptyAboutState />
+      <PublicLayout showMainContainer={false}>
+        <FluxlaneAbout />
       </PublicLayout>
     )
   }
