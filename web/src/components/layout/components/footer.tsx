@@ -226,7 +226,7 @@ export function Footer(props: FooterProps) {
     return (
       <footer
         className={cn(
-          'border-border/40 relative z-10 border-t',
+          'relative z-10 border-t border-white/10 bg-[#0c112e] text-white [&_a]:!text-white [&_p]:!text-white/70 [&_span]:!text-white/70',
           props.className
         )}
       >
@@ -248,7 +248,7 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
-      className={cn('border-border/40 relative z-10 border-t', props.className)}
+      className={cn('relative z-10 border-t border-white/10 bg-[#0c112e] text-white [&_a]:!text-white [&_p]:!text-white/70 [&_span]:!text-white/70', props.className)}
     >
       <div className='mx-auto max-w-6xl px-6 py-12 md:py-16'>
         <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
