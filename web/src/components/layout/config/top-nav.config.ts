@@ -27,4 +27,9 @@ import { type TopNavLink } from '../types'
  * This is intentionally empty to encourage backend configuration.
  * If you need fallback links, add them here.
  */
-export const defaultTopNavLinks: TopNavLink[] = []
+export const defaultTopNavLinks: TopNavLink[] = [
+  { title: 'Features', href: '/#features' },
+  { title: 'Models', href: '/pricing' },
+  { title: 'Docs', href: 'https://doc.fluxlane.ai', external: true },
+  { title: 'Pricing', href: '/pricing' },
+]
