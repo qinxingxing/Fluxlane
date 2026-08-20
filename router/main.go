@@ -17,6 +17,17 @@ func SetRouter(router *gin.Engine, assets WebAssets) {
 	SetDashboardRouter(router)
 	SetRelayRouter(router)
 	SetVideoRouter(router)
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("SERVE_FRONTEND")), "false") {
+		router.NoRoute(func(c *gin.Context) {
+			c.Set(middleware.RouteTagKey, "api")
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "route not found",
+			})
+		})
+		return
+	}
+
 	frontendBaseUrl := os.Getenv("FRONTEND_BASE_URL")
 	if common.IsMasterNode && frontendBaseUrl != "" {
 		frontendBaseUrl = ""
