@@ -58,9 +58,7 @@ const normalizedConfiguredApiBaseUrl = normalizeApiBaseUrl(
 )
 
 export const API_BASE_URL =
-  isFluxlaneFrontend() &&
-  (!normalizedConfiguredApiBaseUrl ||
-    normalizedConfiguredApiBaseUrl === window.location.origin)
+  isFluxlaneFrontend()
     ? FLUXLANE_PLATFORM_API_ORIGIN
     : normalizedConfiguredApiBaseUrl
 
@@ -69,7 +67,7 @@ const normalizedConfiguredPublicApiBaseUrl = normalizeApiBaseUrl(
 )
 
 export const PUBLIC_API_BASE_URL =
-  isFluxlaneFrontend() && !normalizedConfiguredPublicApiBaseUrl
+  isFluxlaneFrontend()
     ? FLUXLANE_PUBLIC_API_ORIGIN
     : normalizedConfiguredPublicApiBaseUrl
 
