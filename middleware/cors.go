@@ -26,7 +26,16 @@ func CORS() gin.HandlerFunc {
 		config.AllowCredentials = true
 	}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"*"}
+	config.AllowHeaders = []string{
+		"Origin",
+		"Accept",
+		"Authorization",
+		"Cache-Control",
+		"Content-Type",
+		"New-Api-User",
+		"X-Auth-Session",
+		"X-Security-Proof",
+	}
 	return cors.New(config)
 }
 
