@@ -41,6 +41,7 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { getFreshAuthHeaders } from '@/lib/api'
 
+import { resolveApiUrl } from '@/lib/api-base-url'
 import {
   deleteOllamaModel,
   fetchModels as fetchModelsFromEndpoint,
@@ -246,7 +247,7 @@ export function OllamaModelsDialog({
 
     try {
       const authHeaders = await getFreshAuthHeaders()
-      const response = await fetch('/api/channel/ollama/pull/stream', {
+      const response = await fetch(resolveApiUrl('/api/channel/ollama/pull/stream'), {
         method: 'POST',
         credentials: 'include',
         headers: {

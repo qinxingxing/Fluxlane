@@ -25,6 +25,7 @@ import {
   clearAuthentication,
   refreshAuthentication,
 } from '@/lib/auth-session'
+import { API_BASE_URL } from '@/lib/api-base-url'
 import { getServerErrorMessageKey } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -42,7 +43,7 @@ declare module 'axios' {
 export type ApiRequestConfig = AxiosRequestConfig
 
 export const api = axios.create({
-  baseURL: '',
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Cache-Control': 'no-store',

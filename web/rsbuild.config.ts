@@ -14,6 +14,10 @@ export default defineConfig(({ envMode }) => {
     process.env.VITE_REACT_APP_SERVER_URL ||
     env.rawPublicVars.VITE_REACT_APP_SERVER_URL ||
     'http://localhost:3000'
+  const apiBaseUrl =
+    process.env.VITE_API_BASE_URL ||
+    env.rawPublicVars.VITE_API_BASE_URL ||
+    ''
 
   const isProd = envMode === 'production'
   const devProxy = Object.fromEntries(
@@ -53,6 +57,9 @@ export default defineConfig(({ envMode }) => {
       },
     },
     source: {
+      define: {
+        'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
+      },
       entry: {
         index: './src/main.tsx',
       },
