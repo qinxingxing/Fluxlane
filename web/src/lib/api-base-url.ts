@@ -39,11 +39,39 @@ function normalizeApiBaseUrl(value: string): string {
   return parsed.origin
 }
 
-export const API_BASE_URL = normalizeApiBaseUrl(configuredApiBaseUrl)
+const FLUXLANE_FRONTEND_HOSTNAMES = new Set([
+  'www.fluxlane.ai',
+  'console.fluxlane.ai',
+])
+const FLUXLANE_PLATFORM_API_ORIGIN = 'https://api.fluxlane.ai'
+const FLUXLANE_PUBLIC_API_ORIGIN = 'https://run.fluxlane.ai'
 
-export const PUBLIC_API_BASE_URL = normalizeApiBaseUrl(
+function isFluxlaneFrontend(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    FLUXLANE_FRONTEND_HOSTNAMES.has(window.location.hostname)
+  )
+}
+
+const normalizedConfiguredApiBaseUrl = normalizeApiBaseUrl(
+  configuredApiBaseUrl
+)
+
+export const API_BASE_URL =
+  isFluxlaneFrontend() &&
+  (!normalizedConfiguredApiBaseUrl ||
+    normalizedConfiguredApiBaseUrl === window.location.origin)
+    ? FLUXLANE_PLATFORM_API_ORIGIN
+    : normalizedConfiguredApiBaseUrl
+
+const normalizedConfiguredPublicApiBaseUrl = normalizeApiBaseUrl(
   configuredPublicApiBaseUrl
 )
+
+export const PUBLIC_API_BASE_URL =
+  isFluxlaneFrontend() && !normalizedConfiguredPublicApiBaseUrl
+    ? FLUXLANE_PUBLIC_API_ORIGIN
+    : normalizedConfiguredPublicApiBaseUrl
 
 export function resolveApiUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path

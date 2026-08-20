@@ -1,0 +1,45 @@
+/* Copyright (C) 2023-2026 QuantumNous */
+
+const PUBLIC_HOSTNAME = 'www.fluxlane.ai'
+const CONSOLE_HOSTNAME = 'console.fluxlane.ai'
+const CONSOLE_ORIGIN = `https://${CONSOLE_HOSTNAME}`
+
+const PUBLIC_PATHS = new Set([
+  '/',
+  '/about',
+  '/pricing',
+  '/rankings',
+  '/privacy-policy',
+  '/user-agreement',
+])
+
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1)
+  }
+  return pathname
+}
+
+/** Keep public pages and the account console on separate origins. */
+export function getDomainRedirect(href: string): string | null {
+  let current: URL
+  try {
+    current = new URL(href)
+  } catch {
+    return null
+  }
+
+  const pathname = normalizePathname(current.pathname)
+  if (
+    current.hostname === PUBLIC_HOSTNAME &&
+    !PUBLIC_PATHS.has(pathname)
+  ) {
+    return `${CONSOLE_ORIGIN}${current.pathname}${current.search}${current.hash}`
+  }
+
+  if (current.hostname === CONSOLE_HOSTNAME && pathname === '/') {
+    return `${CONSOLE_ORIGIN}/sign-in${current.search}${current.hash}`
+  }
+
+  return null
+}
