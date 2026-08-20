@@ -19,6 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import axios from 'axios'
 
 import { api, refreshAuthentication, type RefreshOutcome } from '@/lib/api'
+import {
+  beginVoluntarySignOut,
+  cancelVoluntarySignOut,
+} from '@/lib/auth-session'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { getAffiliateCode } from './lib/storage'
@@ -98,7 +102,9 @@ export async function executeLogout(
 
 // User logout
 export async function logout(): Promise<ApiResponse> {
-  return executeLogout({
+  beginVoluntarySignOut()
+
+  const request = executeLogout({
     getExpectedSID: () => useAuthStore.getState().auth.session?.sid,
     request: async (sid) => {
       const res = await api.post('/api/user/auth/logout', undefined, {
@@ -110,6 +116,17 @@ export async function logout(): Promise<ApiResponse> {
     },
     refresh: refreshAuthentication,
   })
+
+  try {
+    const response = await request
+    if (!response.success) {
+      cancelVoluntarySignOut()
+    }
+    return response
+  } catch (error) {
+    cancelVoluntarySignOut()
+    throw error
+  }
 }
 
 // ----------------------------------------------------------------------------

@@ -78,6 +78,7 @@ const authClient = axios.create({
 const refreshRaceDelays = [80, 200, 500] as const
 let refreshPromise: Promise<RefreshOutcome> | null = null
 let authEpoch = 0
+let voluntarySignOutInProgress = false
 
 class AuthRefreshSupersededError extends Error {
   constructor() {
@@ -136,6 +137,18 @@ export function isAuthBundle(value: unknown): value is AuthBundle {
   )
 }
 
+export function beginVoluntarySignOut(): void {
+  voluntarySignOutInProgress = true
+}
+
+export function cancelVoluntarySignOut(): void {
+  voluntarySignOutInProgress = false
+}
+
+export function isVoluntarySignOutInProgress(): boolean {
+  return voluntarySignOutInProgress
+}
+
 function isAuthTokenRotation(value: unknown): value is AuthTokenRotation {
   return (
     isRecord(value) &&
@@ -190,6 +203,7 @@ export function clearAuthentication(
   const sid = useAuthStore.getState().auth.session?.sid
   authEpoch += 1
   useAuthStore.getState().auth.reset(bootstrapState)
+  voluntarySignOutInProgress = false
   if (synchronizeTabs && sid) {
     publishAuthSessionEvent('signed_out', sid)
   }

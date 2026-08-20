@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import {
   applyAuthRotation,
   clearAuthentication,
+  isVoluntarySignOutInProgress,
   refreshAuthentication,
 } from '@/lib/auth-session'
 import { API_BASE_URL } from '@/lib/api-base-url'
@@ -104,6 +105,15 @@ api.interceptors.response.use(
     const status = error?.response?.status
 
     if (status === 401) {
+      const auth = useAuthStore.getState().auth
+      const isSignedOut = !auth.user && !auth.session && !auth.accessToken
+
+      // Requests already in flight can finish after an intentional logout.
+      // They must not be mistaken for an expired authenticated session.
+      if (isVoluntarySignOutInProgress() || isSignedOut) {
+        throw error
+      }
+
       if (config && !config.skipAuthRefresh && !config.authRetry) {
         config.authRetry = true
         const outcome = await refreshAuthentication()
