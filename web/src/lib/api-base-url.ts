@@ -10,6 +10,9 @@ License, or (at your option) any later version.
 const configuredApiBaseUrl =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ?? ''
 
+const configuredPublicApiBaseUrl =
+  (import.meta.env.VITE_PUBLIC_API_BASE_URL as string | undefined)?.trim() ?? ''
+
 function normalizeApiBaseUrl(value: string): string {
   if (!value) return ''
 
@@ -38,6 +41,10 @@ function normalizeApiBaseUrl(value: string): string {
 
 export const API_BASE_URL = normalizeApiBaseUrl(configuredApiBaseUrl)
 
+export const PUBLIC_API_BASE_URL = normalizeApiBaseUrl(
+  configuredPublicApiBaseUrl
+)
+
 export function resolveApiUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
@@ -45,6 +52,7 @@ export function resolveApiUrl(path: string): string {
 }
 
 export function getPublicApiOrigin(): string {
+  if (PUBLIC_API_BASE_URL) return PUBLIC_API_BASE_URL
   if (API_BASE_URL) return API_BASE_URL
   if (typeof window !== 'undefined') return window.location.origin
   return ''

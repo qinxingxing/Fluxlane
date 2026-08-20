@@ -18,6 +18,10 @@ export default defineConfig(({ envMode }) => {
     process.env.VITE_API_BASE_URL ||
     env.rawPublicVars.VITE_API_BASE_URL ||
     ''
+  const publicApiBaseUrl =
+    process.env.VITE_PUBLIC_API_BASE_URL ||
+    env.rawPublicVars.VITE_PUBLIC_API_BASE_URL ||
+    ''
 
   const isProd = envMode === 'production'
   const devProxy = Object.fromEntries(
@@ -59,6 +63,8 @@ export default defineConfig(({ envMode }) => {
     source: {
       define: {
         'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
+        'import.meta.env.VITE_PUBLIC_API_BASE_URL':
+          JSON.stringify(publicApiBaseUrl),
       },
       entry: {
         index: './src/main.tsx',

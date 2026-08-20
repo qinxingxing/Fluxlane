@@ -18,14 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 /// <reference types="@rsbuild/core/types" />
 
-declare module '@visactor/react-vchart' {
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
+  readonly VITE_PUBLIC_API_BASE_URL?: string
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
+declare module '@visactor/react-vchart' {
   export const VChart: React.ComponentType<Record<string, unknown>>
 }

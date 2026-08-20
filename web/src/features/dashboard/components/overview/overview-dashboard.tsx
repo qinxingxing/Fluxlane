@@ -51,6 +51,7 @@ import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getUserModels } from '@/lib/api'
+import { getPublicApiOrigin } from '@/lib/api-base-url'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { ROLE } from '@/lib/roles'
 import { cn } from '@/lib/utils'
@@ -138,8 +139,7 @@ function saveSetupGuideExpanded(expanded: boolean): void {
 }
 
 function getCurrentOrigin(): string {
-  if (typeof window === 'undefined') return ''
-  return window.location.origin
+  return getPublicApiOrigin()
 }
 
 function normalizeEndpoint(sourceUrl?: string): string {
