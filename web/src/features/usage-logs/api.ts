@@ -48,7 +48,7 @@ async function fetchLogs<T>(
     page_size: paramRecord.page_size || 20,
     ...params,
   })
-  const path = buildApiPath(endpoint, isAdmin)
+  const path = isAdmin ? `${endpoint}/` : `${endpoint}/self`
   const res = await api.get(`${path}?${queryParams}`)
   return res.data
 }
