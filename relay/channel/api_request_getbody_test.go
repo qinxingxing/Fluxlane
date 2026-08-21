@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -591,4 +592,56 @@ func TestUpstreamGetBody_HTTP2CannotRetryWithoutGetBody(t *testing.T) {
 	assert.Equal(t, 1, srv.streamCount)
 	require.Len(t, srv.attemptBodies, 1)
 	assert.Equal(t, payload, srv.attemptBodies[0])
+}
+
+func TestRetryablePreHeaderConnectionError(t *testing.T) {
+	t.Parallel()
+
+	assert.True(t, retryablePreHeaderConnectionError(io.EOF))
+	assert.True(t, retryablePreHeaderConnectionError(fmt.Errorf("wrapped: %w", syscall.ECONNRESET)))
+	assert.False(t, retryablePreHeaderConnectionError(context.Canceled))
+	assert.False(t, retryablePreHeaderConnectionError(fmt.Errorf("upstream returned 500")))
+}
+
+func TestShouldRetryUpstreamRequestSafetyGates(t *testing.T) {
+	t.Parallel()
+
+	req, err := http.NewRequest(http.MethodPost, "http://example.com/v1/chat/completions", bytes.NewReader([]byte("{}")))
+	require.NoError(t, err)
+	require.NotNil(t, req.GetBody)
+	info := &relaycommon.RelayInfo{}
+
+	assert.True(t, shouldRetryUpstreamRequest(req, info, nil, io.EOF))
+
+	info.IsStream = true
+	assert.False(t, shouldRetryUpstreamRequest(req, info, nil, io.EOF))
+	info.IsStream = false
+
+	noReplayReq, err := http.NewRequest(http.MethodPost, "http://example.com/v1/chat/completions", io.NopCloser(strings.NewReader("{}")))
+	require.NoError(t, err)
+	assert.Nil(t, noReplayReq.GetBody)
+	assert.False(t, shouldRetryUpstreamRequest(noReplayReq, info, nil, io.EOF))
+
+	assert.False(t, shouldRetryUpstreamRequest(req, info, &http.Response{StatusCode: http.StatusOK}, io.EOF))
+	assert.False(t, shouldRetryUpstreamRequest(req, info, nil, context.Canceled))
+}
+
+func TestCloneRequestForRetryReplaysBodyAndHeaders(t *testing.T) {
+	t.Parallel()
+
+	payload := []byte("{\"model\":\"qa-mock-model\"}")
+	req, err := http.NewRequest(http.MethodPost, "http://example.com/v1/chat/completions", bytes.NewReader(payload))
+	require.NoError(t, err)
+	req.Header.Set("Idempotency-Key", "request-123")
+	_, err = io.ReadAll(req.Body)
+	require.NoError(t, err)
+
+	retryReq, err := cloneRequestForRetry(req)
+	require.NoError(t, err)
+	defer retryReq.Body.Close()
+	got, err := io.ReadAll(retryReq.Body)
+	require.NoError(t, err)
+	assert.Equal(t, payload, got)
+	assert.Equal(t, "request-123", retryReq.Header.Get("Idempotency-Key"))
+	assert.Equal(t, req.ContentLength, retryReq.ContentLength)
 }

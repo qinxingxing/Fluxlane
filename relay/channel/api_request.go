@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	common2 "github.com/QuantumNous/new-api/common"
@@ -487,6 +489,125 @@ func keepUpstreamRedirectResponse(_ *http.Request, _ []*http.Request) error {
 	return http.ErrUseLastResponse
 }
 
+type upstreamRequestTrace struct {
+	mutex             sync.Mutex
+	startedAt         time.Time
+	connectStartedAt  time.Time
+	connectDuration   time.Duration
+	firstByteDuration time.Duration
+	gotConn           bool
+	reused            bool
+	wasIdle           bool
+	idleTime          time.Duration
+	connectError      string
+}
+
+func newUpstreamRequestTrace() *upstreamRequestTrace {
+	return &upstreamRequestTrace{startedAt: time.Now()}
+}
+
+func (t *upstreamRequestTrace) clientTrace() *httptrace.ClientTrace {
+	return &httptrace.ClientTrace{
+		ConnectStart: func(_, _ string) {
+			t.mutex.Lock()
+			t.connectStartedAt = time.Now()
+			t.mutex.Unlock()
+		},
+		ConnectDone: func(_, _ string, err error) {
+			t.mutex.Lock()
+			if !t.connectStartedAt.IsZero() {
+				t.connectDuration = time.Since(t.connectStartedAt)
+			}
+			if err != nil {
+				t.connectError = common2.MaskSensitiveInfo(err.Error())
+			}
+			t.mutex.Unlock()
+		},
+		GotConn: func(info httptrace.GotConnInfo) {
+			t.mutex.Lock()
+			t.gotConn = true
+			t.reused = info.Reused
+			t.wasIdle = info.WasIdle
+			t.idleTime = info.IdleTime
+			t.mutex.Unlock()
+		},
+		GotFirstResponseByte: func() {
+			t.mutex.Lock()
+			t.firstByteDuration = time.Since(t.startedAt)
+			t.mutex.Unlock()
+		},
+	}
+}
+
+func (t *upstreamRequestTrace) summary() string {
+	if t == nil {
+		return "trace=unavailable"
+	}
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	return fmt.Sprintf(
+		"got_conn=%t reused=%t was_idle=%t idle_ms=%d connect_ms=%d first_byte_ms=%d connect_error=%q",
+		t.gotConn, t.reused, t.wasIdle, t.idleTime.Milliseconds(),
+		t.connectDuration.Milliseconds(), t.firstByteDuration.Milliseconds(), t.connectError,
+	)
+}
+
+func maskedErrorChain(err error) string {
+	if err == nil {
+		return ""
+	}
+	parts := make([]string, 0, 4)
+	for current, depth := err, 0; current != nil && depth < 8; current, depth = errors.Unwrap(current), depth+1 {
+		parts = append(parts, fmt.Sprintf("%T:%s", current, common2.MaskSensitiveInfo(current.Error())))
+	}
+	return strings.Join(parts, " <- ")
+}
+
+func retryablePreHeaderConnectionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, syscall.EPIPE) {
+		return true
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "server closed idle connection") ||
+		strings.Contains(message, "connection reset by peer") || strings.HasSuffix(message, ": eof")
+}
+
+func shouldRetryUpstreamRequest(req *http.Request, info *common.RelayInfo, resp *http.Response, err error) bool {
+	if req == nil || info == nil || info.IsStream || resp != nil || err == nil {
+		return false
+	}
+	if req.Context().Err() != nil || req.GetBody == nil {
+		return false
+	}
+	return retryablePreHeaderConnectionError(err)
+}
+
+func cloneRequestForRetry(req *http.Request) (*http.Request, error) {
+	if req == nil || req.GetBody == nil {
+		return nil, errors.New("request body is not replayable")
+	}
+	body, err := req.GetBody()
+	if err != nil {
+		return nil, fmt.Errorf("recreate request body: %w", err)
+	}
+	retryReq := req.Clone(req.Context())
+	retryReq.Body = body
+	retryReq.GetBody = req.GetBody
+	retryReq.ContentLength = req.ContentLength
+	return retryReq, nil
+}
+
+func doTracedRequest(client *http.Client, req *http.Request) (*http.Response, error, *upstreamRequestTrace) {
+	trace := newUpstreamRequestTrace()
+	tracedReq := req.WithContext(httptrace.WithClientTrace(req.Context(), trace.clientTrace()))
+	resp, err := client.Do(tracedReq)
+	return resp, err, trace
+}
+
 func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
 	client, err := service.GetHttpClientWithProxySettings(info.ChannelSetting.Proxy, info.ChannelSetting)
 	if err != nil {
@@ -529,10 +650,56 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 		}
 	}
 
-	resp, err := relayClient.Do(req)
+	requestID := c.GetString(common2.RequestIdKey)
+	if req != nil && requestID != "" {
+		if req.Header.Get(common2.RequestIdKey) == "" {
+			req.Header.Set(common2.RequestIdKey, requestID)
+		}
+		if !info.IsStream && req.GetBody != nil && req.Header.Get("Idempotency-Key") == "" {
+			req.Header.Set("Idempotency-Key", requestID)
+		}
+	}
+
+	resp, err, requestTrace := doTracedRequest(&relayClient, req)
 	if err != nil {
-		logger.LogError(c, "do request failed: "+err.Error())
-		return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: do request failed"))
+		logger.LogError(c, fmt.Sprintf(
+			"upstream request failed: host=%s attempt=1 %s error_chain=%s",
+			common.SanitizeURLForLog(req.URL.Scheme+"://"+req.URL.Host),
+			requestTrace.summary(),
+			maskedErrorChain(err),
+		))
+	}
+
+	if shouldRetryUpstreamRequest(req, info, resp, err) {
+		retryReq, retryErr := cloneRequestForRetry(req)
+		if retryErr != nil {
+			logger.LogError(c, "upstream retry preparation failed: "+common2.MaskSensitiveInfo(retryErr.Error()))
+		} else {
+			logger.LogWarn(c, fmt.Sprintf(
+				"retrying upstream request once before response headers: host=%s request_id=%s",
+				common.SanitizeURLForLog(req.URL.Scheme+"://"+req.URL.Host), requestID,
+			))
+			resp, err, requestTrace = doTracedRequest(&relayClient, retryReq)
+			if err != nil {
+				logger.LogError(c, fmt.Sprintf(
+					"upstream request failed: host=%s attempt=2 %s error_chain=%s",
+					common.SanitizeURLForLog(req.URL.Scheme+"://"+req.URL.Host),
+					requestTrace.summary(), maskedErrorChain(err),
+				))
+			} else {
+				logger.LogWarn(c, fmt.Sprintf(
+					"upstream request retry succeeded: host=%s request_id=%s %s",
+					common.SanitizeURLForLog(req.URL.Scheme+"://"+req.URL.Host),
+					requestID, requestTrace.summary(),
+				))
+			}
+		}
+	}
+	if err != nil {
+		return nil, types.NewErrorWithStatusCode(
+			err, types.ErrorCodeDoRequestFailed, http.StatusBadGateway,
+			types.ErrOptionWithHideErrMsg("upstream error: do request failed"),
+		)
 	}
 	if resp == nil {
 		return nil, errors.New("resp is nil")
