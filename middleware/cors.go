@@ -31,8 +31,10 @@ func CORS() gin.HandlerFunc {
 		"Accept",
 		"Authorization",
 		"Cache-Control",
+		"Pragma",
 		"Content-Type",
 		"New-Api-User",
+		"X-Requested-With",
 		"X-Auth-Session",
 		"X-Security-Proof",
 	}
