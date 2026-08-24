@@ -18,6 +18,9 @@ func RouteTag(tag string) gin.HandlerFunc {
 
 func SetUpLogger(server *gin.Engine) {
 	server.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		if param.Path == "/healthz" || param.Path == "/readyz" {
+			return ""
+		}
 		var requestID string
 		if param.Keys != nil {
 			requestID, _ = param.Keys[common.RequestIdKey].(string)

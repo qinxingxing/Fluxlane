@@ -199,6 +199,11 @@ func main() {
 		BuildFS:   buildFS,
 		IndexPage: indexPage,
 	})
+	// All synchronous initialization and route registration has completed.
+	// Readiness deliberately excludes shared PostgreSQL, Redis, and providers
+	// so a shared dependency incident cannot evict every node simultaneously.
+	router.MarkReady()
+
 	var port = os.Getenv("PORT")
 	if port == "" {
 		port = strconv.Itoa(*common.Port)
@@ -223,6 +228,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-quit
 	common.SysLog(fmt.Sprintf("received signal: %v, shutting down...", sig))
+	router.MarkNotReady()
 
 	// SSE streams may run for minutes; give them time to finish before forced exit
 	shutdownTimeout := time.Duration(common.GetEnvOrDefault("SHUTDOWN_TIMEOUT_SECONDS", 120)) * time.Second
