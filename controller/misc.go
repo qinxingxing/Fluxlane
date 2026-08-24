@@ -282,13 +282,20 @@ func SendEmailVerification(c *gin.Context) {
 		return
 	}
 	code := common.GenerateVerificationCode(6)
-	common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose)
+	if err := common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose); err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("failed to store email verification code: %s", err.Error()))
+		common.ApiError(c, errors.New("failed to store verification code"))
+		return
+	}
 	subject := fmt.Sprintf("%s邮箱验证邮件", common.SystemName)
 	content := fmt.Sprintf("<p>您好，你正在进行%s邮箱验证。</p>"+
 		"<p>您的验证码为: <strong>%s</strong></p>"+
 		"<p>验证码 %d 分钟内有效，如果不是本人操作，请忽略。</p>", common.SystemName, code, common.VerificationValidMinutes)
 	err := common.SendEmail(subject, email, content)
 	if err != nil {
+		if deleteErr := common.DeleteVerificationCodeWithKey(email, code, common.EmailVerificationPurpose); deleteErr != nil {
+			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to clean up email verification code: %s", deleteErr.Error()))
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -307,7 +314,11 @@ func SendPasswordResetEmail(c *gin.Context) {
 	}
 	if _, err := model.GetUniqueUserByEmail(email); err == nil {
 		code := common.GenerateVerificationCode(0)
-		common.RegisterVerificationCodeWithKey(email, code, common.PasswordResetPurpose)
+		if registerErr := common.RegisterVerificationCodeWithKey(email, code, common.PasswordResetPurpose); registerErr != nil {
+			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to store password reset code: %s", registerErr.Error()))
+			c.JSON(http.StatusOK, gin.H{"success": true, "message": ""})
+			return
+		}
 		link := fmt.Sprintf("%s/user/reset?email=%s&token=%s", system_setting.ServerAddress, email, code)
 		subject := fmt.Sprintf("%s密码重置", common.SystemName)
 		content := fmt.Sprintf("<p>您好，你正在进行%s密码重置。</p>"+
@@ -316,6 +327,9 @@ func SendPasswordResetEmail(c *gin.Context) {
 			"<p>重置链接 %d 分钟内有效，如果不是本人操作，请忽略。</p>", common.SystemName, link, link, common.VerificationValidMinutes)
 		err := common.SendEmail(subject, email, content)
 		if err != nil {
+			if deleteErr := common.DeleteVerificationCodeWithKey(email, code, common.PasswordResetPurpose); deleteErr != nil {
+				logger.LogError(c.Request.Context(), fmt.Sprintf("failed to clean up password reset code: %s", deleteErr.Error()))
+			}
 			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to send password reset email to %s: %s", email, err.Error()))
 		}
 	} else if err != nil && !errors.Is(err, model.ErrEmailNotFound) {
@@ -344,7 +358,13 @@ func ResetPassword(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
-	if !common.VerifyCodeWithKey(req.Email, req.Token, common.PasswordResetPurpose) {
+	valid, verifyErr := common.VerifyCodeWithKey(req.Email, req.Token, common.PasswordResetPurpose)
+	if verifyErr != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("failed to verify password reset code: %s", verifyErr.Error()))
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
+	}
+	if !valid {
 		common.ApiErrorI18n(c, i18n.MsgUserPasswordResetLinkInvalid)
 		return
 	}
@@ -358,7 +378,6 @@ func ResetPassword(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	common.DeleteKey(req.Email, common.PasswordResetPurpose)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

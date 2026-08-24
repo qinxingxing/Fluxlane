@@ -233,7 +233,13 @@ func Register(c *gin.Context) {
 			common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
 			return
 		}
-		if !common.VerifyCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose) {
+		valid, verifyErr := common.VerifyCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose)
+		if verifyErr != nil {
+			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to verify registration email code: %s", verifyErr.Error()))
+			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+			return
+		}
+		if !valid {
 			common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
 			return
 		}
@@ -1276,7 +1282,13 @@ func EmailBind(c *gin.Context) {
 	email := req.Email
 	email = model.NormalizeEmail(email)
 	code := req.Code
-	if !common.VerifyCodeWithKey(email, code, common.EmailVerificationPurpose) {
+	valid, verifyErr := common.VerifyCodeWithKey(email, code, common.EmailVerificationPurpose)
+	if verifyErr != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("failed to verify email bind code: %s", verifyErr.Error()))
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
+	}
+	if !valid {
 		common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
 		return
 	}
