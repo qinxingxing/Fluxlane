@@ -34,6 +34,9 @@ rejected.
 `SERVE_FRONTEND=false` disables the embedded dashboard fallback while leaving
 API, relay, webhook, and health endpoints available.
 
+Production cutover checks, load tests, and billing reconciliation are in
+`docs/production-launch-test-plan.md`.
+
 ## Security
 
 - Never put a secret in a `VITE_*` variable; build variables are public.
