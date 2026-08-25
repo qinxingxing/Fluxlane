@@ -34,8 +34,9 @@ rejected.
 `SERVE_FRONTEND=false` disables the embedded dashboard fallback while leaving
 API, relay, webhook, and health endpoints available.
 
-Production cutover checks, load tests, and billing reconciliation are in
-`docs/production-launch-test-plan.md`.
+Production launch checks and billing reconciliation are in
+`docs/production-launch-test-plan.md`. Capacity Phase 1 is complete; do not
+re-run load tests unless the documented regression triggers fire.
 
 ## Security
 

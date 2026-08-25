@@ -2,6 +2,10 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Rate } from 'k6/metrics';
 
+// Capacity regression only. Phase 1 is COMPLETE. Do not run unless documented
+// regression triggers fire. Shared-state billing tests belong in
+// concurrent-billing.js / underfunded-burst.js via CLB, not this file.
+
 const success = new Counter('chat_success');
 const limited = new Counter('chat_429');
 const fail5xx = new Counter('chat_5xx');

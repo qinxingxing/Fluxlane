@@ -6,7 +6,6 @@ const success = new Counter('billing_success');
 const failed = new Counter('billing_failed');
 
 const SNI = __ENV.SNI || __ENV.RUN_HOST || 'run.fluxlane.ai';
-const TARGET_IP = __ENV.TARGET_HOST || '';
 const API_KEY = __ENV.TEST_API_KEY;
 const MODEL = __ENV.TEST_MODEL || 'gpt-4o-mini';
 const TOTAL = Number(__ENV.TOTAL_REQUESTS || 20);
@@ -15,8 +14,13 @@ if (!API_KEY) {
   throw new Error('TEST_API_KEY is required');
 }
 
+if (__ENV.TARGET_HOST) {
+  throw new Error(
+    'Do not set TARGET_HOST for shared-state billing; traffic must go through CLB'
+  );
+}
+
 export const options = {
-  hosts: TARGET_IP ? { [SNI]: TARGET_IP } : {},
   scenarios: {
     once: {
       executor: 'shared-iterations',

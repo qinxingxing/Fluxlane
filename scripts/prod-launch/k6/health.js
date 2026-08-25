@@ -2,6 +2,9 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
+// Capacity regression only. Phase 1 is COMPLETE. Do not run unless RUN/PG/Redis
+// specs, core Relay, billing concurrency, or CLB architecture changed.
+
 const failRate = new Rate('http_fail');
 const latency = new Trend('health_ms');
 

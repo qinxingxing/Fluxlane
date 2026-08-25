@@ -2,6 +2,9 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate } from 'k6/metrics';
 
+// Capacity regression only. Phase 1 is COMPLETE. Do not run unless documented
+// regression triggers fire.
+
 const failRate = new Rate('non_ok');
 const SNI = __ENV.SNI || __ENV.API_HOST || 'api.fluxlane.ai';
 const TARGET_IP = __ENV.TARGET_HOST || '';
