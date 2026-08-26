@@ -34,6 +34,10 @@ rejected.
 `SERVE_FRONTEND=false` disables the embedded dashboard fallback while leaving
 API, relay, webhook, and health endpoints available.
 
+Production launch checks and billing reconciliation are in
+`docs/production-launch-test-plan.md`. Capacity Phase 1 is complete; do not
+re-run load tests unless the documented regression triggers fire.
+
 ## Security
 
 - Never put a secret in a `VITE_*` variable; build variables are public.
