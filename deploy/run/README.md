@@ -4,8 +4,9 @@
 |---|---|
 | `docker-compose.yml` | Pins `fluxlane/new-api:${FLUXLANE_IMAGE_TAG}`, `pull_policy: never`, container healthcheck on `/readyz` |
 | `nginx.conf` | 443 for `run.fluxlane.ai` → `127.0.0.1:3000`, buffering off for SSE, probes proxied to the app |
-| `deploy.sh` | Load + verify the artifact, `compose up -d`, probes, `/api/status` identity |
-| `rollback.sh` | Same for a previously released tag, with schema gate and legacy probe option |
+| `nginx-readyz-legacy.conf` | Rollback-only **complete** site that answers `/readyz` from `/api/status` |
+| `deploy.sh` | Verify the artifact, load, `compose up -d`, probes, `/api/status` identity |
+| `rollback.sh` | Same for a previously released tag, with schema gate and legacy probe mode |
 
 Shared helpers and overrides live in `../common/`.
 
@@ -38,5 +39,17 @@ Do not mix that rename into a release.
 # Node already detached from CLB, SSE drained (start at 120s).
 FLUXLANE_CLB_DETACHED=yes deploy/run/deploy.sh prod-YYYYMMDD-<short-sha>
 ```
+
+Artifacts are required under `${FLUXLANE_RELEASE_ROOT:-/opt/fluxlane/releases}/<tag>/` (tarball, `.sha256`, `release-manifest.json`). Identity verification fails closed on a missing manifest, missing `jq`, or any mismatch.
+
+Rollback to a pre-probe image:
+
+```bash
+FLUXLANE_CLB_DETACHED=yes FLUXLANE_LEGACY_READYZ=yes \
+FLUXLANE_NGINX_SITE=/etc/nginx/conf.d/<live-site>.conf \
+deploy/run/rollback.sh prod-YYYYMMDD-<previous>
+```
+
+That validates `/api/status` instead of `/healthz` and `/readyz`, and swaps the live Nginx site for `nginx-readyz-legacy.conf` after a backup plus `nginx -t`.
 
 Full procedure: `docs/operations/RELEASE_WORKFLOW.md`. Rollback: `docs/operations/ROLLBACK_WORKFLOW.md`.

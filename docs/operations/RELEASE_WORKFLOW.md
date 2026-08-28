@@ -34,9 +34,11 @@ scripts/release/build-release.sh prod-YYYYMMDD-<short-sha>
 
 The script fails closed and, in order: validates the tag format, requires an annotated tag that is an ancestor of `origin/main`, checks free space, creates the clean worktree `/home/codex/build/<tag>`, writes the tag into `VERSION`, builds once with `--build-arg GIT_COMMIT=<full-sha>`, asserts the binary reports both the tag and the commit, records Image ID and `/new-api` SHA256, exports `.tar.zst` + `.sha256`, and writes `release-manifest.json` (including `build_command`, `dockerfile_sha256`, `base_image_digests`, Compose/Nginx template hashes, and `schema_code_sha256`).
 
-It refuses to overwrite an existing artifact: a published tag is never rebuilt.
+It creates `/home/codex/build` and `/home/codex/releases` when they are missing, then refuses to overwrite an existing per-tag artifact: a published tag is never rebuilt.
 
-Then fill in `test-report.md`, `known_risks`, and — if any risk is recorded — `risk_accepted_by` / `risk_accepted_at` after the user accepts it.
+The rollback target comes from `releases/current-production.json` (written by `scripts/release/record-production.sh` after `PRODUCTION RELEASE PASS`) or from an explicit `FLUXLANE_ROLLBACK_TAG`. It is never inferred from Git tag creation time, because a tag can exist without ever having been deployed. If the recorded tag has no artifact on disk, the build stops.
+
+Then fill in `test-report.md`, `known_risks` (with `accepted_max_overdraft_quota`, `observed_max_overdraft_quota`, `test_model_charge_quota`), and — if any risk is recorded — `risk_accepted_by` / `risk_accepted_at` after the user accepts it.
 
 Production nodes never `docker build`. All four nodes receive the same tarball.
 
@@ -46,7 +48,21 @@ Layered as described in `TESTING_WORKFLOW.md`: development-host image checks, li
 
 ## User approval to roll
 
-Without it, stop.
+Without it, stop. Then gate on the recorded verdict:
+
+```bash
+scripts/release/verify-artifact.sh prod-YYYYMMDD-<short-sha> --release-gate
+```
+
+## First release has no unified rollback tag
+
+Before the first `prod-` rollout the four nodes run per-node images built separately from `3c52e436`; their Image IDs differ. Therefore:
+
+- Keep each node's existing local image as a **node-level emergency fallback**, and record its Image ID per node.
+- Those images are not one previous version and must not be presented as a unified rollback tag.
+- `deploy/*/rollback.sh` targets a `prod-` tag with an artifact and manifest, so it cannot roll back to them; a pre-tag emergency revert is a manual, per-node action on a drained node.
+- Only after the first tagged release is deployed and recorded with `record-production.sh` does a unified, cross-node rollback artifact exist.
+- Do not claim complete rollback coverage for the first release.
 
 ## Four nodes
 
@@ -75,6 +91,12 @@ On failure: stop the remaining nodes; leave the failed node out; keep the health
 
 ## After all four
 
-Test Agent: `PRODUCTION RELEASE PASS` or `PRODUCTION RELEASE FAIL — ROLLBACK RECOMMENDED`. Record it in the manifest.
+Test Agent: `PRODUCTION RELEASE PASS` or `PRODUCTION RELEASE FAIL — ROLLBACK RECOMMENDED`. Record it in the manifest, then make it the rollback baseline for the next build:
+
+```bash
+scripts/release/record-production.sh prod-YYYYMMDD-<short-sha> "API-1,API-2,RUN-1,RUN-2"
+```
+
+That script refuses to run unless the manifest records both `RELEASE CANDIDATE PASS` and `PRODUCTION RELEASE PASS`.
 
 Keep current and previous tarballs, manifests, and images.

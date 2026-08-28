@@ -24,8 +24,10 @@ require_drained_acknowledgement() {
     "refusing to change a pooled node: detach it from CLB, drain (RUN SSE >=120s), then re-run with FLUXLANE_CLB_DETACHED=yes"
 }
 
-# Loads the release image from its artifact when the node does not already have
-# it, then proves the loaded image is the artifact recorded in the manifest.
+# Verifies the artifact and manifest first, loads the image when the node does
+# not have it, then proves the local image is exactly the built artifact.
+# Every step fails closed: "build once, four nodes run the same artifact" cannot
+# be downgraded to a warning.
 load_and_verify_image() {
   local tag=$1
   local dir=$RELEASE_ROOT/$tag
@@ -33,38 +35,49 @@ load_and_verify_image() {
   local manifest=$dir/release-manifest.json
   local image=$IMAGE_REPO:$tag
 
+  command -v jq >/dev/null || die "jq is required to verify release identity"
+  [[ -f $manifest ]] || die "missing manifest: $manifest"
+  [[ -f $artifact ]] || die "missing artifact: $artifact"
+  [[ -f $artifact.sha256 ]] || die "missing checksum: $artifact.sha256"
+
+  # Always checksum the artifact, including when the image is already present:
+  # a matching image name proves nothing about which bits produced it.
+  ( cd "$dir" && sha256sum -c --status "$(basename "$artifact").sha256" ) \
+    || die "artifact checksum mismatch for $tag"
+
+  local recorded_artifact_sha actual_artifact_sha
+  recorded_artifact_sha=$(jq -r '.artifact_sha256 // ""' "$manifest")
+  actual_artifact_sha=$(cut -d' ' -f1 < "$artifact.sha256")
+  [[ -n $recorded_artifact_sha ]] || die "manifest has no artifact_sha256"
+  [[ $recorded_artifact_sha == "$actual_artifact_sha" ]] \
+    || die "manifest artifact_sha256 does not match the checksum file"
+
+  local want_id want_bin want_sha
+  want_id=$(jq -r '.docker_image_id // ""' "$manifest")
+  want_bin=$(jq -r '.new_api_binary_sha256 // ""' "$manifest")
+  want_sha=$(jq -r '.git_sha // ""' "$manifest")
+  [[ -n $want_id ]] || die "manifest has no docker_image_id"
+  [[ -n $want_bin ]] || die "manifest has no new_api_binary_sha256"
+  [[ ${#want_sha} -eq 40 ]] || die "manifest git_sha must be the full 40-char commit"
+  [[ $tag == *-"${want_sha:0:7}"* ]] || die "tag $tag does not match manifest git_sha"
+
   if ! docker image inspect "$image" >/dev/null 2>&1; then
-    [[ -f $artifact ]] || die "image $image absent and artifact missing: $artifact"
-    [[ -f $artifact.sha256 ]] || die "missing checksum: $artifact.sha256"
-    ( cd "$dir" && sha256sum -c --status "$(basename "$artifact").sha256" ) \
-      || die "artifact checksum mismatch for $tag"
     say "loading $image"
     zstd -dc "$artifact" | docker load
   fi
-
   docker image inspect "$image" >/dev/null 2>&1 || die "image still missing after load: $image"
 
-  if [[ -f $manifest ]] && command -v jq >/dev/null; then
-    local want_id want_bin got_id got_bin want_sha reported
-    want_id=$(jq -r '.docker_image_id // ""' "$manifest")
-    want_bin=$(jq -r '.new_api_binary_sha256 // ""' "$manifest")
-    want_sha=$(jq -r '.git_sha // ""' "$manifest")
-    got_id=$(docker image inspect "$image" --format '{{.Id}}')
-    [[ -z $want_id || $want_id == "$got_id" ]] \
-      || die "Image ID mismatch: node has $got_id, manifest says $want_id (per-node rebuild?)"
-    if [[ -n $want_bin ]]; then
-      got_bin=$(docker run --rm --entrypoint sha256sum "$image" /new-api | cut -d' ' -f1)
-      [[ $want_bin == "$got_bin" ]] || die "binary SHA256 mismatch for $image"
-    fi
-    if [[ -n $want_sha ]]; then
-      reported=$(docker run --rm --entrypoint /new-api "$image" --version | tr -d '\r')
-      grep -qxF "commit $want_sha" <<<"$reported" \
-        || die "image does not report commit $want_sha"
-    fi
-    say "image verified against manifest"
-  else
-    say "WARNING no manifest at $manifest; identity not verified"
-  fi
+  local got_id got_bin reported
+  got_id=$(docker image inspect "$image" --format '{{.Id}}')
+  [[ $want_id == "$got_id" ]] \
+    || die "Image ID mismatch: node has $got_id, manifest says $want_id (per-node rebuild?)"
+  got_bin=$(docker run --rm --entrypoint sha256sum "$image" /new-api | cut -d' ' -f1)
+  [[ $want_bin == "$got_bin" ]] || die "binary SHA256 mismatch for $image"
+  reported=$(docker run --rm --entrypoint /new-api "$image" --version | tr -d '\r')
+  grep -qxF "$tag" <<<"$reported" || die "image reports wrong version: $reported"
+  grep -qxF "commit $want_sha" <<<"$reported" || die "image does not report commit $want_sha"
+
+  say "image verified: tag, Image ID, binary SHA256, commit"
 }
 
 record_current_state() {
@@ -108,6 +121,45 @@ require_probe() {
   code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$PROBE_URL$path" || echo 000)
   [[ $code == "$expect" ]] || die "$path returned $code, expected $expect"
   say "$path = $code"
+}
+
+# Images that predate the probes serve neither /readyz nor /healthz, so a
+# legacy rollback is validated through /api/status instead.
+require_legacy_probe() {
+  require_probe /api/status 200
+}
+
+# Replaces the live Nginx site with the rollback-only legacy site, which answers
+# /readyz from /api/status. A bare `location` cannot live in conf.d, so this
+# swaps a complete site file, tests it, and restores the backup on failure.
+install_legacy_readyz_site() {
+  local template=$1 record_dir=$2
+  local site=${FLUXLANE_NGINX_SITE:-}
+  [[ -n $site ]] || die "FLUXLANE_LEGACY_READYZ=yes requires FLUXLANE_NGINX_SITE=<live site path>"
+  [[ -f $site ]] || die "live Nginx site not found: $site"
+  [[ -f $template ]] || die "legacy site template not found: $template"
+  command -v nginx >/dev/null || die "nginx is required to install the legacy site"
+
+  LEGACY_SITE_PATH=$site
+  LEGACY_SITE_BACKUP=$record_dir/$(basename "$site").$(date -u +%Y%m%dT%H%M%SZ).bak
+  cp -a "$site" "$LEGACY_SITE_BACKUP"
+  say "backed up $site to $LEGACY_SITE_BACKUP"
+
+  cp -a "$template" "$site"
+  if ! nginx -t; then
+    cp -a "$LEGACY_SITE_BACKUP" "$site"
+    nginx -t && nginx -s reload || true
+    die "legacy Nginx site failed nginx -t; original site restored"
+  fi
+  nginx -s reload || die "nginx reload failed after installing the legacy site"
+  say "legacy /readyz site active (temporary, drained node only)"
+}
+
+restore_legacy_readyz_site() {
+  [[ -n ${LEGACY_SITE_BACKUP:-} && -f ${LEGACY_SITE_BACKUP:-} ]] || return 0
+  cp -a "$LEGACY_SITE_BACKUP" "$LEGACY_SITE_PATH"
+  nginx -t && nginx -s reload
+  say "restored $LEGACY_SITE_PATH from $LEGACY_SITE_BACKUP"
 }
 
 # The deployed node must report the release tag and the full commit, otherwise

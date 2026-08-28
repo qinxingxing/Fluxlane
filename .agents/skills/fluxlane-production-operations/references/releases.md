@@ -11,7 +11,9 @@ Full procedure: `docs/operations/RELEASE_WORKFLOW.md`. Rollback: `docs/operation
 5. User approves production.
 6. Each node: confirm peer health → detach CLB → drain (RUN SSE 120s) → `FLUXLANE_CLB_DETACHED=yes deploy/<role>/deploy.sh <tag>` → smoke → rejoin → observe → next node.
 
-`deploy/<role>/deploy.sh` verifies the checksum, loads the image, compares Image ID and binary SHA256 against the manifest, runs `docker compose up -d` (never `down`), and requires `/healthz`, `/readyz`, and `/api/status` reporting the tag plus the manifest commit.
+`deploy/<role>/deploy.sh` requires `jq`, the manifest, the tarball and checksum, then compares Image ID, binary SHA256, tag, and commit before running `docker compose up -d` (never `down`) and requiring `/healthz`, `/readyz`, and `/api/status` identity. Every check is fail-closed, including when the image is already present.
+
+Rollback target: `releases/current-production.json` (from `scripts/release/record-production.sh`) or an explicit `FLUXLANE_ROLLBACK_TAG` — never the newest tag by date. Before the first recorded release there is no unified rollback artifact; keep each node's local `3c52e436` image as a node-level emergency fallback and record its Image ID.
 
 Runtime identity: `/api/status` returns `version` and `git_commit`; `/new-api --version` prints the tag then `commit <full-sha>`. Do not set a `VERSION` env var on production nodes — it overrides the compiled tag and breaks verification.
 

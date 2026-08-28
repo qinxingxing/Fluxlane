@@ -12,6 +12,10 @@ Persistent `/readyz` or CLB failure, material 5xx, panic/restarts/OOM, PostgreSQ
 
 If the current tag and the rollback target differ on that hash, an old binary would run against already-migrated tables. `deploy/*/rollback.sh` stops unless `FLUXLANE_SCHEMA_APPROVED=yes` is set, which must only be set after the user accepts that risk. The same gate applies when a manifest is missing and the comparison cannot be made.
 
+## Target selection
+
+Roll back to the tag recorded in `releases/current-production.json`, or to a tag the user names explicitly. Do not pick "the newest `prod-` tag": a tag may exist without ever having been deployed.
+
 ## Per node (never two of one service)
 
 ```bash
@@ -21,11 +25,29 @@ FLUXLANE_CLB_DETACHED=yes deploy/api/rollback.sh prod-YYYYMMDD-<previous>
 FLUXLANE_CLB_DETACHED=yes deploy/run/rollback.sh prod-YYYYMMDD-<previous>
 ```
 
-The script records current state, checks the schema gate, loads and verifies the previous artifact, `docker compose up -d`, waits for health, then requires `/healthz` and `/readyz` plus reported identity.
+The script records current state, checks the schema gate, verifies the artifact checksum and manifest, loads the image if needed, compares Image ID, binary SHA256, and reported commit, then `docker compose up -d`. Any missing manifest, missing `jq`, or mismatch stops the rollback.
 
-For a target image that predates `/readyz`, add `FLUXLANE_LEGACY_READYZ=yes`. That applies `deploy/common/docker-compose.readyz-legacy.yml` (healthcheck → `/api/status`) and, if the CLB probe must also be satisfied on that drained node, install `deploy/common/nginx-readyz-legacy.conf` temporarily. Both are rollback-only and must be removed before the node carries pooled traffic under a normal release.
+### Images that predate the probes
+
+A pre-probe image serves neither `/readyz` nor `/healthz`, so add:
+
+```bash
+FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/conf.d/<live-site>.conf
+```
+
+Then the script:
+
+- applies the role override `deploy/common/docker-compose.readyz-legacy-api.yml` or `-run.yml` (literal service keys — Compose does not substitute variables in mapping keys);
+- backs up the live Nginx site, installs the **complete** legacy site (`deploy/api/nginx-readyz-legacy.conf` or `deploy/run/nginx-readyz-legacy.conf`), runs `nginx -t`, reloads, and restores the backup if anything fails. A bare `location` block cannot live in `conf.d`, so a snippet is not used;
+- validates `/api/status = 200` instead of `/healthz` and `/readyz`.
+
+Both legacy files are rollback-only. Restore the normal site and probe before the node carries pooled traffic under a normal release; the backup path is printed at the end of the run.
 
 Then: smoke → rejoin CLB → observe.
+
+## Before the first tagged release
+
+The four nodes currently run per-node images of `3c52e436` with different Image IDs. They are node-level emergency fallbacks only, not a unified previous version, and `deploy/*/rollback.sh` cannot target them because they have no `prod-` tag, artifact, or manifest. A pre-tag revert is a manual per-node action on a drained node. Record each node's current Image ID before the first release.
 
 Keep the node out if its rollback fails (`ROLLBACK FAILED` / `BLOCKED`). Do not overwrite production databases for a drill.
 

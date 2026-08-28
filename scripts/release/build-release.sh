@@ -31,6 +31,10 @@ ARTIFACT=$RELEASE_DIR/fluxlane-new-api-$RELEASE_TAG.tar.zst
 IMAGE=$IMAGE_REPO:$RELEASE_TAG
 
 [[ -d $REPO_DIR/.git ]] || die "no git repository at $REPO_DIR"
+
+# The roots may not exist yet on a first run; the per-tag directories must not
+# already exist, because a published tag is never rebuilt.
+mkdir -p "$BUILD_ROOT" "$RELEASE_ROOT"
 [[ -e $BUILD_DIR ]] && die "build directory already exists: $BUILD_DIR"
 [[ -e $ARTIFACT ]] && die "artifact already exists, tags are never rebuilt: $ARTIFACT"
 
@@ -53,7 +57,7 @@ git merge-base --is-ancestor "$GIT_SHA" origin/main \
   || die "tag suffix does not match commit ${GIT_SHA:0:7}"
 
 # Clean worktree: build inputs never come from a dirty shared checkout.
-mkdir -p "$BUILD_ROOT" "$RELEASE_DIR"
+mkdir -p "$RELEASE_DIR"
 git worktree add --detach "$BUILD_DIR" "$GIT_SHA" >/dev/null
 cleanup() { git -C "$REPO_DIR" worktree remove --force "$BUILD_DIR" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
@@ -97,17 +101,29 @@ docker save "$IMAGE" | zstd -T0 -10 -q -o "$ARTIFACT"
 ( cd "$RELEASE_DIR" && sha256sum "$(basename "$ARTIFACT")" > "$(basename "$ARTIFACT").sha256" )
 ARTIFACT_SHA=$(cut -d' ' -f1 < "$ARTIFACT.sha256")
 
-PREVIOUS_TAG=$(
-  git -C "$REPO_DIR" tag --list 'prod-*' --sort=-creatordate \
-    | grep -vxF "$RELEASE_TAG" | head -1
-)
+# The rollback target is what production actually runs, not the newest tag by
+# creation time: a tag can exist without ever having been deployed.
+# Source of truth: the production state file written by record-production.sh,
+# overridable with FLUXLANE_ROLLBACK_TAG. Never inferred from tag dates.
+PREVIOUS_TAG=${FLUXLANE_ROLLBACK_TAG:-}
+PRODUCTION_STATE=$RELEASE_ROOT/current-production.json
+if [[ -z $PREVIOUS_TAG && -f $PRODUCTION_STATE ]]; then
+  PREVIOUS_TAG=$(jq -r '.release_tag // ""' "$PRODUCTION_STATE")
+fi
 PREVIOUS_ARTIFACT=""
 if [[ -n $PREVIOUS_TAG ]]; then
+  [[ $PREVIOUS_TAG != "$RELEASE_TAG" ]] || die "rollback tag equals the release being built"
   PREVIOUS_ARTIFACT=$RELEASE_ROOT/$PREVIOUS_TAG/fluxlane-new-api-$PREVIOUS_TAG.tar.zst
-  [[ -f $PREVIOUS_ARTIFACT ]] || printf 'build-release: WARNING rollback artifact missing: %s\n' "$PREVIOUS_ARTIFACT" >&2
+  [[ -f $PREVIOUS_ARTIFACT ]] \
+    || die "recorded production tag $PREVIOUS_TAG has no artifact at $PREVIOUS_ARTIFACT; restore it or pass FLUXLANE_ROLLBACK_TAG"
+else
+  printf 'build-release: WARNING no recorded production release; this build has no unified rollback tag\n' >&2
+  printf 'build-release: WARNING keep each node existing local image as a node-level emergency fallback\n' >&2
 fi
 PREVIOUS_SCHEMA_SHA=""
 if [[ -n $PREVIOUS_TAG ]]; then
+  git -C "$REPO_DIR" rev-parse -q --verify "refs/tags/$PREVIOUS_TAG" >/dev/null \
+    || die "recorded production tag $PREVIOUS_TAG does not exist in Git"
   PREVIOUS_SCHEMA_SHA=$(
     git -C "$REPO_DIR" ls-tree -r "$PREVIOUS_TAG^{}" --name-only -- model \
       | sort \
@@ -119,7 +135,7 @@ if [[ -n $PREVIOUS_TAG ]]; then
 fi
 SCHEMA_NOTES="model/ unchanged vs $PREVIOUS_TAG; app rollback needs no schema statement"
 if [[ -z $PREVIOUS_TAG ]]; then
-  SCHEMA_NOTES="first production tag; no previous schema baseline"
+  SCHEMA_NOTES="no recorded production release; no unified previous schema baseline"
 elif [[ $PREVIOUS_SCHEMA_SHA != "$SCHEMA_CODE_SHA" ]]; then
   SCHEMA_NOTES="model/ CHANGED vs $PREVIOUS_TAG; AutoMigrate moves the schema forward. Rollback requires an explicit compatibility statement and user approval."
 fi

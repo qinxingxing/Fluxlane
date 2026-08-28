@@ -4,9 +4,13 @@ Used by `deploy/api/` and `deploy/run/`. The historical single-node template sta
 
 | File | Purpose |
 |---|---|
-| `node-lib.sh` | Shared node-side steps: tag format, drained acknowledgement, artifact load + identity verification, state recording, `compose up`, probes, schema rollback gate |
-| `docker-compose.readyz-legacy.yml` | Rollback-only healthcheck override for images that predate `/readyz` |
-| `nginx-readyz-legacy.conf` | Rollback-only `/readyz` → `/api/status` shim for a **drained** node; delete before rejoining CLB |
+| `node-lib.sh` | Shared node-side steps: tag format, drained acknowledgement, artifact + identity verification, state recording, `compose up`, probes, legacy Nginx site swap, schema rollback gate |
+| `docker-compose.readyz-legacy-api.yml` | Rollback-only healthcheck override for API images that predate `/readyz` |
+| `docker-compose.readyz-legacy-run.yml` | Same for RUN |
+
+There is one override per role because Compose does not substitute variables in mapping keys: `services: ${VAR}:` is rejected with `Additional property ${VAR} is not allowed`.
+
+The legacy `/readyz` shim is a **complete site** file in the role directory (`deploy/api/nginx-readyz-legacy.conf`, `deploy/run/nginx-readyz-legacy.conf`), not a snippet, because a bare `location` in `conf.d` fails with `"location" directive is not allowed here`. `rollback.sh` installs it over the live site after a backup, runs `nginx -t`, reloads, and restores the backup on failure.
 
 ## Image
 
@@ -17,9 +21,13 @@ pull_policy: never
 
 The tag is the annotated Git tag. Load the tarball from the release directory before `compose up`. Do not `docker build` on a node. Do not use `latest`.
 
+Identity verification fails closed. `node-lib.sh` requires `jq`, the manifest, the tarball and its checksum, and then requires the local image to match `docker_image_id`, `new_api_binary_sha256`, the tag, and the manifest commit — even when an image with that name is already present, because a matching name proves nothing about the bits.
+
 ## Health
 
-Container healthchecks probe `http://127.0.0.1:3000/readyz` inside the app container, and CLB probes `/readyz` too. `/healthz` is liveness only. The legacy files above exist so a rollback to a pre-`/readyz` image is possible on a drained node; a permanent `404 → /api/status` fallback is forbidden because it hides a missing probe on new releases.
+Container healthchecks probe `http://127.0.0.1:3000/readyz` inside the app container, and CLB probes `/readyz` too. `/healthz` is liveness only.
+
+A pre-probe image serves neither `/readyz` nor `/healthz`, so legacy rollback validates `/api/status = 200` instead. The legacy files exist only for that case on a drained node; a permanent `404 → /api/status` fallback is forbidden because it hides a missing probe on new releases.
 
 ## Process
 

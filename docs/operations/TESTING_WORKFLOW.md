@@ -14,6 +14,8 @@ Skill companion: `.agents/skills/fluxlane-production-operations/references/testi
 
 Rebuild after tests voids PASS. Re-verify identity with `scripts/release/verify-artifact.sh <tag> --loaded`.
 
+Before the first release there is no unified previous artifact: the four nodes carry per-node images built separately from `3c52e436`, with different Image IDs. Treat those only as node-level emergency fallbacks, never as one rollback tag.
+
 ## Where each check runs
 
 There is no pre-production environment. Split the candidate checks by what each location can prove:
@@ -60,13 +62,22 @@ Pre-consume and settle; consume logs = successful charges; multi-account isolati
 
 Concurrent in-flight requests can settle past a small remaining wallet and leave a negative balance.
 
-`RELEASE CANDIDATE PASS` is allowed **only** when all three hold:
+`RELEASE CANDIDATE PASS` is allowed **only** when each `known_risks` entry in `release-manifest.json` carries all of:
 
-1. `release-manifest.json` `known_risks` records the maximum observed overdraft quota and the test model charge per request.
-2. The user explicitly accepted that risk; `risk_accepted_by` and `risk_accepted_at` are filled in.
-3. The observed overdraft in this candidate is not larger than the recorded maximum.
+```json
+{
+  "id": "concurrent-wallet-overdraft",
+  "accepted_max_overdraft_quota": -40000,
+  "observed_max_overdraft_quota": -40000,
+  "test_model_charge_quota": 40000
+}
+```
 
-Otherwise report `RELEASE CANDIDATE FAIL`. A negative balance that is not covered by an accepted, quantified risk entry is a FAIL, not an automatic pass. `verify-artifact.sh` fails closed when `known_risks` is non-empty and acceptance fields are blank.
+plus `risk_accepted_by` and `risk_accepted_at` at the top level, and `|observed| <= |accepted|`.
+
+`verify-artifact.sh` enforces this: it requires the three numeric fields per risk, a non-zero accepted ceiling, and compares absolute values so a credit written as a negative number cannot pass by being "smaller". `verify-artifact.sh <tag> --release-gate`, run before rolling production, additionally requires `candidate_result` to be exactly `RELEASE CANDIDATE PASS`.
+
+A negative balance not covered by an accepted, quantified entry is `RELEASE CANDIDATE FAIL`, not an automatic pass.
 
 Reference measurement (Stage 5, 2026-08-27): `qa-billing-u09` and `u10`, 200,000 remaining, 6 concurrent successes at 40,000 each → **−40,000** each. Serial token remain of `N × 40000` gated exactly N successes (Stage 6).
 

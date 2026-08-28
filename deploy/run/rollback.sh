@@ -7,7 +7,8 @@
 # Usage:
 #   FLUXLANE_CLB_DETACHED=yes deploy/run/rollback.sh prod-YYYYMMDD-<short-sha>
 #
-# Add FLUXLANE_LEGACY_READYZ=yes when the target image predates /readyz.
+# Pre-probe images (no /readyz, no /healthz) additionally need:
+#   FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/conf.d/<live>.conf
 # Add FLUXLANE_SCHEMA_APPROVED=yes only after the user accepted a schema risk.
 set -Eeuo pipefail
 
@@ -19,12 +20,18 @@ source "$SCRIPT_DIR/../common/node-lib.sh"
 TARGET_TAG=${1:-}
 CONTAINER=${FLUXLANE_CONTAINER_NAME:-new-api}
 COMPOSE_FILE=${FLUXLANE_COMPOSE_FILE:-$SCRIPT_DIR/docker-compose.yml}
-LEGACY_OVERRIDE=$SCRIPT_DIR/../common/docker-compose.readyz-legacy.yml
+LEGACY_OVERRIDE=$SCRIPT_DIR/../common/docker-compose.readyz-legacy-run.yml
+LEGACY_SITE_TEMPLATE=$SCRIPT_DIR/nginx-readyz-legacy.conf
 RECORD_DIR=${FLUXLANE_RECORD_DIR:-/opt/fluxlane/deploy-records}
+LEGACY=${FLUXLANE_LEGACY_READYZ:-no}
 
 [[ -n $TARGET_TAG ]] || die "usage: FLUXLANE_CLB_DETACHED=yes $0 prod-YYYYMMDD-<short-sha>"
 require_tag_format "$TARGET_TAG"
 require_drained_acknowledgement
+
+for cmd in docker curl sha256sum zstd jq; do
+  command -v "$cmd" >/dev/null || die "$cmd is required"
+done
 
 CURRENT_TAG=$(docker inspect --format '{{.Config.Image}}' "$CONTAINER" 2>/dev/null | awk -F: '{print $NF}' || true)
 [[ -n $CURRENT_TAG ]] && require_schema_rollback_approval "$CURRENT_TAG" "$TARGET_TAG"
@@ -37,22 +44,27 @@ load_and_verify_image "$TARGET_TAG"
 export FLUXLANE_IMAGE_TAG=$TARGET_TAG
 export FLUXLANE_NODE_NAME=${FLUXLANE_NODE_NAME:-$(hostname)}
 
-if [[ ${FLUXLANE_LEGACY_READYZ:-} == yes ]]; then
-  export FLUXLANE_LEGACY_SERVICE=fluxlane-run
-  say "using legacy /api/status healthcheck override; remove it before rejoining CLB"
+if [[ $LEGACY == yes ]]; then
+  say "legacy mode: /api/status healthcheck and temporary /readyz site"
+  install_legacy_readyz_site "$LEGACY_SITE_TEMPLATE" "$RECORD_DIR"
+  trap 'restore_legacy_readyz_site' ERR
   compose_up -f "$COMPOSE_FILE" -f "$LEGACY_OVERRIDE"
 else
   compose_up -f "$COMPOSE_FILE"
 fi
 
 wait_for_container_health "$CONTAINER"
-require_probe /healthz 200
-if [[ ${FLUXLANE_LEGACY_READYZ:-} == yes ]]; then
-  say "WARNING /readyz not expected on this image; CLB must not receive this node until a /readyz-capable release is restored or a documented legacy probe is in place"
+
+if [[ $LEGACY == yes ]]; then
+  require_legacy_probe
+  say "node rolled back to $TARGET_TAG on the legacy probe path"
+  say "CLB probes /readyz through the temporary site; restore deploy/run/nginx.conf as soon as a /readyz-capable release returns"
+  say "backup of the live site: ${LEGACY_SITE_BACKUP:-none}"
 else
+  require_probe /healthz 200
   require_probe /readyz 200
   require_reported_identity "$TARGET_TAG"
 fi
 check_restart_and_oom "$CONTAINER"
 
-say "node rolled back to $TARGET_TAG; relay smoke, then rejoin CLB only if stable"
+say "relay smoke, then rejoin CLB only if stable"

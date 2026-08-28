@@ -29,7 +29,7 @@ Minimum RUN: unauthenticated `/v1/models` → 401; Mock non-stream and stream; U
 
 Minimum Billing: pre-consume and settle; consume log count = successful bills; multi-account isolation; multi-Token shared wallet; failed requests do not charge.
 
-Concurrent overdraft is **not** an automatic pass. `RELEASE CANDIDATE PASS` requires all three: the manifest `known_risks` records the maximum observed overdraft quota and the test model charge per request; the user accepted it (`risk_accepted_by`, `risk_accepted_at` filled); and this candidate's observed overdraft does not exceed that maximum. Otherwise FAIL. Reference: Stage 5, 2026-08-27, u09/u10 at 200000 remaining, 6 concurrent successes at 40000 → −40000 each. `verify-artifact.sh` fails closed on unaccepted risks.
+Concurrent overdraft is **not** an automatic pass. Each manifest `known_risks` entry needs numeric `accepted_max_overdraft_quota`, `observed_max_overdraft_quota`, and `test_model_charge_quota`, plus top-level `risk_accepted_by` and `risk_accepted_at`, with `|observed| <= |accepted|`. `verify-artifact.sh` enforces that and `--release-gate` additionally requires `candidate_result` to be `RELEASE CANDIDATE PASS`. Otherwise FAIL. Reference: Stage 5, 2026-08-27, u09/u10 at 200000 remaining, 6 concurrent successes at 40000 → −40000 each.
 
 Infrastructure: PostgreSQL/Redis reachability from the test path in use; no OOM/unexpected restart; Nginx; no new 500/502/503; rollback artifact present.
 

@@ -20,9 +20,11 @@ Only this host may build production images. Production API/RUN nodes never `dock
 ```bash
 scripts/release/build-release.sh prod-YYYYMMDD-<short-sha>
 scripts/release/verify-artifact.sh prod-YYYYMMDD-<short-sha>
+# after the four-node roll passes:
+scripts/release/record-production.sh prod-YYYYMMDD-<short-sha> "API-1,API-2,RUN-1,RUN-2"
 ```
 
-The script creates and removes the clean Tag worktree, writes `VERSION`, injects `GIT_COMMIT`, builds once, asserts the binary reports tag and commit, exports `.tar.zst` + `.sha256`, and writes `release-manifest.json`. It refuses to rebuild an existing artifact.
+The build script creates `/home/codex/build` and `/home/codex/releases` when missing, creates and removes the clean Tag worktree, writes `VERSION`, injects `GIT_COMMIT`, builds once, asserts the binary reports tag and commit, exports `.tar.zst` + `.sha256`, and writes `release-manifest.json`. It refuses to rebuild an existing per-tag artifact and takes the rollback tag from `releases/current-production.json` or `FLUXLANE_ROLLBACK_TAG`, never from tag dates.
 
 Keep `test-report.md`, `deployment-record.md`, and `rollback-record.md` beside the tarball. Requires `docker`, `zstd`, `sha256sum`, `jq`.
 

@@ -43,6 +43,7 @@ Do not invent a second migration framework in a hotfix. Document compatibility i
 
 - `deploy/api-cvm/docker-compose.yml` still pins `fluxlane/api-control:eaae4af5` and healthchecks `/api/status`.
 - HEAD on `main` (`3c52e436` at skill update) includes `/readyz`.
-- New templates live in `deploy/api/`, `deploy/run/`, `deploy/common/` and are used only after a tagged one-shot build.
+- New assets live in `deploy/api/`, `deploy/run/`, `deploy/common/` and are used only after a tagged one-shot build.
+- There is no production tag yet, so there is no unified previous artifact. The four nodes hold separately built `3c52e436` images with different Image IDs: node-level emergency fallbacks only. A unified cross-node rollback artifact first exists after the first tagged release is deployed and recorded with `record-production.sh`. Do not claim full rollback coverage for release one.
 
 Verify live Compose and CLB independently of Git.
