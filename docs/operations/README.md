@@ -9,4 +9,6 @@
 | [DEVELOPMENT_SERVER.md](DEVELOPMENT_SERVER.md) | `43.160.247.94` layout and windows |
 | [RELEASE_MANIFEST.example.json](RELEASE_MANIFEST.example.json) | Artifact identity file |
 
-Agent skill: `.agents/skills/fluxlane-production-operations/`. Deploy templates: `deploy/api/`, `deploy/run/`, `deploy/common/`. Historical CVM files: `deploy/api-cvm/`.
+Agent skill: `.agents/skills/fluxlane-production-operations/`. Release scripts: `scripts/release/`. Deploy assets: `deploy/api/`, `deploy/run/`, `deploy/common/`. Historical CVM files: `deploy/api-cvm/`.
+
+Install the skill on the development host from **merged `main`** only. An unmerged branch or draft PR is a proposal, not an operating rule.

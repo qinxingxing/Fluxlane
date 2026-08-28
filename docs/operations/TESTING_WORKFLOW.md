@@ -12,13 +12,41 @@ Skill companion: `.agents/skills/fluxlane-production-operations/references/testi
 | Release candidate (the tarball) | `RELEASE CANDIDATE PASS` / `FAIL` | Production roll |
 | After production traffic | `PRODUCTION RELEASE PASS` / `PRODUCTION RELEASE FAIL — ROLLBACK RECOMMENDED` | Remaining nodes / keep-live |
 
-Rebuild after tests voids PASS.
+Rebuild after tests voids PASS. Re-verify identity with `scripts/release/verify-artifact.sh <tag> --loaded`.
+
+## Where each check runs
+
+There is no pre-production environment. Split the candidate checks by what each location can prove:
+
+### Layer 1 — development host `43.160.247.94`, no production secrets
+
+Load the tarball and start the candidate image against a local database and the QA Mock provider on `:18080`.
+
+Proves: image starts; `/healthz`; `/readyz`; `/api/status` `version` = tag and `git_commit` = manifest `git_sha`; `/new-api --version`; Mock non-stream and stream; Usage and `request_id`; relay 401 without a token; migration runs clean on a scratch database; no OOM.
+
+Does not prove: production data compatibility, CLB behavior, real per-node config.
+
+### Layer 2 — current production version, existing nodes
+
+Regression of live behavior (login, Channel, logs, Billing single request) against the version already running, to establish the comparison baseline. Read-only for the Test Agent; no config changes.
+
+### Layer 3 — one drained production node, candidate loaded, still out of the pool
+
+Requires user approval. Development Agent detaches one node from CLB, drains it, and runs `deploy/<role>/deploy.sh`. The node keeps its real env file, real PostgreSQL, and real Redis, but receives **no** CLB traffic.
+
+Test Agent then hits that node directly (node IP or a host-header request) for: login/logout, Token, Channel/model/logs, Console pages, PostgreSQL/Redis-backed reads, Mock non-stream and stream, Billing single request reconciled against `/api/log`, plus `/api/status` identity.
+
+This is how "verify compatibility with production before release" and "do not disturb production" coexist: the node is production hardware and production data, but out of traffic. Nothing rejoins CLB until this layer passes.
+
+### Layer 4 — after rejoin, public entries
+
+See below. Repeat per node as the roll proceeds; API-1 → API-2 → RUN-1 → RUN-2.
 
 ## Release candidate minimum
 
 ### API
 
-`/healthz`, `/readyz`, `/api/status` (Tag and Git identity), login/logout, email verification, Token management, Channel/model/logs, Console pages, API-1 vs API-2.
+`/healthz`, `/readyz`, `/api/status` (tag + `git_commit`), login/logout, email verification, Token management, Channel/model/logs, Console pages, API-1 vs API-2.
 
 ### RUN
 
@@ -28,11 +56,23 @@ Unauthenticated `/v1/models` → 401; Mock non-stream; Mock stream; Usage; `requ
 
 Pre-consume and settle; consume logs = successful charges; multi-account isolation; multi-Token shared user wallet; failures do not charge.
 
-Known product risk (do not treat as unexpected FAIL if already documented): concurrent in-flight settles can overdraft a small wallet (observed Stage 5: u09/u10 each **−40,000** quota). Serial Token remain = N×40000 does gate exactly N successes.
+### Known concurrency overdraft — explicit acceptance required
+
+Concurrent in-flight requests can settle past a small remaining wallet and leave a negative balance.
+
+`RELEASE CANDIDATE PASS` is allowed **only** when all three hold:
+
+1. `release-manifest.json` `known_risks` records the maximum observed overdraft quota and the test model charge per request.
+2. The user explicitly accepted that risk; `risk_accepted_by` and `risk_accepted_at` are filled in.
+3. The observed overdraft in this candidate is not larger than the recorded maximum.
+
+Otherwise report `RELEASE CANDIDATE FAIL`. A negative balance that is not covered by an accepted, quantified risk entry is a FAIL, not an automatic pass. `verify-artifact.sh` fails closed when `known_risks` is non-empty and acceptance fields are blank.
+
+Reference measurement (Stage 5, 2026-08-27): `qa-billing-u09` and `u10`, 200,000 remaining, 6 concurrent successes at 40,000 each → **−40,000** each. Serial token remain of `N × 40000` gated exactly N successes (Stage 6).
 
 ### Infrastructure
 
-PostgreSQL/Redis from the path under test; no OOM/unexpected restart; Nginx; no new 500/502/503; previous image tarball present.
+PostgreSQL/Redis from the path under test; no OOM/unexpected restart; Nginx; no new 500/502/503; previous artifact and manifest present for rollback.
 
 ## Formal post-release entries
 
@@ -48,7 +88,7 @@ Include CLB distribution and Image ID equality across the four nodes.
 
 ## Evidence
 
-Keep client JSONL with client/server `request_id`. Never store Admin Token, user API keys, Provider keys, or passwords. Stop on 5xx, status=0, CLB drop, or Billing mismatch. Expected 401 on exhausted Token is not a stop.
+Keep client JSONL with client/server `request_id`. Never store Admin Token, user API keys, Provider keys, or passwords. Stop on 5xx, status=0, CLB drop, or Billing mismatch outside an accepted risk. Expected 401 on exhausted Token is not a stop.
 
 ## Time windows
 

@@ -1,0 +1,19 @@
+# Rollback-only override: previous images that predate /readyz.
+#
+# Use with the drained node's Compose file, never on a node in the CLB pool and
+# never as a permanent file:
+#
+#   docker compose -f docker-compose.yml \
+#     -f ../common/docker-compose.readyz-legacy.yml up -d
+#
+# Set FLUXLANE_LEGACY_SERVICE to the service name in the base file
+# (fluxlane-api or fluxlane-run). Remove this override as soon as the node runs
+# an image that serves /readyz; CLB must go back to /readyz before rejoin.
+services:
+  ${FLUXLANE_LEGACY_SERVICE}:
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/status >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s

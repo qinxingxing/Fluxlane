@@ -9,25 +9,22 @@
 /home/codex/releases/<release-tag>/     Artifacts, manifests, reports
 /home/codex/test-results/               Redacted client evidence
 /opt/qa-mock-provider                   Mock provider, port 18080
-/home/codex/.codex/skills/              Shared skills (copy from Git)
+/home/codex/.codex/skills/              Shared skills (copy from merged main only)
 /home/codex/.ssh/id_ed25519             GitHub SSH (mode 600; never print)
 ```
 
 ## One-shot build
 
-Only this host may build production images. Use a clean worktree of the annotated Tag. Production API/RUN nodes never `docker build`.
-
-Image: `fluxlane/new-api:<release-tag>`
-
-Pack:
+Only this host may build production images. Production API/RUN nodes never `docker build`.
 
 ```bash
-docker save fluxlane/new-api:<release-tag> | zstd -T0 -10 \
-  > /home/codex/releases/<release-tag>/fluxlane-new-api-<release-tag>.tar.zst
-sha256sum ... > ...tar.zst.sha256
+scripts/release/build-release.sh prod-YYYYMMDD-<short-sha>
+scripts/release/verify-artifact.sh prod-YYYYMMDD-<short-sha>
 ```
 
-Keep `release-manifest.json`, `test-report.md`, `deployment-record.md`, `rollback-record.md` beside the tarball.
+The script creates and removes the clean Tag worktree, writes `VERSION`, injects `GIT_COMMIT`, builds once, asserts the binary reports tag and commit, exports `.tar.zst` + `.sha256`, and writes `release-manifest.json`. It refuses to rebuild an existing artifact.
+
+Keep `test-report.md`, `deployment-record.md`, and `rollback-record.md` beside the tarball. Requires `docker`, `zstd`, `sha256sum`, `jq`.
 
 If anything is rebuilt after the Test Agent starts, previous PASS is void.
 

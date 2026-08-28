@@ -9,20 +9,22 @@
 | Docker Image ID | `docker image inspect` after the single build | manifest, node `docker load` verification |
 | `/new-api` SHA256 | hash of the binary inside the image | manifest |
 | Artifact SHA256 | `docker save \| zstd` tarball | `.tar.zst.sha256` |
-| Schema baseline | Git tree of `model/` at the Tag | `schema_model_tree_sha` in the manifest |
+| Schema baseline | sha256 over every path+blob under `model/` at the Tag, including the explicit migrations in `model/main.go` | `schema_code_sha256` in the manifest |
 
 Four nodes must share Tag, Image ID, and binary SHA256. A matching Git SHA with different Image IDs means per-node rebuild — treat as a release defect.
 
-## VERSION
+## VERSION and runtime SHA
 
-`VERSION` in Git may be empty on `main`. The **build worktree** writes the Release Tag into `VERSION` before `docker build` so:
+`VERSION` in Git may be empty on `main`. `scripts/release/build-release.sh` writes the Release Tag into `VERSION` in the build worktree before `docker build`, so frontend `VITE_REACT_APP_VERSION` and Go `common.Version` both equal the Tag.
 
-- frontend `VITE_REACT_APP_VERSION`
-- Go `common.Version` via ldflags
+The full commit is injected separately through the Dockerfile build arg `GIT_COMMIT` into `common.GitCommit`. A deployed node exposes both:
 
-both equal the Tag. `/api/status` `version` must equal that Tag after deploy.
+- `GET /api/status` → `data.version` (Tag) and `data.git_commit` (full SHA)
+- `/new-api --version` → Tag on line 1, `commit <full-sha>` on line 2
 
-Also inject the full Git SHA (separate ldflags or status field). If the current binary only exposes `common.Version`, the Tag string must still uniquely identify the commit via the `prod-…-<short-sha>` suffix until a dedicated SHA field exists.
+The build script fails if the built binary does not report both, so an unlabeled image cannot become a release.
+
+Do not set a `VERSION` environment variable on production nodes: `common.InitEnv` lets it override the compiled Tag, which would defeat artifact verification.
 
 ## Schema
 
@@ -32,7 +34,7 @@ Consequences:
 
 - Forward: starting a new Tag can add columns. That is a one-way production schema change.
 - Reverse: loading an older image does **not** drop columns. An old binary may fail or mis-bill if it cannot tolerate the new schema.
-- The release manifest records `schema_model_tree_sha` (`git rev-parse <tag>:model`) and `schema_notes`. Compare with the previous release. If `model/` changed, rollback of the app requires an explicit schema-compatibility statement from the Development Agent and user approval.
+- The release manifest records `schema_code_sha256` and `schema_notes`. It hashes each path together with its blob SHA under `model/`, so a change to `model/main.go` migrations, a new model file, or a moved file all change the value. `deploy/*/rollback.sh` compares the two manifests and refuses to proceed unless `FLUXLANE_SCHEMA_APPROVED=yes` records explicit user acceptance.
 - Cloud database backups are not a commit↔schema map. Do not treat backup time as schema version.
 
 Do not invent a second migration framework in a hotfix. Document compatibility in the manifest.

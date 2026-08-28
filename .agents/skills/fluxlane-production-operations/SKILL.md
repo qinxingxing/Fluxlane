@@ -38,7 +38,7 @@ Shared Git workspaces on `43.160.247.94`:
 6. Nobody merges or force-pushes `main` without explicit user approval.
 7. Do not use `git reset --hard`, `git clean`, force-push, or delete another tool's worktree.
 
-Install this skill on the development host from Git:
+Install this skill on the development host **only from merged `main`**; an unmerged branch or draft PR is a proposal, not an operating rule.
 
 ```text
 /home/codex/workspace/Fluxlane/.agents/skills/fluxlane-production-operations/
@@ -73,15 +73,19 @@ The Development Agent must not declare tests passed. The Test Agent must not mod
 - GitHub SSH uses `/home/codex/.ssh/id_ed25519` with `IdentitiesOnly=yes`. Never print, copy, or commit that key.
 - GitHub is the only code source. `main` is the only production baseline.
 - One production Tag (`prod-YYYYMMDD-<short-sha>`) maps to one commit on `main`. Tags are never moved or overwritten.
-- Build once, in a clean worktree under `/home/codex/build/<release-tag>/`, injecting Tag into `VERSION` and Git SHA into the runtime. Image name: `fluxlane/new-api:<release-tag>`.
+- Build once with `scripts/release/build-release.sh <tag>`: clean worktree under `/home/codex/build/<tag>/`, Tag into `VERSION`, full commit into `common.GitCommit` via the Dockerfile `GIT_COMMIT` arg. Image: `fluxlane/new-api:<tag>`. Verify with `scripts/release/verify-artifact.sh`.
+- A deployed node must report both identities: `/api/status` `version` + `git_commit`, and `/new-api --version`. Never set a `VERSION` env var on production nodes; it overrides the compiled Tag.
 - Without a reachable private registry, distribute `docker save | zstd`, checksum, `docker load` on each node, pin Compose to that Tag with `pull_policy: never`. Never retarget nodes to another node's local Image ID. Never rebuild on API/RUN nodes.
+- Node deploys and rollbacks run `deploy/api/{deploy,rollback}.sh` or `deploy/run/{deploy,rollback}.sh`, which require `FLUXLANE_CLB_DETACHED=yes` and verify Image ID, binary SHA256, probes, and reported identity.
+- Keep the node identity that already runs: API container `fluxlane-api` + `/etc/fluxlane-api.env`; RUN container `new-api` + `/opt/new-api/secrets/runtime.env`. Renaming a container or moving an env file is a separate approved change with an enumerated list of affected scripts.
 - Four production nodes run the same artifact. Production nodes never develop, commit, or `docker build`.
 - Test PASS is not authorization to go live. User approval is required to merge `main`, create a production Tag, and roll production.
 - Roll API and RUN separately. Keep one healthy node of that service in the pool. Order default: API-1 → API-2 → RUN-1 → RUN-2.
 - CLB uses `/readyz`. TCP-open is insufficient. Compose healthchecks probe `127.0.0.1:3000/readyz` inside the app container.
 - Drain RUN Streaming/SSE, initially 120 seconds unless observed duration requires more.
 - Do not `docker compose down` as a deploy or rollback step. Use `docker compose up -d` after switching the Tag.
-- Schema today is GORM AutoMigrate on start. Record the model-tree SHA in the release manifest. Do not roll back a binary that cannot read/write the already-migrated schema.
+- Schema today is GORM AutoMigrate on start. Record `schema_code_sha256` (every path+blob under `model/`, including `model/main.go` migrations) in the manifest. Rollback across a differing hash requires user acceptance recorded as `FLUXLANE_SCHEMA_APPROVED=yes`.
+- A concurrent Billing overdraft is not an automatic pass: it must be quantified in the manifest `known_risks` and accepted by the user (`risk_accepted_by`, `risk_accepted_at`) before `RELEASE CANDIDATE PASS`.
 - Stop on ambiguity, unhealthy surviving peer, failed backup, missing rollback artifact, unexplained 5xx, or Billing inconsistency.
 - Prefer rollback of the saved previous image over degraded continuation.
 - Do not build Docker images during QA Mock load tests. Do not change Mock usage during Billing tests. Do not prune Docker images needed for rollback.

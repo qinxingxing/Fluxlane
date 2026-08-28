@@ -5,13 +5,15 @@ Full procedure: `docs/operations/RELEASE_WORKFLOW.md`. Rollback: `docs/operation
 ## Build once, ship the tarball
 
 1. Tag on `main` after Test Agent PASS and user approval.
-2. Clean worktree `/home/codex/build/<release-tag>` on `43.160.247.94`.
-3. Write Tag into `VERSION`; inject Git SHA.
-4. Build `fluxlane/new-api:<release-tag>` once.
-5. `docker save | zstd` + SHA256 into `/home/codex/releases/<release-tag>/`.
-6. Test Agent validates **that** artifact (`RELEASE CANDIDATE PASS`).
-7. User approves production.
-8. Each node: confirm peer health → detach CLB → drain (RUN SSE 120s) → checksum → `docker load` → pin Compose Tag with `pull_policy: never` → `docker compose up -d` (never `down`) → `/healthz` `/readyz` healthy, matching Image ID and `/api/status` version → smoke → rejoin → observe → next node.
+2. `scripts/release/build-release.sh <release-tag>` on `43.160.247.94`: clean worktree, `VERSION`, `--build-arg GIT_COMMIT=<full-sha>`, single build, Image ID and binary SHA256, `.tar.zst` + `.sha256`, `release-manifest.json`. Fails closed; refuses to rebuild an existing artifact.
+3. Fill `test-report.md`, `known_risks`, and risk acceptance fields.
+4. Test Agent validates **that** artifact (`RELEASE CANDIDATE PASS`) using the layers in [testing.md](testing.md).
+5. User approves production.
+6. Each node: confirm peer health → detach CLB → drain (RUN SSE 120s) → `FLUXLANE_CLB_DETACHED=yes deploy/<role>/deploy.sh <tag>` → smoke → rejoin → observe → next node.
+
+`deploy/<role>/deploy.sh` verifies the checksum, loads the image, compares Image ID and binary SHA256 against the manifest, runs `docker compose up -d` (never `down`), and requires `/healthz`, `/readyz`, and `/api/status` reporting the tag plus the manifest commit.
+
+Runtime identity: `/api/status` returns `version` and `git_commit`; `/new-api --version` prints the tag then `commit <full-sha>`. Do not set a `VERSION` env var on production nodes — it overrides the compiled tag and breaks verification.
 
 Default order: API-1 → API-2 → RUN-1 → RUN-2. Same service never updates two nodes together.
 
@@ -26,7 +28,7 @@ GitHub is the only code source. Do not `docker build` on API/RUN. Do not rebuild
 `deploy/api-cvm/` is the historical CVM template:
 
 - `deploy-api.sh` fails closed unless PostgreSQL/Redis targets match.
-- `rollback-api.sh` currently runs `compose down` — that is **not** the approved rollback. Use `ROLLBACK_WORKFLOW.md` (switch Tag, `up -d`, optional readyz-legacy override).
+- `rollback-api.sh` runs `compose down` — that is **not** the approved rollback. Use `deploy/<role>/rollback.sh`, which enforces the `schema_code_sha256` gate and offers the rollback-only legacy probe override in `deploy/common/`.
 
 ## Replacement and expansion
 

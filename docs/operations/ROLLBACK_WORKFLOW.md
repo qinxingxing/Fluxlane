@@ -8,27 +8,31 @@ Persistent `/readyz` or CLB failure, material 5xx, panic/restarts/OOM, PostgreSQ
 
 ## Schema gate
 
-If `schema_model_tree_sha` of the new Tag differs from the old Tag, an old binary may not be safe against AutoMigrate-forwarded tables. Stop and get user approval before an old image writes `fluxlane_prod`.
+`schema_code_sha256` in the manifest covers every path and blob under `model/` at that tag, including the explicit migrations in `model/main.go`. AutoMigrate only moves the schema forward.
+
+If the current tag and the rollback target differ on that hash, an old binary would run against already-migrated tables. `deploy/*/rollback.sh` stops unless `FLUXLANE_SCHEMA_APPROVED=yes` is set, which must only be set after the user accepts that risk. The same gate applies when a manifest is missing and the comparison cannot be made.
 
 ## Per node (never two of one service)
 
-```text
-Detach CLB
-→ drain (RUN SSE 120s unless observed otherwise)
-→ pin previous Release Tag in Compose (same tarball already on the node, or load from /home/codex/releases/<old-tag>/)
-→ if old image has no /readyz: versioned healthcheck override to /api/status and, if needed, temporary Nginx readyz-legacy only on the drained node
-→ docker compose up -d
-→ /healthz, Docker healthy; /readyz=200 or documented legacy probe
-→ smoke
-→ rejoin CLB
-→ observe
+```bash
+# Node detached from CLB and drained first.
+FLUXLANE_CLB_DETACHED=yes deploy/api/rollback.sh prod-YYYYMMDD-<previous>
+# or
+FLUXLANE_CLB_DETACHED=yes deploy/run/rollback.sh prod-YYYYMMDD-<previous>
 ```
 
-Keep the failed new node out if rollback of that node fails (`ROLLBACK FAILED` / `BLOCKED`). Do not overwrite production databases for a drill.
+The script records current state, checks the schema gate, loads and verifies the previous artifact, `docker compose up -d`, waits for health, then requires `/healthz` and `/readyz` plus reported identity.
+
+For a target image that predates `/readyz`, add `FLUXLANE_LEGACY_READYZ=yes`. That applies `deploy/common/docker-compose.readyz-legacy.yml` (healthcheck → `/api/status`) and, if the CLB probe must also be satisfied on that drained node, install `deploy/common/nginx-readyz-legacy.conf` temporarily. Both are rollback-only and must be removed before the node carries pooled traffic under a normal release.
+
+Then: smoke → rejoin CLB → observe.
+
+Keep the node out if its rollback fails (`ROLLBACK FAILED` / `BLOCKED`). Do not overwrite production databases for a drill.
 
 ## Forbidden
 
 - Rebuild from an old commit
 - Simultaneous rollback of both API or both RUN nodes
 - `compose down` as the only rollback
-- Flushing Redis or restoring PostgreSQL over production without an explicit data-recovery plan (`references/data-operations.md`)
+- Leaving a permanent `404 → /api/status` fallback in the default Nginx site
+- Flushing Redis or restoring PostgreSQL over production without an explicit data-recovery plan (`.agents/skills/fluxlane-production-operations/references/data-operations.md`)

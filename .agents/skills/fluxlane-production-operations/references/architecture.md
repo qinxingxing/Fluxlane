@@ -9,8 +9,7 @@ Cloudflare
 └─ run.fluxlane.ai     → RUN CLB → RUN-1/RUN-2 → Nginx → 127.0.0.1:3000
 ```
 
-API/RUN → TencentDB PostgreSQL / `fluxlane_prod`  
-API/RUN → TencentDB Redis / DB `0`
+API/RUN → TencentDB PostgreSQL / `fluxlane_prod`, and TencentDB Redis / DB `0`.
 
 Build host (only): `43.160.247.94` user `codex`. Production nodes never build.
 
@@ -42,10 +41,11 @@ API normally uses CLB backend HTTP:80 and HTTP `/readyz`. RUN normally uses HTTP
 
 TCP-open is insufficient. Readiness 200 is not end-to-end Billing/Provider proof.
 
-Repo templates:
+Repo assets:
 
-- Current live CVM template (may lag HEAD): `deploy/api-cvm/` healthchecks `/api/status`, image tag `eaae4af5`.
-- Target templates for tagged releases: `deploy/api/`, `deploy/run/`, `deploy/common/` healthcheck `/readyz`, image `fluxlane/new-api:<release-tag>`, `pull_policy: never`.
+- Historical live CVM template (may lag HEAD): `deploy/api-cvm/` healthchecks `/api/status`, image tag `eaae4af5`.
+- Tagged-release assets: `deploy/api/` and `deploy/run/` (Compose, `nginx.conf`, `deploy.sh`, `rollback.sh`), shared helpers and rollback-only legacy probe files in `deploy/common/`.
+- Node identity defaults, kept as they already run: API container `fluxlane-api` with `/etc/fluxlane-api.env`; RUN container `new-api` with `/opt/new-api/secrets/runtime.env`. Renaming either is a separate approved change, never part of a release.
 
 Do not assume Git matches the running Compose file.
 

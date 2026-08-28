@@ -1,20 +1,24 @@
-# Image tag is a Git production Tag, e.g. prod-20260828-3c52e436
-# Load the matching tarball before up. pull_policy never.
+# Fluxlane API node — tagged release Compose.
+#
+# FLUXLANE_IMAGE_TAG must be a production tag (prod-YYYYMMDD-<short-sha>) whose
+# artifact was built once on the development host and loaded on this node.
+# Container name and env path default to the values already used on the API CVM;
+# renaming either one is a separate change, not part of image convergence.
 services:
   fluxlane-api:
     image: fluxlane/new-api:${FLUXLANE_IMAGE_TAG}
     pull_policy: never
-    container_name: fluxlane-api
+    container_name: ${FLUXLANE_CONTAINER_NAME:-fluxlane-api}
     restart: unless-stopped
     env_file:
-      - /etc/fluxlane-api.env
+      - ${FLUXLANE_ENV_FILE:-/etc/fluxlane-api.env}
     environment:
       - NODE_NAME=${FLUXLANE_NODE_NAME:-api-unset}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - /opt/fluxlane-api/data:/data
-      - /opt/fluxlane-api/logs:/app/logs
+      - ${FLUXLANE_DATA_DIR:-/opt/fluxlane-api/data}:/data
+      - ${FLUXLANE_LOG_DIR:-/opt/fluxlane-api/logs}:/app/logs
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/readyz >/dev/null || exit 1"]
       interval: 15s

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Deploy one production release to THIS RUN node. The node must already be
+# detached from the RUN CLB and drained (Streaming/SSE at least 120s); the peer
+# RUN node must stay healthy.
+#
+# Usage:
+#   FLUXLANE_CLB_DETACHED=yes deploy/run/deploy.sh prod-YYYYMMDD-<short-sha>
+set -Eeuo pipefail
+
+FLUXLANE_ROLE=run
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=../common/node-lib.sh
+source "$SCRIPT_DIR/../common/node-lib.sh"
+
+RELEASE_TAG=${1:-}
+CONTAINER=${FLUXLANE_CONTAINER_NAME:-new-api}
+COMPOSE_FILE=${FLUXLANE_COMPOSE_FILE:-$SCRIPT_DIR/docker-compose.yml}
+RECORD_DIR=${FLUXLANE_RECORD_DIR:-/opt/fluxlane/deploy-records}
+
+[[ -n $RELEASE_TAG ]] || die "usage: FLUXLANE_CLB_DETACHED=yes $0 prod-YYYYMMDD-<short-sha>"
+require_tag_format "$RELEASE_TAG"
+require_drained_acknowledgement
+
+for cmd in docker curl sha256sum zstd; do
+  command -v "$cmd" >/dev/null || die "$cmd is required"
+done
+
+mkdir -p "$RECORD_DIR"
+record_current_state "$CONTAINER" "$RECORD_DIR/run-$RELEASE_TAG.before"
+
+load_and_verify_image "$RELEASE_TAG"
+
+export FLUXLANE_IMAGE_TAG=$RELEASE_TAG
+export FLUXLANE_NODE_NAME=${FLUXLANE_NODE_NAME:-$(hostname)}
+compose_up -f "$COMPOSE_FILE"
+
+wait_for_container_health "$CONTAINER"
+require_probe /healthz 200
+require_probe /readyz 200
+require_reported_identity "$RELEASE_TAG"
+check_restart_and_oom "$CONTAINER"
+
+say "node updated to $RELEASE_TAG; run relay smoke (401 without token, Mock stream/non-stream), then rejoin CLB manually"
+say "rollback: FLUXLANE_CLB_DETACHED=yes deploy/run/rollback.sh <previous-tag>"
