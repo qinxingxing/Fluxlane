@@ -1,0 +1,29 @@
+# Image tag is a Git production Tag shared with API nodes.
+services:
+  fluxlane-run:
+    image: fluxlane/new-api:${FLUXLANE_IMAGE_TAG}
+    pull_policy: never
+    container_name: fluxlane-run
+    restart: unless-stopped
+    env_file:
+      - /etc/fluxlane-run.env
+    environment:
+      - NODE_NAME=${FLUXLANE_NODE_NAME:-run-unset}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - /opt/fluxlane-run/data:/data
+      - /opt/fluxlane-run/logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/readyz >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
