@@ -66,8 +66,12 @@ cd "$BUILD_DIR"
 [[ -z $(git status --porcelain) ]] || die "build worktree is dirty"
 printf '%s\n' "$RELEASE_TAG" > VERSION
 
-grep -RIlqs -e 'BEGIN OPENSSH PRIVATE KEY' -e 'BEGIN RSA PRIVATE KEY' . \
-  && die "private key material found in build worktree"
+# Scan tracked tree for PEM material. Exclude this script: it documents the
+# marker strings literally and would otherwise false-positive every build.
+if git grep -l -E -- 'BEGIN (OPENSSH|RSA) PRIVATE KEY' \
+  -- . ':(exclude)scripts/release/build-release.sh' | grep -q .; then
+  die "private key material found in build worktree"
+fi
 
 SCHEMA_CODE_SHA=$(
   git -C "$BUILD_DIR" ls-tree -r "$GIT_SHA" --name-only -- model \

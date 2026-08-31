@@ -32,7 +32,10 @@ DATA_DIR=$(mktemp -d)
 
 cleanup() {
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-  rm -rf "$DATA_DIR"
+  if [[ -d $DATA_DIR ]]; then
+    chmod -R u+w "$DATA_DIR" 2>/dev/null || true
+    rm -rf "$DATA_DIR"
+  fi
 }
 trap cleanup EXIT
 
