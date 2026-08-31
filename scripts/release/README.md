@@ -7,6 +7,9 @@ Run on the development host `43.160.247.94` as `codex`. Never on API/RUN nodes.
 | `build-release.sh <prod-tag>` | Verify the tag is annotated and on `main`, create a clean worktree, write `VERSION`, build the image **once** with `GIT_COMMIT`, assert the binary reports tag and commit, export `.tar.zst` + `.sha256`, write `release-manifest.json` |
 | `verify-artifact.sh <prod-tag> [--loaded] [--release-gate]` | Re-check checksum, manifest identity, secret-looking values, quantified risk acceptance, rollback artifact; `--loaded` compares Image ID, binary SHA256, and reported commit of the local image; `--release-gate` requires `candidate_result` to be `RELEASE CANDIDATE PASS` |
 | `record-production.sh <prod-tag> "API-1,API-2,..."` | After `PRODUCTION RELEASE PASS`, write `releases/current-production.json`, which is the rollback source of truth for the next build |
+| `patch-first-release-manifest.sh <prod-tag>` | Add the accepted concurrent-overdraft `known_risks` entry (`FLUXLANE_RISK_ACCEPTED_BY`, `FLUXLANE_RISK_ACCEPTED_AT`) |
+| `candidate-layer1-smoke.sh <prod-tag>` | Dev-host Layer-1 probes: load artifact, SQLite container, `/healthz`, `/readyz`, `/api/status`, `--version`, relay 401 |
+| `record-candidate-pass.sh <prod-tag> [test-report.md]` | Write `candidate_result: RELEASE CANDIDATE PASS` after Test Agent sign-off |
 
 All three fail closed: any failed step exits non-zero and does not continue.
 
