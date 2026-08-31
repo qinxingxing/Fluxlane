@@ -32,16 +32,25 @@ The script records current state, checks the schema gate, verifies the artifact 
 A pre-probe image serves neither `/readyz` nor `/healthz`, so add:
 
 ```bash
-FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/conf.d/<live-site>.conf
+FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/sites-available/fluxlane-api
+# RUN nodes:
+FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/sites-available/fluxlane-api-run
 ```
+
+Production paths (always pass the **sites-available** real file; `sites-enabled` is a symlink):
+
+| Role | Real file |
+|---|---|
+| API | `/etc/nginx/sites-available/fluxlane-api` |
+| RUN | `/etc/nginx/sites-available/fluxlane-api-run` |
 
 Then the script:
 
 - applies the role override `deploy/common/docker-compose.readyz-legacy-api.yml` or `-run.yml` (literal service keys — Compose does not substitute variables in mapping keys);
-- backs up the live Nginx site, installs the **complete** legacy site (`deploy/api/nginx-readyz-legacy.conf` or `deploy/run/nginx-readyz-legacy.conf`), runs `nginx -t`, reloads, and restores the backup if anything fails. A bare `location` block cannot live in `conf.d`, so a snippet is not used;
+- resolves the live site with `readlink -f`, backs up **file content** (not the symlink), installs the **complete** legacy site (`deploy/api/nginx-readyz-legacy.conf` or `deploy/run/nginx-readyz-legacy.conf`), runs `nginx -t`, reloads, and restores the backup if anything fails;
 - validates `/api/status = 200` instead of `/healthz` and `/readyz`.
 
-Both legacy files are rollback-only. Restore the normal site and probe before the node carries pooled traffic under a normal release; the backup path is printed at the end of the run.
+Both legacy files are rollback-only. A normal `deploy.sh` on a later release automatically restores the role Nginx template, runs `nginx -t`, reloads, and verifies native `/readyz = 200` with no `X-Fluxlane-Readyz-Source: legacy-api-status` before the node may rejoin CLB.
 
 Then: smoke → rejoin CLB → observe.
 

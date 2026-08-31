@@ -14,6 +14,8 @@ source "$SCRIPT_DIR/../common/node-lib.sh"
 RELEASE_TAG=${1:-}
 CONTAINER=${FLUXLANE_CONTAINER_NAME:-fluxlane-api}
 COMPOSE_FILE=${FLUXLANE_COMPOSE_FILE:-$SCRIPT_DIR/docker-compose.yml}
+NORMAL_SITE_TEMPLATE=$SCRIPT_DIR/nginx.conf
+FLUXLANE_NGINX_SITE=${FLUXLANE_NGINX_SITE:-/etc/nginx/sites-available/fluxlane-api}
 RECORD_DIR=${FLUXLANE_RECORD_DIR:-/opt/fluxlane/deploy-records}
 
 [[ -n $RELEASE_TAG ]] || die "usage: FLUXLANE_CLB_DETACHED=yes $0 prod-YYYYMMDD-<short-sha>"
@@ -36,6 +38,7 @@ compose_up -f "$COMPOSE_FILE"
 wait_for_container_health "$CONTAINER"
 require_probe /healthz 200
 require_probe /readyz 200
+ensure_normal_nginx_site "$NORMAL_SITE_TEMPLATE" "$RECORD_DIR"
 require_reported_identity "$RELEASE_TAG"
 check_restart_and_oom "$CONTAINER"
 

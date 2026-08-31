@@ -8,7 +8,7 @@
 #   FLUXLANE_CLB_DETACHED=yes deploy/run/rollback.sh prod-YYYYMMDD-<short-sha>
 #
 # Pre-probe images (no /readyz, no /healthz) additionally need:
-#   FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/conf.d/<live>.conf
+#   FLUXLANE_LEGACY_READYZ=yes FLUXLANE_NGINX_SITE=/etc/nginx/sites-available/fluxlane-api-run
 # Add FLUXLANE_SCHEMA_APPROVED=yes only after the user accepted a schema risk.
 set -Eeuo pipefail
 

@@ -107,7 +107,10 @@ wait_for_container_health() {
     case $status in
       healthy) say "container healthy"; return 0 ;;
       unhealthy) docker logs --tail 100 "$container" >&2; die "container unhealthy" ;;
-      none) say "WARNING container has no healthcheck"; return 0 ;;
+      none)
+        docker logs --tail 100 "$container" >&2
+        die "container has no healthcheck (wrong compose override, wrong compose file, or unexpected container)"
+        ;;
     esac
     sleep 5
     waited=$((waited + 5))
@@ -129,36 +132,109 @@ require_legacy_probe() {
   require_probe /api/status 200
 }
 
+# Resolves sites-enabled symlinks to the real file under sites-available.
+resolve_nginx_site_path() {
+  local site=$1 resolved
+  [[ -n $site ]] || die "nginx site path is required"
+  [[ -e $site ]] || die "nginx site not found: $site"
+  resolved=$(readlink -f "$site")
+  [[ -n $resolved && -f $resolved ]] \
+    || die "nginx site is not a regular file: $site (resolved: ${resolved:-none})"
+  printf '%s\n' "$resolved"
+}
+
+reload_nginx_or_die() {
+  nginx -t || die "nginx -t failed"
+  nginx -s reload || die "nginx reload failed"
+}
+
+nginx_site_is_legacy_readyz() {
+  local site=$1
+  grep -q 'X-Fluxlane-Readyz-Source.*legacy-api-status' "$site" 2>/dev/null
+}
+
+nginx_readyz_has_legacy_header() {
+  local url=${FLUXLANE_NGINX_PROBE_URL:-https://127.0.0.1/readyz}
+  local headers
+  headers=$(curl -skS -D - -o /dev/null --max-time 5 "$url" 2>/dev/null | tr -d '\r') || return 1
+  grep -qi 'X-Fluxlane-Readyz-Source: legacy-api-status' <<<"$headers"
+}
+
+require_nginx_native_readyz() {
+  local url=${FLUXLANE_NGINX_PROBE_URL:-https://127.0.0.1/readyz}
+  local code headers
+  code=$(curl -skS -o /dev/null -w '%{http_code}' --max-time 5 "$url" || echo 000)
+  [[ $code == 200 ]] || die "nginx /readyz returned $code, expected 200"
+  headers=$(curl -skS -D - -o /dev/null --max-time 5 "$url" 2>/dev/null | tr -d '\r') \
+    || die "cannot probe nginx /readyz at $url"
+  if grep -qi 'X-Fluxlane-Readyz-Source: legacy-api-status' <<<"$headers"; then
+    die "nginx still serves /readyz via legacy shim (X-Fluxlane-Readyz-Source: legacy-api-status)"
+  fi
+  say "nginx /readyz = 200 (native proxy, no legacy shim)"
+}
+
+# After a legacy rollback, a normal deploy must restore the role template before
+# the node rejoins CLB; otherwise /readyz keeps answering from /api/status.
+ensure_normal_nginx_site() {
+  local normal_template=$1 record_dir=$2
+  local site_input=${FLUXLANE_NGINX_SITE:-}
+  [[ -n $site_input ]] || die \
+    "FLUXLANE_NGINX_SITE is required (e.g. /etc/nginx/sites-available/fluxlane-api)"
+  [[ -f $normal_template ]] || die "normal nginx template not found: $normal_template"
+  command -v nginx >/dev/null || die "nginx is required to verify the live site"
+
+  local site backup
+  site=$(resolve_nginx_site_path "$site_input")
+
+  if nginx_site_is_legacy_readyz "$site" || nginx_readyz_has_legacy_header; then
+    say "legacy Nginx /readyz shim detected; restoring normal site at $site"
+    backup=$record_dir/$(basename "$site").legacy-revert.$(date -u +%Y%m%dT%H%M%SZ).bak
+    cp -- "$site" "$backup"
+    cp -- "$normal_template" "$site"
+    if ! nginx -t; then
+      cp -- "$backup" "$site"
+      reload_nginx_or_die || true
+      die "normal Nginx site failed nginx -t; previous site restored from $backup"
+    fi
+    reload_nginx_or_die
+    say "normal Nginx site restored (backup: $backup)"
+  else
+    say "nginx site is not legacy: $site"
+  fi
+
+  require_nginx_native_readyz
+}
+
 # Replaces the live Nginx site with the rollback-only legacy site, which answers
-# /readyz from /api/status. A bare `location` cannot live in conf.d, so this
-# swaps a complete site file, tests it, and restores the backup on failure.
+# /readyz from /api/status. Operates on the resolved real file (sites-available),
+# backs up file content (not a symlink), tests, reloads, and restores on failure.
 install_legacy_readyz_site() {
   local template=$1 record_dir=$2
-  local site=${FLUXLANE_NGINX_SITE:-}
-  [[ -n $site ]] || die "FLUXLANE_LEGACY_READYZ=yes requires FLUXLANE_NGINX_SITE=<live site path>"
-  [[ -f $site ]] || die "live Nginx site not found: $site"
+  local site_input=${FLUXLANE_NGINX_SITE:-}
+  [[ -n $site_input ]] || die "FLUXLANE_LEGACY_READYZ=yes requires FLUXLANE_NGINX_SITE=<live site path>"
   [[ -f $template ]] || die "legacy site template not found: $template"
   command -v nginx >/dev/null || die "nginx is required to install the legacy site"
 
-  LEGACY_SITE_PATH=$site
-  LEGACY_SITE_BACKUP=$record_dir/$(basename "$site").$(date -u +%Y%m%dT%H%M%SZ).bak
-  cp -a "$site" "$LEGACY_SITE_BACKUP"
-  say "backed up $site to $LEGACY_SITE_BACKUP"
+  LEGACY_SITE_PATH=$(resolve_nginx_site_path "$site_input")
+  LEGACY_SITE_BACKUP=$record_dir/$(basename "$LEGACY_SITE_PATH").$(date -u +%Y%m%dT%H%M%SZ).bak
+  cp -- "$LEGACY_SITE_PATH" "$LEGACY_SITE_BACKUP"
+  say "backed up $LEGACY_SITE_PATH to $LEGACY_SITE_BACKUP"
 
-  cp -a "$template" "$site"
+  cp -- "$template" "$LEGACY_SITE_PATH"
   if ! nginx -t; then
-    cp -a "$LEGACY_SITE_BACKUP" "$site"
-    nginx -t && nginx -s reload || true
+    cp -- "$LEGACY_SITE_BACKUP" "$LEGACY_SITE_PATH"
+    reload_nginx_or_die || true
     die "legacy Nginx site failed nginx -t; original site restored"
   fi
-  nginx -s reload || die "nginx reload failed after installing the legacy site"
+  reload_nginx_or_die
   say "legacy /readyz site active (temporary, drained node only)"
 }
 
 restore_legacy_readyz_site() {
   [[ -n ${LEGACY_SITE_BACKUP:-} && -f ${LEGACY_SITE_BACKUP:-} ]] || return 0
-  cp -a "$LEGACY_SITE_BACKUP" "$LEGACY_SITE_PATH"
-  nginx -t && nginx -s reload
+  [[ -n ${LEGACY_SITE_PATH:-} ]] || return 0
+  cp -- "$LEGACY_SITE_BACKUP" "$LEGACY_SITE_PATH"
+  reload_nginx_or_die
   say "restored $LEGACY_SITE_PATH from $LEGACY_SITE_BACKUP"
 }
 

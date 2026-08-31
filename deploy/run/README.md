@@ -46,10 +46,17 @@ Rollback to a pre-probe image:
 
 ```bash
 FLUXLANE_CLB_DETACHED=yes FLUXLANE_LEGACY_READYZ=yes \
-FLUXLANE_NGINX_SITE=/etc/nginx/conf.d/<live-site>.conf \
+FLUXLANE_NGINX_SITE=/etc/nginx/sites-available/fluxlane-api-run \
 deploy/run/rollback.sh prod-YYYYMMDD-<previous>
 ```
 
-That validates `/api/status` instead of `/healthz` and `/readyz`, and swaps the live Nginx site for `nginx-readyz-legacy.conf` after a backup plus `nginx -t`.
+Production live paths (sites-enabled are symlinks into sites-available):
+
+| Role | sites-enabled | Real file (use this) |
+|---|---|---|
+| API | `/etc/nginx/sites-enabled/fluxlane-api` | `/etc/nginx/sites-available/fluxlane-api` |
+| RUN | `/etc/nginx/sites-enabled/fluxlane-api-run` | `/etc/nginx/sites-available/fluxlane-api-run` |
+
+That validates `/api/status` instead of `/healthz` and `/readyz`, backs up the **real file content** (not the symlink), installs `nginx-readyz-legacy.conf`, runs `nginx -t`, and reloads. A later normal `deploy.sh` automatically restores `nginx.conf` and verifies native `/readyz` before the node may rejoin CLB.
 
 Full procedure: `docs/operations/RELEASE_WORKFLOW.md`. Rollback: `docs/operations/ROLLBACK_WORKFLOW.md`.

@@ -10,7 +10,7 @@ Used by `deploy/api/` and `deploy/run/`. The historical single-node template sta
 
 There is one override per role because Compose does not substitute variables in mapping keys: `services: ${VAR}:` is rejected with `Additional property ${VAR} is not allowed`.
 
-The legacy `/readyz` shim is a **complete site** file in the role directory (`deploy/api/nginx-readyz-legacy.conf`, `deploy/run/nginx-readyz-legacy.conf`), not a snippet, because a bare `location` in `conf.d` fails with `"location" directive is not allowed here`. `rollback.sh` installs it over the live site after a backup, runs `nginx -t`, reloads, and restores the backup on failure.
+The legacy `/readyz` shim is a **complete site** file in the role directory (`deploy/api/nginx-readyz-legacy.conf`, `deploy/run/nginx-readyz-legacy.conf`), not a snippet. Production sites live under `/etc/nginx/sites-available/` (API: `fluxlane-api`, RUN: `fluxlane-api-run`); `sites-enabled` entries are symlinks. `rollback.sh` resolves the real file with `readlink -f`, backs up file content (not the symlink), installs the legacy template, runs `nginx -t`, reloads, and restores the backup on failure. A normal `deploy.sh` detects a leftover legacy site (config marker or `X-Fluxlane-Readyz-Source: legacy-api-status`), restores the role template, and verifies native `/readyz` before rejoin.
 
 ## Image
 
@@ -25,7 +25,7 @@ Identity verification fails closed. `node-lib.sh` requires `jq`, the manifest, t
 
 ## Health
 
-Container healthchecks probe `http://127.0.0.1:3000/readyz` inside the app container, and CLB probes `/readyz` too. `/healthz` is liveness only.
+Container healthchecks probe `http://127.0.0.1:3000/readyz` inside the app container, and CLB probes `/readyz` too. `/healthz` is liveness only. Deploy and rollback fail closed if the container reports `none` (no healthcheck) — that means the wrong Compose file, a missing override, or an unexpected container.
 
 A pre-probe image serves neither `/readyz` nor `/healthz`, so legacy rollback validates `/api/status = 200` instead. The legacy files exist only for that case on a drained node; a permanent `404 → /api/status` fallback is forbidden because it hides a missing probe on new releases.
 

@@ -81,7 +81,7 @@ FLUXLANE_CLB_DETACHED=yes deploy/api/deploy.sh prod-YYYYMMDD-<short-sha>
 FLUXLANE_CLB_DETACHED=yes deploy/run/deploy.sh prod-YYYYMMDD-<short-sha>
 ```
 
-It records the previous image/health, verifies the checksum, `docker load`s if needed, compares Image ID and binary SHA256 against the manifest, `docker compose up -d` (never `down`), waits for container health, requires `/healthz=200` and `/readyz=200`, and requires `/api/status` to report the tag and the manifest commit.
+It records the previous image/health, verifies the checksum, `docker load`s if needed, compares Image ID and binary SHA256 against the manifest, `docker compose up -d` (never `down`), waits for container health (fails if the container has no healthcheck), requires app `/healthz=200` and `/readyz=200`, restores normal Nginx if a legacy rollback shim is still active (`/etc/nginx/sites-available/fluxlane-api` or `fluxlane-api-run`), verifies nginx `/readyz=200` without `X-Fluxlane-Readyz-Source: legacy-api-status`, and requires `/api/status` to report the tag and the manifest commit.
 
 5. Role smoke on the drained node. Rejoin CLB. Wait for CLB healthy. Hit the public hostname.
 6. Record the node in the manifest `deployment_nodes`.
