@@ -1,0 +1,35 @@
+# Fluxlane RUN node — tagged release Compose.
+#
+# Defaults intentionally match the identity already in use on the RUN nodes
+# (container `new-api`, env `/opt/new-api/secrets/runtime.env`) so this template
+# only converges the image tag and the readiness probe. Renaming the container
+# or moving the env file breaks existing log, audit, monitoring, and sudo
+# wrappers; do that as a separate approved change (see README.md).
+services:
+  fluxlane-run:
+    image: fluxlane/new-api:${FLUXLANE_IMAGE_TAG}
+    pull_policy: never
+    container_name: ${FLUXLANE_CONTAINER_NAME:-new-api}
+    restart: unless-stopped
+    env_file:
+      - ${FLUXLANE_ENV_FILE:-/opt/new-api/secrets/runtime.env}
+    environment:
+      - NODE_NAME=${FLUXLANE_NODE_NAME:-run-unset}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ${FLUXLANE_DATA_DIR:-/opt/new-api/data}:/data
+      - ${FLUXLANE_LOG_DIR:-/opt/new-api/logs}:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/readyz >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true

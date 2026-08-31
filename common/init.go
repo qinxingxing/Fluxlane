@@ -39,6 +39,7 @@ func InitEnv() {
 
 	if *PrintVersion {
 		fmt.Println(Version)
+		fmt.Println("commit " + GitCommit)
 		os.Exit(0)
 	}
 

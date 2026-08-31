@@ -1,0 +1,19 @@
+# Rollback-only override for API images that predate /readyz.
+#
+# Compose does not substitute variables in mapping keys, so the service key is
+# written literally and there is one file per role.
+#
+#   docker compose -f deploy/api/docker-compose.yml \
+#     -f deploy/common/docker-compose.readyz-legacy-api.yml up -d
+#
+# Use only on a node that is detached from CLB. Drop this override as soon as
+# the node runs an image that serves /readyz; CLB must probe /readyz again
+# before the node rejoins.
+services:
+  fluxlane-api:
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/status >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s

@@ -12,6 +12,10 @@ import (
 
 var StartTime = time.Now().Unix() // unit: second
 var Version = "v0.0.0"            // this hard coding will be replaced automatically when building, no need to manually change
+// GitCommit is the full commit the binary was built from. Release builds inject
+// it so a running node can be mapped back to exactly one source commit; an
+// unset value means the binary was not produced by a release build.
+var GitCommit = "unknown"
 var SystemName = "New API"
 var Footer = ""
 var Logo = ""

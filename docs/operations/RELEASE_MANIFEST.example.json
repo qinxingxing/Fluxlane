@@ -1,0 +1,63 @@
+{
+  "schema": "fluxlane-release-manifest/v1",
+  "release_tag": "prod-YYYYMMDD-00000000",
+  "git_sha": "0000000000000000000000000000000000000000",
+  "git_sha_short": "0000000",
+  "version_file": "prod-YYYYMMDD-00000000",
+  "built_at_utc": "2026-01-01T00:00:00Z",
+  "builder_hostname": "dev-host-name",
+  "builder_user": "codex",
+  "image_name": "fluxlane/new-api:prod-YYYYMMDD-00000000",
+  "docker_image_id": "sha256:replace-after-build",
+  "new_api_binary_sha256": "replace-after-build",
+  "reported_version_output": "prod-YYYYMMDD-00000000\ncommit 0000000000000000000000000000000000000000",
+  "artifact_path": "/home/codex/releases/prod-YYYYMMDD-00000000/fluxlane-new-api-prod-YYYYMMDD-00000000.tar.zst",
+  "artifact_sha256": "replace-after-save",
+  "frontend_build_version": "prod-YYYYMMDD-00000000",
+  "build_command": "docker build --pull --build-arg GIT_COMMIT=<full-sha> -t fluxlane/new-api:prod-YYYYMMDD-00000000 .",
+  "dockerfile_sha256": "replace-after-build",
+  "base_image_digests": [
+    "oven/bun:1@sha256:...",
+    "golang:1.26.1-alpine@sha256:...",
+    "debian:bookworm-slim@sha256:..."
+  ],
+  "compose_template_sha256": {
+    "api": "replace-after-build",
+    "run": "replace-after-build"
+  },
+  "nginx_template_sha256": {
+    "api": "replace-after-build",
+    "run": "replace-after-build"
+  },
+  "schema_mechanism": "gorm_automigrate",
+  "schema_code_sha256": "sha256 over every path+blob under model/ at this tag, including model/main.go explicit migrations",
+  "schema_notes": "Empty when schema_code_sha256 equals the previous tag. Otherwise state rollback compatibility explicitly.",
+  "rollback_tag": "prod-YYYYMMDD-previous (from releases/current-production.json or FLUXLANE_ROLLBACK_TAG; empty before the first recorded production release)",
+  "rollback_artifact_path": "/home/codex/releases/prod-YYYYMMDD-previous/fluxlane-new-api-prod-YYYYMMDD-previous.tar.zst",
+  "test_report_path": "test-report.md",
+  "candidate_result": "pending | RELEASE CANDIDATE PASS | RELEASE CANDIDATE FAIL",
+  "production_result": "not-yet | PRODUCTION RELEASE PASS | PRODUCTION RELEASE FAIL — ROLLBACK RECOMMENDED",
+  "deployment_nodes": [
+    {
+      "node": "API-1",
+      "deployed_at_utc": "",
+      "docker_image_id": "",
+      "status_version": "",
+      "status_git_commit": "",
+      "rejoined_clb_at_utc": ""
+    }
+  ],
+  "known_risks": [
+    {
+      "id": "concurrent-wallet-overdraft",
+      "summary": "Concurrent in-flight requests can settle past a small remaining wallet, producing a negative balance.",
+      "accepted_max_overdraft_quota": -40000,
+      "observed_max_overdraft_quota": -40000,
+      "test_model_charge_quota": 40000,
+      "evidence": "Stage 5, 2026-08-27: qa-billing-u09 and u10 each 200000 remaining, 6 concurrent successes, 240000 charged."
+    }
+  ],
+  "risk_accepted_by": "",
+  "risk_accepted_at": "",
+  "notes": "No secrets, keys, passwords, or connection strings in this file. Every known_risks entry needs numeric accepted_max_overdraft_quota, observed_max_overdraft_quota, and test_model_charge_quota; verify-artifact.sh compares absolute values and requires risk_accepted_by/at. --release-gate additionally requires candidate_result to be RELEASE CANDIDATE PASS."
+}
