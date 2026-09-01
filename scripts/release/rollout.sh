@@ -1,17 +1,23 @@
 #!/bin/bash
 # Central production rollout entry, run on the development host.
 #
-# Holds ONE cluster-wide lock for the entire multi-node run so two operators
-# can never roll two nodes of one service at the same time. Per node it:
-#   1. verifies the node's deploy assets are byte-identical to this Git
-#      commit (sha256; --sync-assets copies them first),
-#   2. invokes the node-side rolling.sh (maintenance-flag soft detach,
-#      active detach proof, drain, deploy, probe gates, rejoin) with a
-#      rollout lease id,
-#   3. verifies the public entry before touching the next node.
+# Two subcommands with deliberately separate semantics:
+#
+#   rollout.sh sync-assets <node>...
+#       ONLY copies deploy assets from the current clean Git commit to the
+#       nodes and verifies sha256 equality. Never deploys anything; a tag is
+#       not even accepted.
+#
+#   rollout.sh deploy <tag> <node>...
+#       Holds ONE cluster-wide lock for the whole api-1 -> api-2 -> run-1 ->
+#       run-2 run (lock is released only when the script exits), refuses
+#       nodes whose assets drifted from the Git commit, then per node invokes
+#       the node-side rolling.sh (maintenance soft detach, active detach
+#       proof, drain, deploy, probe gates, rejoin) with a rollout lease id.
 #
 # Usage:
-#   rollout.sh [--sync-assets] <tag> <node>...        # nodes: api-1 api-2 run-1 run-2
+#   rollout.sh sync-assets api-1 api-2 run-1 run-2
+#   rollout.sh deploy prod-YYYYMMDD-<short-sha> api-1 api-2 run-1 run-2
 #   rollout.sh --list
 # Environment:
 #   FLUXLANE_REPO_DIR (default /home/codex/workspace/Fluxlane)
@@ -26,7 +32,6 @@ ASSETS=(deploy/common/rolling.sh deploy/common/node-lib.sh deploy/common/nginx-m
 say() { printf 'rollout: %s\n' "$*"; }
 die() { printf 'rollout: %s\n' "$*" >&2; exit 1; }
 
-# node: role host public_base host_header
 node_meta() {
   case $1 in
     api-1) echo "api 124.156.104.48 https://api.fluxlane.ai api.fluxlane.ai" ;;
@@ -37,7 +42,6 @@ node_meta() {
   esac
 }
 
-SYNC_ASSETS=no
 if [ "${1:-}" = "--list" ]; then
   cat <<'EOF'
 api-1  api  124.156.104.48  https://api.fluxlane.ai
@@ -47,12 +51,16 @@ run-2  run  150.109.45.79   https://run.fluxlane.ai
 EOF
   exit 0
 fi
-if [ "${1:-}" = "--sync-assets" ]; then SYNC_ASSETS=yes; shift; fi
 
-TAG=${1:-}; shift || true
-[ -n "$TAG" ] && [[ $TAG =~ ^prod-[0-9]{8}-[0-9a-f]{7,40}$ ]] || die "usage: rollout.sh [--sync-assets] <tag> <node>..."
+MODE=${1:-}; shift || true
+[ "$MODE" = sync-assets ] || [ "$MODE" = deploy ] || die "usage: rollout.sh {sync-assets|deploy} [<tag>] <node>... (see --list)"
+
+TAG=""
+if [ "$MODE" = deploy ]; then
+  TAG=${1:-}; shift || true
+  [[ $TAG =~ ^prod-[0-9]{8}-[0-9a-f]{7,40}$ ]] || die "deploy needs a prod-YYYYMMDD-<short-sha> tag"
+fi
 [ $# -ge 1 ] || die "no nodes given (see rollout.sh --list)"
-
 command -v flock >/dev/null || die "flock is required"
 
 cd "$REPO_DIR"
@@ -64,10 +72,6 @@ COMMIT=$(git rev-parse HEAD)
 ssh_node() {
   local host=$1; shift
   ssh -i "$SSH_KEY" -o IdentitiesOnly=yes -o ConnectTimeout=10 -o BatchMode=yes "ubuntu@$host" "$@"
-}
-scp_node() {
-  local host=$1 dest=$2; shift 2
-  scp -q -i "$SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes "$@" "ubuntu@$host:$dest"
 }
 
 public_health() {
@@ -84,21 +88,37 @@ check_assets() {
   return $mismatch
 }
 
+# sync-assets never deploys anything: it copies files, sets modes, and stops.
 sync_assets() {
-  local host=$1 a dest
+  local host=$1 a dest mode
   ssh_node "$host" 'sudo -n mkdir -p /opt/fluxlane/deploy/common /opt/fluxlane/deploy/api /opt/fluxlane/deploy/run && sudo -n chown -R ubuntu:ubuntu /opt/fluxlane/deploy'
   for a in "${ASSETS[@]}"; do
     dest="/opt/fluxlane/deploy/${a#deploy/}"
-    scp_node "$host" "/tmp/rollout-asset" "$a"
-    ssh_node "$host" "sudo -n install -m \$( [ '${a##*.}' = sh ] && echo 755 || echo 644 ) /tmp/rollout-asset $dest && rm -f /tmp/rollout-asset"
+    mode=644; [ "${a##*.}" = sh ] && mode=755
+    scp -q -i "$SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes "$a" "ubuntu@$host:/tmp/rollout-asset"
+    ssh_node "$host" "sudo -n install -m $mode /tmp/rollout-asset $dest && rm -f /tmp/rollout-asset && sha256sum $dest"
   done
   say "assets synced to $host from commit $COMMIT"
 }
 
-# --- cluster-wide lock for the entire run ------------------------------------
+if [ "$MODE" = sync-assets ]; then
+  say "asset source: $REPO_DIR @ $COMMIT (deploy NOT requested; nothing will be restarted)"
+  FAILED=0
+  for NODE in "$@"; do
+    node_meta "$NODE" >/dev/null || die "unknown node: $NODE (see --list)"
+    read -r _ HOST _ _ <<<"$(node_meta "$NODE")"
+    say "=== syncing $NODE ($HOST) ==="
+    sync_assets "$HOST"
+    check_assets "$HOST" || { say "verification FAILED on $NODE"; FAILED=1; }
+  done
+  [ "$FAILED" = 0 ] && say "SYNC-ASSETS COMPLETE: all nodes match $COMMIT" || exit 1
+  exit 0
+fi
+
+# --- deploy mode: cluster-wide lock for the entire run ------------------------
 exec 8>"$LOCK_FILE"
 flock -n 8 || die "another production rollout holds $LOCK_FILE"
-say "cluster rollout lock acquired: $LOCK_FILE"
+say "cluster rollout lock acquired: $LOCK_FILE (held until the whole run ends)"
 say "assets source: $REPO_DIR @ $COMMIT"
 
 ROLLOUT_ID="$TAG-$$-$(date -u +%H%M%SZ)"
@@ -112,16 +132,7 @@ for NODE in "$@"; do
   c=$(public_health "$BASE" "$HDR")
   [ "$c" = 200 ] || die "public entry $BASE unhealthy ($c) before $NODE — stopping (previous nodes stay as-is)"
 
-  if ! check_assets "$HOST"; then
-    if [ "$SYNC_ASSETS" = yes ]; then
-      sync_assets "$HOST"
-      check_assets "$HOST" || die "asset verification still failing on $HOST after sync"
-    else
-      die "deploy assets on $HOST differ from $COMMIT; rerun with --sync-assets (after merging to main)"
-    fi
-  else
-    say "assets on $NODE match $COMMIT"
-  fi
+  check_assets "$HOST" || die "deploy assets on $HOST differ from $COMMIT; run: rollout.sh sync-assets $NODE"
 
   if ssh_node "$HOST" "test -f /opt/fluxlane/deploy/.active-rollout"; then
     die "$NODE holds an active rollout lease ($(ssh_node "$HOST" 'cat /opt/fluxlane/deploy/.active-rollout')) — refusing"

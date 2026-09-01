@@ -61,7 +61,14 @@ restore_and_abort() {
   fi
   exit 1
 }
-on_signal() { restore_and_abort "received signal at stage=$STAGE"; }
+on_signal() {
+  if [ "$STAGE" = rejoin ]; then
+    # Already back in the pool; nothing to restore or take offline.
+    say "signal at stage=rejoin ignored (node is already rejoined; rollout continues or ends here)"
+    exit 0
+  fi
+  restore_and_abort "received signal at stage=$STAGE"
+}
 trap 'on_signal INT' INT
 trap 'on_signal TERM' TERM
 trap 'on_signal HUP' HUP
@@ -78,8 +85,15 @@ if [ -f "$LEASE_FILE" ] && grep -qv '^'"$ROLLLOUT_ID"'$' "$LEASE_FILE"; then
 fi
 printf '%s\n' "$ROLLLOUT_ID" > "$LEASE_FILE"
 
+# No curl -f anywhere: a 401 from the unauthenticated run probe is the
+# EXPECTED healthy answer and must not be treated as a transport failure.
+# Unique query param + no-cache headers guarantee each request really
+# traverses the CLB and is individually matchable in the default combined
+# access log (which does not record a custom User-Agent reliably).
 probe_public() {
-  curl -sk -o /dev/null -w '%{http_code}' --max-time 8 ${PUBLIC_HOST:+-H "Host: $PUBLIC_HOST"} "$1"
+  curl -sk -o /dev/null -w '%{http_code}' --max-time 8 \
+    -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+    ${PUBLIC_HOST:+-H "Host: $PUBLIC_HOST"} "$1"
 }
 
 # Unique read-only probe through the public entry. api uses /api/status
@@ -95,7 +109,7 @@ send_probes() {
     local path="/v1/models"
   fi
   for i in $(seq 1 "$PROBE_COUNT"); do
-    code=$(probe_public "$PUBLIC_BASE$path?rollout=$probe_marker-$i")
+    code=$(probe_public "$PUBLIC_BASE$path?rollout_probe=$probe_marker-$i")
     case "$code" in 200|401) ;; *) say "WARNING probe $i returned $code" ;; esac
     sleep 0.3
   done
