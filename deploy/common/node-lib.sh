@@ -68,11 +68,17 @@ load_and_verify_image() {
   docker image inspect "$image" >/dev/null 2>&1 || die "image still missing after load: $image"
 
   local got_id got_bin reported
+  # Binary SHA256 is the byte-level identity proof. The Docker Image ID is
+  # config-digest based and is NOT stable across docker save (26.x) and
+  # docker load (29.x): the same artifact loads with a different ID. A
+  # matching binary SHA and version with a differing Image ID is therefore
+  # expected cross-version, not a per-node rebuild; a binary mismatch always
+  # fails.
   got_id=$(docker image inspect "$image" --format '{{.Id}}')
-  [[ $want_id == "$got_id" ]] \
-    || die "Image ID mismatch: node has $got_id, manifest says $want_id (per-node rebuild?)"
   got_bin=$(docker run --rm --entrypoint sha256sum "$image" /new-api | cut -d' ' -f1)
-  [[ $want_bin == "$got_bin" ]] || die "binary SHA256 mismatch for $image"
+  [[ $want_bin == "$got_bin" ]] || die "binary SHA256 mismatch for $image (node id $got_id)"
+  [[ $want_id == "$got_id" ]] \
+    || say "WARNING Image ID differs across docker versions: node $got_id vs manifest $want_id; binary SHA256 matched, continuing"
   reported=$(docker run --rm --entrypoint /new-api "$image" --version | tr -d '\r')
   grep -qxF "$tag" <<<"$reported" || die "image reports wrong version: $reported"
   grep -qxF "commit $want_sha" <<<"$reported" || die "image does not report commit $want_sha"
@@ -164,6 +170,13 @@ require_nginx_native_readyz() {
   local url=${FLUXLANE_NGINX_PROBE_URL:-https://127.0.0.1/readyz}
   local code headers
   code=$(curl -skS -o /dev/null -w '%{http_code}' --max-time 5 "$url" || echo 000)
+  if [[ $code == 503 && -f /var/run/fluxlane-maintenance ]]; then
+    app=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$PROBE_URL/readyz" || echo 000)
+    [[ $app == 200 ]] \
+      || die "maintenance mode but app /readyz=$app; nginx check deferred, app must be healthy"
+    say "maintenance mode: nginx /readyz=503 by design, app /readyz=200 (final nginx check happens after flag removal)"
+    return 0
+  fi
   [[ $code == 200 ]] || die "nginx /readyz returned $code, expected 200"
   headers=$(curl -skS -D - -o /dev/null --max-time 5 "$url" 2>/dev/null | tr -d '\r') \
     || die "cannot probe nginx /readyz at $url"
@@ -241,7 +254,10 @@ restore_legacy_readyz_site() {
 # The deployed node must report the release tag and the full commit, otherwise
 # the running code cannot be mapped back to the artifact.
 require_reported_identity() {
-  local tag=$1 dir=$RELEASE_ROOT/$tag manifest=$dir/release-manifest.json body version commit want_sha
+  local tag=$1 dir manifest body version commit want_sha
+  # Split from the first local line: same-line expansion of $tag runs before
+  # the assignment under set -u and aborts with "tag: unbound variable".
+  dir=$RELEASE_ROOT/$tag manifest=$dir/release-manifest.json
   body=$(curl -sS --max-time 5 "$PROBE_URL/api/status") || die "cannot read /api/status"
   if command -v jq >/dev/null; then
     version=$(jq -r '.data.version // ""' <<<"$body")
