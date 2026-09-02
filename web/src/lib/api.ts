@@ -68,7 +68,8 @@ export async function getUserGroups(): Promise<{
 // ============================================================================
 
 export async function getStatus() {
-  const res = await api.get('/api/status')
+  // Passive branding/config refresh with a localStorage fallback: failures stay silent
+  const res = await api.get('/api/status', { skipErrorHandler: true })
   return res.data?.data as Record<string, unknown>
 }
 
@@ -77,7 +78,8 @@ export async function getNotice(): Promise<{
   message?: string
   data?: string
 }> {
-  const res = await api.get('/api/notice')
+  // Passive notice refresh: failures stay silent
+  const res = await api.get('/api/notice', { skipErrorHandler: true })
   return res.data
 }
 

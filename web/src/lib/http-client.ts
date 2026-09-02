@@ -140,6 +140,11 @@ api.interceptors.response.use(
         toast.error(t('Session expired!'))
       }
     } else if (!skipErrorHandler) {
+      // Network-level failures (no HTTP response, e.g. during a reconnect
+      // window or aborted request) stay silent; query retry policies own them
+      if (!error.response) {
+        throw error
+      }
       const messageKey = getServerErrorMessageKey(error)
       const message = messageKey
         ? t(messageKey)
