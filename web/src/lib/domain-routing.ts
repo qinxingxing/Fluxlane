@@ -3,6 +3,7 @@
 const PUBLIC_HOSTNAME = 'www.fluxlane.ai'
 const CONSOLE_HOSTNAME = 'console.fluxlane.ai'
 const CONSOLE_ORIGIN = `https://${CONSOLE_HOSTNAME}`
+const PUBLIC_ORIGIN = `https://${PUBLIC_HOSTNAME}`
 
 const PUBLIC_PATHS = new Set([
   '/',
@@ -20,6 +21,15 @@ function normalizePathname(pathname: string): string {
   return pathname
 }
 
+/** Pricing model detail pages (/pricing/$modelId) stay on the public site too. */
+function isPublicSitePath(pathname: string): boolean {
+  return (
+    PUBLIC_PATHS.has(pathname) ||
+    pathname === '/pricing' ||
+    pathname.startsWith('/pricing/')
+  )
+}
+
 /** Keep public pages and the account console on separate origins. */
 export function getDomainRedirect(href: string): string | null {
   let current: URL
@@ -32,13 +42,18 @@ export function getDomainRedirect(href: string): string | null {
   const pathname = normalizePathname(current.pathname)
   if (
     current.hostname === PUBLIC_HOSTNAME &&
-    !PUBLIC_PATHS.has(pathname)
+    !isPublicSitePath(pathname)
   ) {
     return `${CONSOLE_ORIGIN}${current.pathname}${current.search}${current.hash}`
   }
 
-  if (current.hostname === CONSOLE_HOSTNAME && pathname === '/') {
-    return `${CONSOLE_ORIGIN}/sign-in${current.search}${current.hash}`
+  if (current.hostname === CONSOLE_HOSTNAME) {
+    if (pathname === '/') {
+      return `${CONSOLE_ORIGIN}/sign-in${current.search}${current.hash}`
+    }
+    if (isPublicSitePath(pathname)) {
+      return `${PUBLIC_ORIGIN}${current.pathname}${current.search}${current.hash}`
+    }
   }
 
   return null

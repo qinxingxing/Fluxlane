@@ -50,13 +50,15 @@ export function FluxlaneAbout() {
         <section className='mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-28'>
           <div className='space-y-6'>
             <span className='inline-flex rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1 text-xs font-semibold tracking-widest text-violet-300 uppercase'>
-              About Fluxlane
+              About Fluxlane.ai
             </span>
             <h1 className='text-[clamp(2.35rem,5vw,3.6rem)] leading-[1.1] font-bold tracking-tight'>
-              让 AI 能力以更简单的方式流向每一个产品
+              让 AI 能力更顺畅地进入每一个产品
             </h1>
             <p className='text-muted-foreground max-w-xl text-base leading-relaxed'>
-              统一、稳定、透明的 AI 模型 API 服务，帮助开发者和企业减少接入与运维成本，更快完成从创意到生产的过程。
+              Fluxlane.ai
+              提供统一、稳定、透明的 AI 模型 API 服务，帮助开发者与企业简化模型接入和用量管理，降低开发与运维成本，让
+              AI 产品更快从创意走向生产。
             </p>
             <div className='flex flex-wrap gap-3 pt-2'>
               <Button render={<Link to='/sign-up' />}>创建账号</Button>
@@ -98,12 +100,14 @@ export function FluxlaneAbout() {
             </h2>
             <div className='text-muted-foreground space-y-5 leading-relaxed'>
               <p>
-                Fluxlane 是面向开发者与企业的 AI 模型 API 聚合与用量管理平台。通过兼容 OpenAI
-                的统一接口，用户可以更轻松地完成模型接入、Token 管理、用量查询和成本核对。
+                Fluxlane.ai
+                是面向开发者与企业的 AI 模型 API 聚合与用量管理平台。通过兼容 OpenAI
+                的统一接口，开发者无需针对不同模型重复适配，即可完成模型调用、Token
+                管理、用量查询与成本核对。
               </p>
               <p>
-                平台目前已接入 DigitalOcean Serverless Inference
-                等模型服务，并通过标准化接入层减少不同底层模型的调用差异，让 AI 能力更顺滑地融入业务代码。
+                平台已接入多家权威模型服务，并通过标准化接入层屏蔽不同模型与服务商之间的调用差异，为业务提供更简单、更稳定、更易管理的
+                AI 基础设施。
               </p>
             </div>
           </div>
@@ -115,14 +119,11 @@ export function FluxlaneAbout() {
               <p className='text-xs font-semibold tracking-widest text-cyan-400 uppercase'>
                 Our Backing
               </p>
-              <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
-                由 Access Technology Ventures 控股与支持
-              </h2>
               <div className='text-muted-foreground space-y-4 leading-relaxed'>
                 <p>
-                  Fluxlane 是 Access Technology Ventures 控股并支持发展的 AI
-                  基础设施平台。Access Technology Ventures 是 Access Industries
-                  旗下专注科技领域的长期投资平台。
+                  Fluxlane.ai 是 Access Technology Ventures 控股并支持发展的 AI
+                  基础设施平台，由卓普云科技日常运营。Access Technology Ventures 是
+                  Access Industries 旗下专注科技领域的长期投资平台。
                 </p>
                 <p>
                   其科技投资组合包括 DigitalOcean、Alibaba、Amazon、Agora、Pinduoduo、PingCAP、SpaceX
@@ -136,6 +137,14 @@ export function FluxlaneAbout() {
                 rel='noopener noreferrer'
               >
                 了解 Access Technology Ventures <ArrowRight className='size-4' />
+              </a>
+              <a
+                className='inline-flex items-center gap-2 text-sm text-cyan-400 hover:underline'
+                href='https://www.aidroplet.com'
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                了解 卓普云科技 AI Droplet <ArrowRight className='size-4' />
               </a>
             </div>
             <div className='border-border/50 bg-muted/15 rounded-2xl border p-8'>

@@ -145,7 +145,12 @@ export const Route = createRootRouteWithContext<{
 }>()({
   // 应用初始化与路由解析前统一校验会话
   beforeLoad: async ({ location }) => {
-    const domainTarget = getDomainRedirect(window.location.href)
+    // location.href 是本次导航的目标（相对路径）；客户端跳转时
+    // window.location.href 仍是旧地址，不能用于域名分流判断
+    const targetHref = /^https?:\/\//i.test(location.href)
+      ? location.href
+      : `${window.location.origin}${location.href}`
+    const domainTarget = getDomainRedirect(targetHref)
     if (domainTarget) {
       throw redirect({ href: domainTarget, replace: true })
     }

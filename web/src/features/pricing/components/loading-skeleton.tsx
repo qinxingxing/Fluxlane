@@ -25,7 +25,7 @@ export interface LoadingSkeletonProps {
 }
 
 export function LoadingSkeleton(props: LoadingSkeletonProps) {
-  const viewMode = props.viewMode ?? VIEW_MODES.CARD
+  const viewMode = props.viewMode ?? VIEW_MODES.TABLE
 
   return (
     <div className='space-y-5'>

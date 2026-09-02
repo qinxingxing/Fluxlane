@@ -118,7 +118,7 @@ export function FluxlaneLanding({
                 <code>
                   <span className='text-fuchsia-300'>curl</span>{' '}
                   <span className='text-cyan-300'>-X POST</span>{' '}
-                  <span className='text-emerald-300'>https://www.fluxlane.ai/v1/chat/completions</span>
+                  <span className='text-emerald-300'>https://run.fluxlane.ai/v1/chat/completions</span>
                   {'\n'}  -H <span className='text-amber-200'>&quot;Authorization: Bearer $FLUXLANE_API_KEY&quot;</span>
                   {'\n'}  -d <span className='text-amber-100'>{'{"model":"your-model","messages":[...]}'}</span>
                 </code>
