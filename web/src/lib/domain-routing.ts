@@ -30,6 +30,31 @@ function isPublicSitePath(pathname: string): boolean {
   )
 }
 
+/**
+ * Resolve a public-site link for the current host: absolute on the console
+ * origin, relative (SPA navigation) everywhere else.
+ */
+export function publicSiteHref(path: string): string {
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname === CONSOLE_HOSTNAME
+  ) {
+    return `${PUBLIC_ORIGIN}${path}`
+  }
+  return path
+}
+
+/** Resolve a console link for the current host: absolute on www, relative elsewhere. */
+export function consoleSiteHref(path: string): string {
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname === PUBLIC_HOSTNAME
+  ) {
+    return `${CONSOLE_ORIGIN}${path}`
+  }
+  return path
+}
+
 /** Keep public pages and the account console on separate origins. */
 export function getDomainRedirect(href: string): string | null {
   let current: URL
