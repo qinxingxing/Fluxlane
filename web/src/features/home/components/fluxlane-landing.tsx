@@ -39,13 +39,15 @@ const features = [
   {
     icon: Zap,
     title: '极速',
-    description: '优化的网络层与智能路由，面向高并发、高吞吐场景提供稳定响应。',
+    description:
+      '所有模型国内直连，优化的网络层与智能路由，面向高并发、高吞吐场景提供稳定响应。',
     color: 'text-cyan-300',
   },
   {
     icon: ShieldCheck,
     title: '安全可靠',
-    description: '企业级安全防护、Token 权限控制、用量审计与透明计费。',
+    description:
+      '企业级账号直连 Claude、GPT 等模型，支持 Token 权限控制、用量与计费统计。',
     color: 'text-violet-300',
   },
   {
@@ -77,13 +79,14 @@ export function FluxlaneLanding({
             Fluxlane · AI Application Infrastructure
           </p>
           <h1 className='relative max-w-4xl text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.08] font-bold tracking-[-0.035em]'>
-            统一 API 网关，服务于
+            一个 API 网关接入
             <span className='mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent'>
               海量 AI 模型
             </span>
           </h1>
           <p className='relative mt-6 max-w-2xl text-base leading-relaxed text-[#ccc3d7] md:text-lg'>
-            通过统一、标准的接口协议接入海量模型。承载 AI 应用，高效管理数字资产，连接未来。
+            只需一个 API Key，调用 Claude、GPT、DeepSeek
+            等大模型。无需管理基础设施，按需付费，毫秒级响应。
           </p>
           <div className='relative mt-9 flex flex-wrap justify-center gap-3'>
             <Button
@@ -155,7 +158,7 @@ export function FluxlaneLanding({
         <section id='features' className='relative mx-auto max-w-7xl scroll-mt-20 px-6 py-24'>
           <div className='mb-14 text-center'>
             <p className='font-mono text-xs font-semibold tracking-widest text-cyan-300 uppercase'>Core Features</p>
-            <h2 className='mt-4 text-3xl font-bold tracking-tight md:text-4xl'>为开发者打造，为规模而设计</h2>
+            <h2 className='mt-4 text-3xl font-bold tracking-tight md:text-4xl'>为开发者打造，为产品化而设计</h2>
           </div>
           <div className='grid gap-6 md:grid-cols-3'>
             {features.map(({ icon: Icon, title, description, color }) => (

@@ -187,9 +187,7 @@ export function Pricing() {
               })}
             </p>
             <p className='text-muted-foreground/60 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-              {t(
-                'Discover curated AI models, compare pricing and capabilities, and choose the right model for every scenario.'
-              )}
+              按需筛选 AI 模型，清晰比较价格与能力，为不同场景选择合适的模型。
             </p>
             <SearchBar
               value={searchInput}
