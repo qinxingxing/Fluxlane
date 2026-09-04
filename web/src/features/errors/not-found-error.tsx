@@ -20,11 +20,13 @@ import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { notFoundSeo, usePageSeo } from '@/lib/seo'
 
 export function NotFoundError() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { history } = useRouter()
+  usePageSeo(notFoundSeo)
   return (
     <div className='h-svh'>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>

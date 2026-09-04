@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
+import { useIsClient } from '@/lib/client-only'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -94,7 +95,9 @@ export function PublicHeader(props: PublicHeaderProps) {
   const pathname = routerState.location.pathname
 
   const user = auth.user
-  const isAuthenticated = !!user
+  // Keep visitor-specific chrome out of the deterministic first frame.
+  const isClient = useIsClient()
+  const isAuthenticated = isClient && !!user
   const displaySiteName = customSiteName || systemName
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
 
@@ -264,7 +267,7 @@ export function PublicHeader(props: PublicHeaderProps) {
 
               {showLanguageSwitcher && <LanguageSwitcher />}
               {showThemeSwitch && <ThemeSwitch />}
-              {showNotifications && (
+              {showNotifications && isClient && (
                 <NotificationPopover
                   open={notifications.popoverOpen}
                   onOpenChange={notifications.setPopoverOpen}

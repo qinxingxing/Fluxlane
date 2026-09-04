@@ -23,9 +23,11 @@ import {
   Outlet,
   redirect,
   useNavigate,
+  useRouterState,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { NavigationProgress } from '@/components/navigation-progress'
 import { Toaster } from '@/components/ui/sonner'
@@ -43,14 +45,61 @@ import {
 import { subscribeAuthSessionEvents } from '@/lib/auth-session-sync'
 import { getDomainRedirect } from '@/lib/domain-routing'
 import { resolveLegacyRoute } from '@/lib/legacy-route'
+import { useIsClient } from '@/lib/client-only'
+import {
+  endPrerenderHydration,
+  isPrerenderHydration,
+  wasPrerenderedPage,
+} from '@/lib/prerender-bridge'
+import { applyDefaultTitle, markNavigation } from '@/lib/seo'
+import { useNotificationStore } from '@/stores/notification-store'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 import { useAuthStore } from '@/stores/auth-store'
 
 function RootComponent() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { i18n } = useTranslation()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // False during server rendering and the hydration pass: visitor-specific
+  // chrome (progress bar, toasts) stays out of the deterministic first
+  // frame and mounts right after hydration.
+  const isClient = useIsClient()
 
   // Load system configuration (logo, system name, etc.) from backend
   useSystemConfig({ autoLoad: true })
+
+  // The persisted system config (branding for returning visitors) applies
+  // only after hydration; the first frame always renders defaults so the
+  // prerendered HTML and the hydration render stay identical.
+  useEffect(() => {
+    void useSystemConfigStore.persist.rehydrate()
+    void useNotificationStore.persist.rehydrate()
+    endPrerenderHydration()
+  }, [])
+
+  // Keep the browser title in sync on every navigation. Routes that apply
+  // page-level SEO win; anything else falls back to a per-path default.
+  useEffect(() => {
+    markNavigation(pathname)
+    applyDefaultTitle(pathname)
+  }, [pathname])
+
+  // Prerendered pages hydrate with the prerendered language (en) so the
+  // first client render matches the server HTML. Switch to the visitor's
+  // detected language only after hydration completes.
+  useEffect(() => {
+    if (!wasPrerenderedPage()) return
+    const detector = i18n.services?.languageDetector
+    if (!detector?.detect) return
+    const detected = detector.detect()
+    const preferred = Array.isArray(detected) ? detected[0] : detected
+    if (preferred && preferred !== i18n.language) {
+      void i18n.changeLanguage(preferred).catch(() => {
+        /* keep prerendered language on failure */
+      })
+    }
+  }, [i18n])
 
   useEffect(() => {
     const aff = new URLSearchParams(window.location.search).get('aff')?.trim()
@@ -95,9 +144,11 @@ function RootComponent() {
 
   return (
     <ThemeCustomizationProvider>
-      <NavigationProgress />
+      {isClient && <NavigationProgress />}
       <Outlet />
-      <Toaster closeButton duration={5000} position='top-center' richColors />
+      {isClient && (
+        <Toaster closeButton duration={5000} position='top-center' richColors />
+      )}
       {import.meta.env.MODE === 'development' && (
         <>
           <ReactQueryDevtools buttonPosition='bottom-left' />
@@ -146,18 +197,27 @@ export const Route = createRootRouteWithContext<{
   // 应用初始化与路由解析前统一校验会话
   beforeLoad: async ({ location }) => {
     // location.href 是本次导航的目标（相对路径）；客户端跳转时
-    // window.location.href 仍是旧地址，不能用于域名分流判断
-    const targetHref = /^https?:\/\//i.test(location.href)
-      ? location.href
-      : `${window.location.origin}${location.href}`
-    const domainTarget = getDomainRedirect(targetHref)
-    if (domainTarget) {
-      throw redirect({ href: domainTarget, replace: true })
+    // window.location.href 仍是旧地址，不能用于域名分流判断。
+    // 构建期预渲染由脚本显式决定渲染哪些路由（含 404 视图），跳过域名分流。
+    if (typeof window !== 'undefined' && !isPrerenderHydration()) {
+      const targetHref = /^https?:\/\//i.test(location.href)
+        ? location.href
+        : `${window.location.origin}${location.href}`
+      const domainTarget = getDomainRedirect(targetHref)
+      if (domainTarget) {
+        throw redirect({ href: domainTarget, replace: true })
+      }
     }
 
     const legacyTarget = resolveLegacyRoute(location.href)
     if (legacyTarget) {
       throw redirect({ href: legacyTarget, replace: true })
+    }
+
+    // Keep the first client tree identical to the prerendered HTML:
+    // live auth, setup, and origin checks run after hydration.
+    if (isPrerenderHydration()) {
+      return
     }
 
     const pathname = location?.pathname || ''

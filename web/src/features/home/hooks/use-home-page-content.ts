@@ -16,9 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import i18next from 'i18next'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 import { isHttpUrl } from '@/lib/content-format'
 
@@ -30,21 +28,23 @@ const STORAGE_KEY = 'home_page_content'
 /**
  * Hook to load and manage custom home page content
  * Supports both Markdown/HTML content and iframe URLs
+ *
+ * The default landing renders immediately: cached custom content (if any)
+ * is read synchronously as the initial state and the API only refreshes it
+ * afterwards. This keeps the public first paint free of a loading gate.
  */
 export function useHomePageContent(): HomePageContentResult {
-  const [content, setContent] = useState<string>('')
-  const [isLoaded, setIsLoaded] = useState(false)
+  // First frame is always the in-repo landing. Cached custom HTML is a
+  // visitor-specific override and must not participate in hydration.
+  const [state, setState] = useState<{ content: string; isLoaded: boolean }>({
+    content: '',
+    isLoaded: true,
+  })
 
   useEffect(() => {
     let mounted = true
 
     const loadContent = async () => {
-      // Load from localStorage first for immediate display
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached && mounted) {
-        setContent(cached)
-      }
-
       try {
         const response = await getHomePageContent()
         const { success, data } = response
@@ -52,22 +52,18 @@ export function useHomePageContent(): HomePageContentResult {
         if (!mounted) return
 
         if (success && data) {
-          setContent(data)
+          setState({ content: data, isLoaded: true })
           localStorage.setItem(STORAGE_KEY, data)
         } else {
           // Clear content if API returns empty
-          setContent('')
+          setState({ content: '', isLoaded: true })
           localStorage.removeItem(STORAGE_KEY)
         }
       } catch (error) {
         if (!mounted) return
         // eslint-disable-next-line no-console
         console.error('Failed to load home page content:', error)
-        toast.error(i18next.t('Failed to load home page content'))
-      } finally {
-        if (mounted) {
-          setIsLoaded(true)
-        }
+        setState((prev) => ({ ...prev, isLoaded: true }))
       }
     }
 
@@ -78,7 +74,7 @@ export function useHomePageContent(): HomePageContentResult {
     }
   }, [])
 
-  const isUrl = isHttpUrl(content)
+  const isUrl = isHttpUrl(state.content)
 
-  return { content, isLoaded, isUrl }
+  return { content: state.content, isLoaded: state.isLoaded, isUrl }
 }

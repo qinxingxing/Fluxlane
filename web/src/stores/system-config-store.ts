@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 import { DEFAULT_SYSTEM_NAME, DEFAULT_LOGO } from '@/lib/constants'
 
@@ -95,6 +95,14 @@ export const useSystemConfigStore = create<SystemConfigState>()(
     }),
     {
       name: 'system-config-storage',
+      // Explicit global (not window.localStorage): zustand's default storage
+      // factory dereferences `window`, which silently disables persistence
+      // in non-browser environments such as the SEO prerenderer.
+      storage: createJSONStorage(() => localStorage),
+      // Hydration is deferred to a post-hydration effect in the root route:
+      // the deterministic first frame must not depend on the visitor's
+      // persisted branding, or prerendered pages fail hydration.
+      skipHydration: true,
       partialize: (state) => ({
         config: state.config,
         loadedLogoUrl: state.loadedLogoUrl,

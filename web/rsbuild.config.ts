@@ -15,9 +15,7 @@ export default defineConfig(({ envMode }) => {
     env.rawPublicVars.VITE_REACT_APP_SERVER_URL ||
     'http://localhost:3000'
   const apiBaseUrl =
-    process.env.VITE_API_BASE_URL ||
-    env.rawPublicVars.VITE_API_BASE_URL ||
-    ''
+    process.env.VITE_API_BASE_URL || env.rawPublicVars.VITE_API_BASE_URL || ''
   const publicApiBaseUrl =
     process.env.VITE_PUBLIC_API_BASE_URL ||
     env.rawPublicVars.VITE_PUBLIC_API_BASE_URL ||

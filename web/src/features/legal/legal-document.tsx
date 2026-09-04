@@ -59,7 +59,7 @@ export function LegalDocument({
     return (
       <PublicLayout>
         <div className='mx-auto flex max-w-4xl flex-col gap-4 py-12'>
-          <Skeleton className='h-8 w-[45%]' />
+          <h1 className='text-3xl font-semibold tracking-tight'>{title}</h1>
           <Skeleton className='h-4 w-full' />
           <Skeleton className='h-4 w-[90%]' />
           <Skeleton className='h-4 w-[80%]' />
@@ -78,7 +78,7 @@ export function LegalDocument({
                 <FileWarning className='text-muted-foreground h-5 w-5' />
               </div>
               <div className='space-y-1'>
-                <CardTitle className='text-lg font-semibold'>{title}</CardTitle>
+                <h1 className='text-lg font-semibold'>{title}</h1>
                 <p className='text-muted-foreground text-sm'>
                   {data?.message || emptyMessage}
                 </p>

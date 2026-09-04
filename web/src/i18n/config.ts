@@ -20,6 +20,8 @@ import i18n from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
+import { readPrerenderState } from '@/lib/prerender-bridge'
+
 import { convertDetectedLanguage } from './languages'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
@@ -39,6 +41,12 @@ export const resources = {
   zhTW,
 } as const
 
+// Prerendered pages ship English HTML. Pin the language to en for the
+// hydration pass (and skip caching so the visitor's stored preference is
+// not overwritten); the root route switches to the detected language right
+// after hydration.
+const prerendered = readPrerenderState() !== null
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -52,9 +60,10 @@ i18n
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
+    ...(prerendered ? { lng: 'en' } : {}),
     detection: {
       order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
+      caches: prerendered ? [] : ['localStorage'],
       // Browsers report `zh-CN`/`zh-TW`/`zh`; map them onto our `zhCN`/`zhTW`
       // codes (non-Chinese codes pass through for normal supportedLngs matching).
       convertDetectedLanguage,

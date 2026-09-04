@@ -173,6 +173,21 @@ export function getModuleAccess(module: HeaderNavModule): ModuleAccess {
   return getModuleAccessFromStatus(getCachedStatus(), module)
 }
 
+/**
+ * When a live `/api/status` read fails, keep the last cached flags if any,
+ * otherwise the in-repo defaults. Never treat a network/CORS failure as
+ * "module disabled" — that used to 302 public pages to `/` (soft 404).
+ */
+export function moduleAccessAfterStatusFailure(
+  module: HeaderNavModule,
+  cachedStatus: Record<string, unknown> | null
+): ModuleAccess {
+  if (cachedStatus) {
+    return getModuleAccessFromStatus(cachedStatus, module)
+  }
+  return { ...DEFAULTS[module] }
+}
+
 export async function getFreshModuleAccess(
   module: HeaderNavModule
 ): Promise<ModuleAccess> {
@@ -181,7 +196,7 @@ export async function getFreshModuleAccess(
     cacheStatus(status)
     return getModuleAccessFromStatus(status, module)
   } catch {
-    return { enabled: false, requireAuth: true }
+    return moduleAccessAfterStatusFailure(module, getCachedStatus())
   }
 }
 

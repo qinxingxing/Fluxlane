@@ -24,19 +24,6 @@ import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { mapStatusDataToConfig } from './use-system-config'
 
-// Get initial cache from localStorage
-function getInitialStatus(): SystemStatus | undefined {
-  try {
-    if (typeof window !== 'undefined') {
-      const saved = window.localStorage.getItem('status')
-      return saved ? (JSON.parse(saved) as SystemStatus) : undefined
-    }
-  } catch {
-    /* empty */
-  }
-  return undefined
-}
-
 export function useStatus() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['status'],
@@ -56,7 +43,6 @@ export function useStatus() {
           )
         }
       }
-      // Save to localStorage
       try {
         if (typeof window !== 'undefined' && status) {
           window.localStorage.setItem('status', JSON.stringify(status))
@@ -66,11 +52,9 @@ export function useStatus() {
       }
       return status as SystemStatus | null
     },
-    // Use localStorage data as initial data
-    placeholderData: getInitialStatus(),
-    // Data becomes stale after 5 minutes
+    // Do not seed from localStorage here: that value is visitor-specific
+    // and would diverge from the prerendered first frame.
     staleTime: 5 * 60 * 1000,
-    // Cache expires after 30 minutes
     gcTime: 30 * 60 * 1000,
   })
 

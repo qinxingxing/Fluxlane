@@ -19,7 +19,13 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute } from '@tanstack/react-router'
 
 import { Home } from '@/features/home'
+import { homeSeo, usePageSeo } from '@/lib/seo'
+
+function HomePage() {
+  usePageSeo(homeSeo)
+  return <Home />
+}
 
 export const Route = createFileRoute('/')({
-  component: Home,
+  component: HomePage,
 })

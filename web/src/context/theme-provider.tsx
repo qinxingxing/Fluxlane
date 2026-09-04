@@ -81,19 +81,22 @@ export function ThemeProvider({
   storageKey = THEME_COOKIE_NAME,
   ...props
 }: ThemeProviderProps) {
-  const [theme, _setTheme] = useState<Theme>(() =>
-    getStoredTheme(storageKey, defaultTheme)
-  )
+  const [theme, _setTheme] = useState<Theme>(defaultTheme)
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
-    resolveTheme(getStoredTheme(storageKey, defaultTheme))
+    defaultTheme === 'system' ? 'light' : defaultTheme
   )
+
+  useEffect(() => {
+    const stored = getStoredTheme(storageKey, defaultTheme)
+    _setTheme(stored)
+  }, [defaultTheme, storageKey])
 
   useEffect(() => {
     const root = window.document.documentElement
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
     const applyTheme = () => {
-      const nextResolvedTheme = theme === 'system' ? getSystemTheme() : theme
+      const nextResolvedTheme = resolveTheme(theme)
       root.classList.remove('light', 'dark')
       root.classList.add(nextResolvedTheme)
       setResolvedTheme(nextResolvedTheme)

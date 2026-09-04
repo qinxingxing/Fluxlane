@@ -128,7 +128,8 @@ export function Hero(props: HeroProps) {
             className='landing-animate-fade-up text-muted-foreground/80 mt-5 max-w-xl text-base leading-relaxed opacity-0 md:text-[15px]'
             style={{ animationDelay: '120ms' }}
           >
-            通过统一、标准的接口协议接入海量模型。承载 AI 应用，高效管理数字资产，连接未来。
+            通过统一、标准的接口协议接入海量模型。承载 AI
+            应用，高效管理数字资产，连接未来。
           </p>
 
           <div

@@ -16,12 +16,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import z from 'zod'
 
 import { Pricing } from '@/features/pricing'
+import { trackEvent } from '@/lib/analytics'
 import { getFreshModuleAccess } from '@/lib/nav-modules'
+import { isPrerenderHydration } from '@/lib/prerender-bridge'
+import { pricingSeo, usePageSeo } from '@/lib/seo'
 import { useAuthStore } from '@/stores/auth-store'
+
+function PricingPage() {
+  usePageSeo(pricingSeo)
+  useEffect(() => {
+    trackEvent('view_pricing')
+  }, [])
+  return <Pricing />
+}
 
 const pricingSearchSchema = z.object({
   search: z.string().optional(),
@@ -39,9 +51,10 @@ const pricingSearchSchema = z.object({
 export const Route = createFileRoute('/pricing/')({
   validateSearch: pricingSearchSchema,
   beforeLoad: async ({ location }) => {
+    if (isPrerenderHydration()) return
     const access = await getFreshModuleAccess('pricing')
     if (!access.enabled) {
-      throw redirect({ to: '/' })
+      throw notFound()
     }
     if (access.requireAuth) {
       const { auth } = useAuthStore.getState()
@@ -53,5 +66,5 @@ export const Route = createFileRoute('/pricing/')({
       }
     }
   },
-  component: Pricing,
+  component: PricingPage,
 })

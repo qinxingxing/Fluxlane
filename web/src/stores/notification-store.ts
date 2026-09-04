@@ -78,6 +78,7 @@ export const useNotificationStore = create<NotificationState>()(
     }),
     {
       name: 'notification-storage',
+      skipHydration: true,
       partialize: (state) => ({
         lastReadNotice: state.lastReadNotice,
         readAnnouncementKeys: state.readAnnouncementKeys,

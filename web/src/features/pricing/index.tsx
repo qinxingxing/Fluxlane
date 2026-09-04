@@ -152,6 +152,14 @@ export function Pricing() {
     return (
       <PublicLayout showMainContainer={false}>
         <div className='mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+          <h1 className='mb-2 text-3xl font-semibold tracking-tight'>
+            {t('AI Model API Pricing')}
+          </h1>
+          <p className='text-muted-foreground mb-8 max-w-2xl text-sm'>
+            {t(
+              'Compare pricing and availability for AI models available through the Fluxlane unified API. The live price table loads in a moment.'
+            )}
+          </p>
           <LoadingSkeleton viewMode={viewMode} />
         </div>
       </PublicLayout>

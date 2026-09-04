@@ -20,6 +20,8 @@ import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
+  hydrate,
+  type DehydratedState,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { AxiosError } from 'axios'
@@ -34,6 +36,8 @@ import { applyFaviconToDom } from '@/lib/dom-utils'
 import '@/lib/dayjs'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
 import { handleServerError } from '@/lib/handle-server-error'
+import { takePrerenderState } from '@/lib/prerender-bridge'
+import { applyBrandFallbackTitle } from '@/lib/seo'
 
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -93,6 +97,11 @@ const queryClient = new QueryClient({
   }),
 })
 
+// Consume the prerender bridge before anything else: prerendered pages ship
+// a correct page-level <title> in their static HTML, and the brand fallback
+// below must never overwrite it before React mounts.
+const prerenderState = takePrerenderState()
+
 // Create a new router instance
 const router = createRouter({
   routeTree,
@@ -108,28 +117,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// Render the app
-const rootElement = document.querySelector<HTMLElement>('#root')
-if (!rootElement) {
-  throw new Error('Root element not found')
-}
-// Set document.title and favicon from cached status, then refresh from network
+// Set favicon and the brand fallback title from cached status, then refresh
+// from network. The brand name is only a fallback: page-level SEO titles
+// registered via @/lib/seo always keep priority.
 ;(function initSystemBranding() {
   try {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
-    const apply = (name: string) => {
-      document.title = name
-      const metaTitle = document.querySelector(
-        'meta[name="title"]'
-      ) as HTMLMetaElement | null
-      if (metaTitle) metaTitle.setAttribute('content', name)
-    }
+    const applyTitle = prerenderState
+      ? () => undefined
+      : applyBrandFallbackTitle
     // Cache-first
     try {
       const saved = localStorage.getItem('status')
       if (saved) {
         const s = JSON.parse(saved)
-        if (s?.system_name) apply(s.system_name)
+        if (s?.system_name) applyTitle(s.system_name)
         if (s?.logo) applyFaviconToDom(s.logo)
       }
     } catch {
@@ -139,7 +141,7 @@ if (!rootElement) {
     getStatus()
       .then((s) => {
         if (s?.system_name) {
-          apply(s.system_name as string)
+          applyTitle(s.system_name as string)
           try {
             localStorage.setItem('status', JSON.stringify(s))
           } catch {
@@ -155,9 +157,18 @@ if (!rootElement) {
     /* empty */
   }
 })()
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-  root.render(
+
+const rootElement = document.querySelector<HTMLElement>('#root')
+
+async function start(): Promise<void> {
+  if (!rootElement) {
+    throw new Error('Root element not found')
+  }
+  if (prerenderState?.dehydratedQueries) {
+    hydrate(queryClient, prerenderState.dehydratedQueries as DehydratedState)
+  }
+
+  const app = (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
@@ -170,4 +181,45 @@ if (!rootElement.innerHTML) {
       </QueryClientProvider>
     </StrictMode>
   )
+
+  if (prerenderState) {
+    // Prerendered page: make the first client render match the server HTML.
+    // router.load() resolves loaders/beforeLoad but does not await route
+    // component chunks; a still-pending lazy component would suspend into an
+    // empty pending state, fail hydration, and discard the prerendered DOM.
+    try {
+      await router.load()
+      const routes = router.state.matches.map(
+        (match) => router.routesById[match.routeId]
+      )
+      for (const route of routes) {
+        await router.loadRouteChunk(route)
+      }
+    } catch {
+      /* navigation errors surface through the router UI */
+    }
+    ReactDOM.hydrateRoot(rootElement, app, {
+      // Surface hydration recoveries loudly: the acceptance test fails
+      // when prerendered pages recover from any hydration error.
+      onRecoverableError(error, errorInfo) {
+        const stack = errorInfo?.componentStack ?? ''
+        console.error(
+          '[fluxlane-hydration] recoverable error:',
+          error,
+          stack
+        )
+        try {
+          window.__FLUXLANE_HYDRATION_ERROR__ = `${String(error)}\n${stack}`
+        } catch {
+          /* ignore */
+        }
+      },
+    })
+    return
+  }
+
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(app)
 }
+
+void start()
