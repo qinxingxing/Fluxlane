@@ -138,6 +138,16 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 - In React components, use `useTranslation()` and call `t('English key')` for user-facing text.
 - Follow `web/AGENTS.md` for detailed frontend conventions, including TypeScript, component structure, styling, accessibility, testing, and build checks.
 
+**Public site SEO (www.fluxlane.ai):**
+
+- `web/scripts/seo-postbuild.ts` prerenders public HTML. The prerenderer must not contact `api.fluxlane.ai` or any live API. Snapshot data lives in Git.
+- Hydration must reuse the serialized prerender payload for the first frame. Cookies, `localStorage`, media queries, and live `/api/status` module flags apply only after hydration.
+- Empty legal pages stay `noindex` and out of `sitemap.xml` until real policy text is in Git.
+- Rankings, when disabled, must 404 / `notFound` — never redirect to `/`.
+- Model detail SEO is deferred. `/pricing/*` uses a noindex shell.
+- `www.fluxlane.ai` and `api.fluxlane.ai` are cross-origin. Pages Preview (`*.pages.dev`) is not on the production CORS allowlist; do not add `*.pages.dev`.
+- Console builds (`VITE_SITE_MODE=console`) are `noindex` site-wide.
+
 ### Project Governance
 
 **Protected project information:** The following project-related information is strictly protected and MUST NOT be modified, deleted, replaced, or removed under any circumstances:

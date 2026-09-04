@@ -97,41 +97,57 @@ const ThemeCustomizationContext =
 export function ThemeCustomizationProvider(props: {
   children: React.ReactNode
 }) {
-  const [preset, _setPreset] = useState<ThemePreset>(() =>
-    readCookie<ThemePreset>(
-      THEME_COOKIE_KEYS.preset,
-      THEME_PRESET_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.preset
-    )
+  const [preset, _setPreset] = useState<ThemePreset>(
+    DEFAULT_THEME_CUSTOMIZATION.preset
   )
-  const [font, _setFont] = useState<ThemeFont>(() =>
-    readCookie<ThemeFont>(
-      THEME_COOKIE_KEYS.font,
-      THEME_FONT_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.font
-    )
+  const [font, _setFont] = useState<ThemeFont>(DEFAULT_THEME_CUSTOMIZATION.font)
+  const [radius, _setRadius] = useState<ThemeRadius>(
+    DEFAULT_THEME_CUSTOMIZATION.radius
   )
-  const [radius, _setRadius] = useState<ThemeRadius>(() =>
-    readCookie<ThemeRadius>(
-      THEME_COOKIE_KEYS.radius,
-      THEME_RADIUS_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.radius
-    )
+  const [scale, _setScale] = useState<ThemeScale>(
+    DEFAULT_THEME_CUSTOMIZATION.scale
   )
-  const [scale, _setScale] = useState<ThemeScale>(() =>
-    readCookie<ThemeScale>(
-      THEME_COOKIE_KEYS.scale,
-      THEME_SCALE_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.scale
-    )
+  const [contentLayout, _setContentLayout] = useState<ContentLayout>(
+    DEFAULT_THEME_CUSTOMIZATION.contentLayout
   )
-  const [contentLayout, _setContentLayout] = useState<ContentLayout>(() =>
-    readCookie<ContentLayout>(
-      THEME_COOKIE_KEYS.contentLayout,
-      CONTENT_LAYOUT_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.contentLayout
+
+  useEffect(() => {
+    _setPreset(
+      readCookie<ThemePreset>(
+        THEME_COOKIE_KEYS.preset,
+        THEME_PRESET_VALUES,
+        DEFAULT_THEME_CUSTOMIZATION.preset
+      )
     )
-  )
+    _setFont(
+      readCookie<ThemeFont>(
+        THEME_COOKIE_KEYS.font,
+        THEME_FONT_VALUES,
+        DEFAULT_THEME_CUSTOMIZATION.font
+      )
+    )
+    _setRadius(
+      readCookie<ThemeRadius>(
+        THEME_COOKIE_KEYS.radius,
+        THEME_RADIUS_VALUES,
+        DEFAULT_THEME_CUSTOMIZATION.radius
+      )
+    )
+    _setScale(
+      readCookie<ThemeScale>(
+        THEME_COOKIE_KEYS.scale,
+        THEME_SCALE_VALUES,
+        DEFAULT_THEME_CUSTOMIZATION.scale
+      )
+    )
+    _setContentLayout(
+      readCookie<ContentLayout>(
+        THEME_COOKIE_KEYS.contentLayout,
+        CONTENT_LAYOUT_VALUES,
+        DEFAULT_THEME_CUSTOMIZATION.contentLayout
+      )
+    )
+  }, [])
 
   // Mirror state to the <body> via data-* attributes so theme-presets.css can
   // override CSS variables at the right cascade layer.

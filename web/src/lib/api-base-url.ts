@@ -53,23 +53,19 @@ function isFluxlaneFrontend(): boolean {
   )
 }
 
-const normalizedConfiguredApiBaseUrl = normalizeApiBaseUrl(
-  configuredApiBaseUrl
-)
+const normalizedConfiguredApiBaseUrl = normalizeApiBaseUrl(configuredApiBaseUrl)
 
-export const API_BASE_URL =
-  isFluxlaneFrontend()
-    ? FLUXLANE_PLATFORM_API_ORIGIN
-    : normalizedConfiguredApiBaseUrl
+export const API_BASE_URL = isFluxlaneFrontend()
+  ? FLUXLANE_PLATFORM_API_ORIGIN
+  : normalizedConfiguredApiBaseUrl
 
 const normalizedConfiguredPublicApiBaseUrl = normalizeApiBaseUrl(
   configuredPublicApiBaseUrl
 )
 
-export const PUBLIC_API_BASE_URL =
-  isFluxlaneFrontend()
-    ? FLUXLANE_PUBLIC_API_ORIGIN
-    : normalizedConfiguredPublicApiBaseUrl
+export const PUBLIC_API_BASE_URL = isFluxlaneFrontend()
+  ? FLUXLANE_PUBLIC_API_ORIGIN
+  : normalizedConfiguredPublicApiBaseUrl
 
 export function resolveApiUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path

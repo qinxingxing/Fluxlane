@@ -175,6 +175,7 @@
 - 使用 Rsbuild，配置见 `rsbuild.config.ts`；脚本以 `package.json` 为准（如 `bun run dev`、`bun run build`、`bun run typecheck`、`bun run lint`、`bun run format`），包管理见 [3.15 依赖管理](#315-依赖管理)。
 - 代码分割与懒加载策略见 [3.4 性能](#34-性能)；资源使用合适格式与压缩，环境变量用 `.env` 且以 `VITE_` 前缀，不在代码中硬编码。
 - **发布前**：执行 typecheck、lint、format 检查，完成生产构建并检查产物体积与环境变量配置。
+- **公开站 SEO**：`bun run build` 在 `VITE_SITE_MODE=public`（默认）下会跑 `scripts/seo-postbuild.ts`。预渲染不得访问生产 API；水合走官方 `RouterServer`/`RouterClient` 与 `$_TSR` 脱水数据。详见 `docs/seo/`。
 
 ---
 

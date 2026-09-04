@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { trackEvent } from '@/lib/analytics'
+import { consoleSiteHref, publicSiteHref } from '@/lib/domain-routing'
 import { cn } from '@/lib/utils'
 
 interface FooterLink {
@@ -47,6 +49,56 @@ const NEW_API_FOOTER_ATTRIBUTION_KEY = [
   'new' + 'api',
   'projectAttributionSuffix',
 ].join('.')
+
+// Standard link row shown on Fluxlane public pages so crawlers and visitors
+// always find the main public destinations, independent of admin footer HTML.
+function FluxlaneFooterNav() {
+  const { t } = useTranslation()
+  const links: { key: string; label: string; href: string }[] = [
+    { key: 'pricing', label: t('Pricing'), href: publicSiteHref('/pricing') },
+    {
+      key: 'docs',
+      label: t('Documentation'),
+      href: 'https://doc.fluxlane.ai',
+    },
+    { key: 'about', label: t('About'), href: publicSiteHref('/about') },
+    {
+      key: 'privacy',
+      label: t('Privacy Policy'),
+      href: publicSiteHref('/privacy-policy'),
+    },
+    {
+      key: 'terms',
+      label: t('User Agreement'),
+      href: publicSiteHref('/user-agreement'),
+    },
+    {
+      key: 'console',
+      label: t('Console'),
+      href: consoleSiteHref('/dashboard'),
+    },
+  ]
+  return (
+    <nav
+      aria-label='Footer'
+      className='flex flex-wrap items-center gap-x-4 gap-y-1'
+    >
+      {links.map((link) => (
+        <a
+          key={link.key}
+          href={link.href}
+          className='hover:text-foreground text-sm transition-colors duration-200'
+          onClick={() => {
+            if (link.key === 'docs') trackEvent('click_documentation')
+            if (link.key === 'console') trackEvent('click_console')
+          }}
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  )
+}
 
 function FooterLinkItem(props: { link: FooterLink }) {
   const { t } = useTranslation()
@@ -236,6 +288,7 @@ export function Footer(props: FooterProps) {
               className='custom-footer text-muted-foreground min-w-0 text-center text-sm sm:text-left'
               dangerouslySetInnerHTML={{ __html: footerHtml }}
             />
+            <FluxlaneFooterNav />
             <div className='border-border/60 text-muted-foreground/45 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t pt-4 text-xs sm:w-auto sm:justify-end sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5'>
               <LegalLinks />
               <ProjectAttribution currentYear={currentYear} inline />
@@ -248,7 +301,10 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
-      className={cn('relative z-10 border-t border-white/10 bg-[#0c112e] text-white [&_a]:!text-white [&_p]:!text-white/70 [&_span]:!text-white/70', props.className)}
+      className={cn(
+        'relative z-10 border-t border-white/10 bg-[#0c112e] text-white [&_a]:!text-white [&_p]:!text-white/70 [&_span]:!text-white/70',
+        props.className
+      )}
     >
       <div className='mx-auto max-w-6xl px-6 py-12 md:py-16'>
         <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
@@ -258,6 +314,8 @@ export function Footer(props: FooterProps) {
               <img
                 src={displayLogo}
                 alt={displayName}
+                width={28}
+                height={28}
                 className='size-7 rounded-lg object-contain'
               />
               <span className='text-sm font-semibold tracking-tight'>
@@ -267,10 +325,13 @@ export function Footer(props: FooterProps) {
             <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
               {t('Powerful API Management Platform')}
             </p>
+            <div className='mt-4'>
+              <FluxlaneFooterNav />
+            </div>
           </div>
 
           {/* Links columns */}
-          {isDemoSiteMode && (
+          {(isDemoSiteMode || props.columns) && (
             <div className='grid grid-cols-3 gap-8 md:gap-16'>
               {displayColumns.map((column, index) => (
                 <div key={index}>

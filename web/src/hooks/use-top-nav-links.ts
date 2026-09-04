@@ -56,8 +56,10 @@ export function useTopNavLinks(): TopNavLink[] {
     )
   }, [status])
 
-  // Documentation link (may be external)
-  const docsLink: string | undefined = status?.docs_link as string | undefined
+  // Documentation link. Fluxlane docs always live on the dedicated docs
+  // origin; the admin-configured docs_link may still point at the upstream
+  // project docs and must not leak into Fluxlane public navigation.
+  const docsLink = 'https://doc.fluxlane.ai'
 
   const isAuthed = !!auth?.user
 
@@ -95,13 +97,9 @@ export function useTopNavLinks(): TopNavLink[] {
     })
   }
 
-  // Docs (supports external links)
+  // Docs (external link)
   if (modules?.docs !== false) {
-    if (docsLink) {
-      links.push({ title: t('Docs'), href: docsLink, external: true })
-    } else {
-      links.push({ title: t('Docs'), href: '/docs' })
-    }
+    links.push({ title: t('Docs'), href: docsLink, external: true })
   }
 
   // About

@@ -19,7 +19,20 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute } from '@tanstack/react-router'
 
 import { UserAgreement } from '@/features/legal'
+import { getUserAgreement } from '@/features/legal/api'
+import { usePageSeo, userAgreementSeo } from '@/lib/seo'
+
+function UserAgreementPage() {
+  usePageSeo(userAgreementSeo)
+  return <UserAgreement />
+}
 
 export const Route = createFileRoute('/user-agreement')({
-  component: UserAgreement,
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ['user-agreement'],
+      queryFn: getUserAgreement,
+      staleTime: 10 * 60 * 1000,
+    }),
+  component: UserAgreementPage,
 })

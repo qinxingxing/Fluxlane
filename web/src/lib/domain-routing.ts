@@ -65,10 +65,7 @@ export function getDomainRedirect(href: string): string | null {
   }
 
   const pathname = normalizePathname(current.pathname)
-  if (
-    current.hostname === PUBLIC_HOSTNAME &&
-    !isPublicSitePath(pathname)
-  ) {
+  if (current.hostname === PUBLIC_HOSTNAME && !isPublicSitePath(pathname)) {
     return `${CONSOLE_ORIGIN}${current.pathname}${current.search}${current.hash}`
   }
 

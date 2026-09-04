@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" suppressHydrationWarning>
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
@@ -7,14 +7,31 @@
     <meta name="google" content="notranslate" />
 
     <!-- Primary Meta Tags -->
-    <title>Fluxlane — Unified AI API Gateway</title>
-    <meta name="title" content="Fluxlane — Unified AI API Gateway" />
+    <title>Fluxlane</title>
+    <meta name="title" content="Fluxlane" />
     <meta
       name="description"
-      content="Fluxlane provides one unified API for leading AI models, transparent usage, and scalable model access."
+      content="Access leading AI models through one OpenAI-compatible API. Compare pricing, manage usage, and integrate with Fluxlane using familiar SDKs."
     />
 
     <meta name="theme-color" content="#0c112e" />
+    <!-- Apply the persisted theme before first paint to avoid a light flash
+         for dark-theme visitors on prerendered pages. -->
+    <script>
+      ;(function () {
+        try {
+          var match = document.cookie.match(/(?:^|;\s*)vite-ui-theme=([^;]+)/)
+          var theme = match ? match[1] : 'dark'
+          var dark =
+            theme === 'dark' ||
+            (theme === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.add(dark ? 'dark' : 'light')
+        } catch (e) {
+          /* default styles apply */
+        }
+      })()
+    </script>
     <!--umami-->
     <!--Google Analytics-->
   </head>

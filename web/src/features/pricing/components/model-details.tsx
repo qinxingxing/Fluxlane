@@ -30,7 +30,7 @@ import {
   Sparkles,
   Timer,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
@@ -55,7 +55,9 @@ import {
   formatUptimePct,
   getSuccessRateTextClass,
 } from '@/features/performance-metrics/lib/format'
+import { trackEvent } from '@/lib/analytics'
 import { getLobeIcon } from '@/lib/lobe-icon'
+import { modelDetailSeo, usePageSeo } from '@/lib/seo'
 import { cn } from '@/lib/utils'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
@@ -1268,6 +1270,25 @@ export function ModelDetails() {
     if (!models || !modelId) return null
     return models.find((m) => m.model_name === modelId) || null
   }, [models, modelId])
+
+  const seo = useMemo(
+    () =>
+      model
+        ? modelDetailSeo(model.model_name, modelId)
+        : {
+            ...modelDetailSeo(modelId, modelId),
+            title: 'Model Not Found | Fluxlane',
+            noindex: true,
+          },
+    [model, modelId]
+  )
+  usePageSeo(seo)
+
+  useEffect(() => {
+    if (model) {
+      trackEvent('view_model', { modelId: model.model_name })
+    }
+  }, [model])
 
   const handleBack = () => {
     navigate({ to: '/pricing', search })

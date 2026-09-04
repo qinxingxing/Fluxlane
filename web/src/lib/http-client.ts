@@ -20,13 +20,13 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import { t } from 'i18next'
 import { toast } from 'sonner'
 
+import { API_BASE_URL } from '@/lib/api-base-url'
 import {
   applyAuthRotation,
   clearAuthentication,
   isVoluntarySignOutInProgress,
   refreshAuthentication,
 } from '@/lib/auth-session'
-import { API_BASE_URL } from '@/lib/api-base-url'
 import { getServerErrorMessageKey } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 

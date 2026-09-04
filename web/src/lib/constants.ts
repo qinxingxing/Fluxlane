@@ -21,7 +21,10 @@ For commercial licensing, please contact support@quantumnous.com
  */
 
 // System Configuration Defaults
-export const DEFAULT_SYSTEM_NAME = 'New API'
+// Brand default before /api/status resolves. Page-level SEO titles always
+// win over this (see @/lib/seo); it only covers first-paint branding so a
+// Fluxlane page never flashes the upstream project name.
+export const DEFAULT_SYSTEM_NAME = 'Fluxlane'
 export const DEFAULT_LOGO = '/logo.png'
 
 // LocalStorage Keys

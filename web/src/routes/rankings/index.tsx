@@ -16,11 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
 import z from 'zod'
 
 import { Rankings } from '@/features/rankings'
 import { getFreshModuleAccess } from '@/lib/nav-modules'
+import { isPrerenderHydration } from '@/lib/prerender-bridge'
+import { rankingsSeo, usePageSeo } from '@/lib/seo'
 import { useAuthStore } from '@/stores/auth-store'
 
 const rankingsSearchSchema = z.object({
@@ -30,12 +32,19 @@ const rankingsSearchSchema = z.object({
     .catch(undefined),
 })
 
+function RankingsPage() {
+  usePageSeo(rankingsSeo)
+  return <Rankings />
+}
+
 export const Route = createFileRoute('/rankings/')({
   validateSearch: rankingsSearchSchema,
   beforeLoad: async ({ location }) => {
+    if (isPrerenderHydration()) return
     const access = await getFreshModuleAccess('rankings')
     if (!access.enabled) {
-      throw redirect({ to: '/' })
+      // Disabled rankings must 404. Redirecting to `/` would be a soft 404.
+      throw notFound()
     }
     if (access.requireAuth) {
       const { auth } = useAuthStore.getState()
@@ -47,5 +56,5 @@ export const Route = createFileRoute('/rankings/')({
       }
     }
   },
-  component: Rankings,
+  component: RankingsPage,
 })

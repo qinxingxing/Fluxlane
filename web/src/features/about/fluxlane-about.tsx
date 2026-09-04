@@ -6,12 +6,19 @@ it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Code2, Eye, Network, ShieldCheck } from 'lucide-react'
 
-import { Footer } from '@/components/layout/components/footer'
 import { Button } from '@/components/ui/button'
 
 const values = [
@@ -56,8 +63,8 @@ export function FluxlaneAbout() {
               让 AI 能力更顺畅地进入每一个产品
             </h1>
             <p className='text-muted-foreground max-w-xl text-base leading-relaxed'>
-              Fluxlane.ai
-              提供统一、稳定、透明的 AI 模型 API 服务，帮助开发者与企业简化模型接入和用量管理，降低开发与运维成本，让
+              Fluxlane.ai 提供统一、稳定、透明的 AI 模型 API
+              服务，帮助开发者与企业简化模型接入和用量管理，降低开发与运维成本，让
               AI 产品更快从创意走向生产。
             </p>
             <div className='flex flex-wrap gap-3 pt-2'>
@@ -100,8 +107,8 @@ export function FluxlaneAbout() {
             </h2>
             <div className='text-muted-foreground space-y-5 leading-relaxed'>
               <p>
-                Fluxlane.ai
-                是面向开发者与企业的 AI 模型 API 聚合与用量管理平台。通过兼容 OpenAI
+                Fluxlane.ai 是面向开发者与企业的 AI 模型 API
+                聚合与用量管理平台。通过兼容 OpenAI
                 的统一接口，开发者无需针对不同模型重复适配，即可完成模型调用、Token
                 管理、用量查询与成本核对。
               </p>
@@ -122,11 +129,12 @@ export function FluxlaneAbout() {
               <div className='text-muted-foreground space-y-4 leading-relaxed'>
                 <p>
                   Fluxlane.ai 是 Access Technology Ventures 控股并支持发展的 AI
-                  基础设施平台，由卓普云科技日常运营。Access Technology Ventures 是
-                  Access Industries 旗下专注科技领域的长期投资平台。
+                  基础设施平台，由卓普云科技日常运营。Access Technology Ventures
+                  是 Access Industries 旗下专注科技领域的长期投资平台。
                 </p>
                 <p>
-                  其科技投资组合包括 DigitalOcean、Alibaba、Amazon、Agora、Pinduoduo、PingCAP、SpaceX
+                  其科技投资组合包括
+                  DigitalOcean、Alibaba、Amazon、Agora、Pinduoduo、PingCAP、SpaceX
                   和 Zhihu 等企业。
                 </p>
               </div>
@@ -136,7 +144,8 @@ export function FluxlaneAbout() {
                 target='_blank'
                 rel='noopener noreferrer'
               >
-                了解 Access Technology Ventures <ArrowRight className='size-4' />
+                了解 Access Technology Ventures{' '}
+                <ArrowRight className='size-4' />
               </a>
               <a
                 className='inline-flex items-center gap-2 text-sm text-cyan-400 hover:underline'
@@ -150,11 +159,15 @@ export function FluxlaneAbout() {
             <div className='border-border/50 bg-muted/15 rounded-2xl border p-8'>
               <h3 className='text-xl font-semibold'>长期资本，长期建设</h3>
               <p className='text-muted-foreground mt-4 leading-relaxed'>
-                Access 强调灵活、长期的合作方式，为消费科技、企业软件、云计算与基础设施领域的成长型公司提供资本和战略支持。
+                Access
+                强调灵活、长期的合作方式，为消费科技、企业软件、云计算与基础设施领域的成长型公司提供资本和战略支持。
               </p>
               <div className='mt-8 grid grid-cols-2 gap-3'>
                 {['DigitalOcean', 'SpaceX', 'Amazon', 'Alibaba'].map((name) => (
-                  <div key={name} className='border-border/50 rounded-lg border px-3 py-2 text-center text-xs'>
+                  <div
+                    key={name}
+                    className='border-border/50 rounded-lg border px-3 py-2 text-center text-xs'
+                  >
                     {name}
                   </div>
                 ))}
@@ -166,22 +179,30 @@ export function FluxlaneAbout() {
         <section className='border-border/40 border-y'>
           <div className='mx-auto max-w-6xl px-6 py-20'>
             <div className='mb-12 text-center'>
-              <p className='text-xs font-semibold tracking-widest text-violet-300 uppercase'>我们的价值观</p>
-              <h2 className='mt-3 text-2xl font-bold tracking-tight md:text-3xl'>以可靠工程和清晰体验创造长期价值</h2>
+              <p className='text-xs font-semibold tracking-widest text-violet-300 uppercase'>
+                我们的价值观
+              </p>
+              <h2 className='mt-3 text-2xl font-bold tracking-tight md:text-3xl'>
+                以可靠工程和清晰体验创造长期价值
+              </h2>
             </div>
             <div className='grid gap-5 md:grid-cols-3'>
               {values.map(({ icon: Icon, title, description, accent }) => (
-                <article key={title} className='border-border/50 bg-muted/10 rounded-2xl border p-7'>
+                <article
+                  key={title}
+                  className='border-border/50 bg-muted/10 rounded-2xl border p-7'
+                >
                   <Icon className={`size-7 ${accent}`} />
                   <h3 className='mt-6 text-lg font-semibold'>{title}</h3>
-                  <p className='text-muted-foreground mt-3 text-sm leading-relaxed'>{description}</p>
+                  <p className='text-muted-foreground mt-3 text-sm leading-relaxed'>
+                    {description}
+                  </p>
                 </article>
               ))}
             </div>
           </div>
         </section>
       </main>
-      <Footer />
     </>
   )
 }
