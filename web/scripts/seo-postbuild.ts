@@ -251,14 +251,19 @@ function deterministicDehydrate(
   const queries = copy.queries
   if (Array.isArray(queries)) {
     copy.queries = queries.map((entry) => {
-      const query = entry as Record<string, unknown>
-      const state = query.state as Record<string, unknown> | undefined
+      const query = { ...(entry as Record<string, unknown>) }
+      query.dehydratedAt = 0
+      query.fetchStatus = 'idle'
+      const state = query.state
+        ? { ...(query.state as Record<string, unknown>) }
+        : undefined
       if (state) {
         state.dataUpdatedAt = 0
         state.fetchSuccessTime = 0
+        state.errorUpdatedAt = 0
         if (Array.isArray(state.fetchStatus)) state.fetchStatus = 'idle'
+        query.state = state
       }
-      query.fetchStatus = 'idle'
       return query
     })
   }
@@ -457,6 +462,14 @@ function stripLeadingHoistedTags(content: string): string {
   return out
 }
 
+function stripSuspenseMarkers(content: string): string {
+  return content
+    .replaceAll('<!--$-->', '')
+    .replaceAll('<!--/$-->', '')
+    .replaceAll('<!--$?-->', '')
+    .replaceAll('<!--$!-->', '')
+}
+
 function composePageHtml(opts: {
   shell: string
   routeSeo: ComposableSeo
@@ -488,7 +501,9 @@ function composePageHtml(opts: {
   if (!html.includes(ROOT_DIV)) {
     fail('dist/index.html has no empty #root container to inject into')
   }
-  const normalizedContent = stripLeadingHoistedTags(content)
+  const normalizedContent = stripSuspenseMarkers(
+    stripLeadingHoistedTags(content)
+  )
   html = html.replace(
     /<div id="root"[^>]*><\/div>/,
     () =>
@@ -804,7 +819,9 @@ function validateOutput(renderedRoutes: string[]): void {
 
 type LoadedRouter = {
   load: () => Promise<unknown>
-  state: { location: { pathname: string } }
+  loadRouteChunk: (route: unknown) => Promise<unknown>
+  routesById: Record<string, unknown>
+  state: { location: { pathname: string }; matches: { routeId: string }[] }
 }
 
 type PrefetchableQueryClient = {
@@ -949,12 +966,24 @@ async function prerenderRoute(opts: {
     routeTree: modules.routeTree,
     context: { queryClient },
     defaultPreload: 'intent',
+    ssr: { nonce: '' },
     history: modules.createMemoryHistory({ initialEntries: [routePath] }),
   })
+  ;(router as { ssr?: Record<string, never> }).ssr = {}
   try {
     await router.load()
+    const routes = router.state.matches.map(
+      (match) => router.routesById[match.routeId]
+    )
+    for (const route of routes) {
+      await router.loadRouteChunk(route)
+    }
   } catch (error) {
     log(`router.load(${routePath}) threw: ${String(error)}`)
+  }
+  for (const route of Object.values(router.routesById)) {
+    const options = (route as { options?: { wrapInSuspense?: boolean } }).options
+    if (options) options.wrapInSuspense = false
   }
 
   const content = modules.renderToString(
@@ -1032,6 +1061,7 @@ async function main(): Promise<void> {
     writeStaticFiles([])
     validateOutput([])
     log('console build finalized (noindex shell + robots/_headers/_redirects)')
+    process.exit(0)
     return
   }
 
@@ -1086,6 +1116,7 @@ async function main(): Promise<void> {
   log(
     'public build finalized (prerendered pages + robots/sitemap/_headers/_redirects)'
   )
+  process.exit(0)
 }
 
 void main()

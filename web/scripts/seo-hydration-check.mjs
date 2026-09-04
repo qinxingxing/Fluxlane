@@ -61,7 +61,10 @@ const MIME = {
   '.woff2': 'font/woff2',
 }
 
-const PORT = 8123
+const PORT = Number(process.env.SEO_HYDRATION_PORT || 18223)
+const CHROME_LIBS = process.env.LD_LIBRARY_PATH
+  ? undefined
+  : '/tmp/chrome-libs/root/usr/lib/x86_64-linux-gnu'
 
 function startServer() {
   const server = createServer(async (req, res) => {
@@ -111,6 +114,16 @@ async function main() {
   const browser = await chromium.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-dev-shm-usage'],
+    env: {
+      ...process.env,
+      ...(CHROME_LIBS
+        ? {
+            LD_LIBRARY_PATH: [CHROME_LIBS, process.env.LD_LIBRARY_PATH]
+              .filter(Boolean)
+              .join(':'),
+          }
+        : {}),
+    },
   })
 
   let failures = 0

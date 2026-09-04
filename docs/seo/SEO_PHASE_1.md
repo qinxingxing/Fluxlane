@@ -43,6 +43,20 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 - www unknown paths are real 404s
 - `robots.txt` / `sitemap.xml` are not covered by an SPA fallback
 
+## Current verification (development host)
+
+Done:
+
+- Public prerender does not contact `api.fluxlane.ai`
+- Same-commit consecutive public builds: prerendered HTML SHA256 match (after zeroing per-query `dehydratedAt`)
+- Legal URLs are `noindex` and absent from `sitemap.xml`
+- Rankings is absent from the sitemap; disabled rankings uses `notFound` (not `/`)
+- Console build: `Disallow: /`, meta robots, `X-Robots-Tag`
+
+Not done (blocks merge):
+
+- React hydration **#418 is still non-zero** on all prerendered pages. The recoverable error's component stack points at TanStack Router `Match`/`Matches` `Suspense`. `bun run seo:hydration-check` currently fails. Do not merge until that check is green.
+
 ## Hydration check on the development host
 
 Public `dist/` plus Playwright Chromium (already bootstrapped on the dev host under `~/.cache/ms-playwright`). The check serves `dist`, blocks `/api/**`, and fails on hydration errors or a disappearing H1.

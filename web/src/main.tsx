@@ -108,7 +108,13 @@ const router = createRouter({
   context: { queryClient },
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
+  ...(prerenderState ? { ssr: { nonce: '' } } : {}),
 })
+
+if (prerenderState) {
+  // Matches.tsx reads `router.ssr` (instance field), not `options.ssr`.
+  ;(router as { ssr?: Record<string, never> }).ssr = {}
+}
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
@@ -168,7 +174,17 @@ async function start(): Promise<void> {
     hydrate(queryClient, prerenderState.dehydratedQueries as DehydratedState)
   }
 
-  const app = (
+  const app = prerenderState ? (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <FontProvider>
+          <DirectionProvider>
+            <RouterProvider router={router} />
+          </DirectionProvider>
+        </FontProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  ) : (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
@@ -194,6 +210,9 @@ async function start(): Promise<void> {
       )
       for (const route of routes) {
         await router.loadRouteChunk(route)
+      }
+      for (const route of Object.values(router.routesById)) {
+        route.options.wrapInSuspense = false
       }
     } catch {
       /* navigation errors surface through the router UI */
