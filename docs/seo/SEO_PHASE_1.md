@@ -67,3 +67,5 @@ cd web
 VITE_SITE_MODE=public bun run build
 bun run seo:hydration-check
 ```
+
+Cloudflare Pages Preview for `web/` uses **npm** (not Bun). Keep TanStack Router at `1.170.18` and pin `@tanstack/react-router-devtools` / `@tanstack/router-plugin` so `npm install` does not ERESOLVE. Commit `web/package-lock.json`. The prerender step still runs **Bun** (`env -u NODE_ENV bun scripts/seo-postbuild.ts`); install the `bun` npm package so Pages has `node_modules/.bin/bun` after `npm install`. Do not add `*.pages.dev` to production CORS.
