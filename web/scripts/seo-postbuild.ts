@@ -252,6 +252,7 @@ function gitLastmod(sources: string[]): string | null {
  */
 function installShims(): void {
   const g = globalThis as Record<string, unknown>
+  Date.now = () => 1_700_000_000_000
   const storage = {
     getItem: () => null as string | null,
     setItem: () => undefined,
@@ -829,7 +830,6 @@ function waitForSerialization(router: {
 }
 
 async function loadPrerenderModules(): Promise<PrerenderModules> {
-  process.env.NODE_ENV = 'production'
   installShims()
   banProductionApi()
 

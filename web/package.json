@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "rsbuild dev",
-    "build": "rsbuild build && bun scripts/seo-postbuild.ts",
+    "build": "rsbuild build && env -u NODE_ENV bun scripts/seo-postbuild.ts",
     "build:check": "tsgo -b && bun run build",
     "typecheck": "tsgo -b",
     "lint": "oxlint -c .oxlintrc.json .",

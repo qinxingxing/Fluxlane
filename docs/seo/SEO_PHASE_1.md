@@ -48,14 +48,15 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 Done:
 
 - Public prerender does not contact `api.fluxlane.ai`
-- Same-commit consecutive public builds: prerendered HTML SHA256 match (after zeroing per-query `dehydratedAt`)
+- Same-commit consecutive public builds: prerendered HTML SHA256 match (frozen `Date.now` during SSR plus fixed Query dehydrate timestamps)
 - Legal URLs are `noindex` and absent from `sitemap.xml`
 - Rankings is absent from the sitemap; disabled rankings uses `notFound` (not `/`)
 - Console build: `Disallow: /`, meta robots, `X-Robots-Tag`
+- React hydration **#418 = 0** on `/`, `/about`, `/pricing`, `/privacy-policy`, `/user-agreement` (JS enabled and disabled; H1/body persist)
 
 Not done (blocks merge):
 
-- React hydration **#418 is still non-zero** on all prerendered pages. The recoverable error's component stack points at TanStack Router `Match`/`Matches` `Suspense`. `bun run seo:hydration-check` currently fails. Do not merge until that check is green.
+- Cloudflare Pages **Preview** of this revision (static HTML, metadata, robots/sitemap, 404, CSS/JS, hydration). Do not merge until that Preview is reviewed.
 
 ## Hydration check on the development host
 
