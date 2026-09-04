@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute } from '@tanstack/react-router'
 
 import { About } from '@/features/about'
+import { getAboutContent } from '@/features/about/api'
 import { aboutSeo, usePageSeo } from '@/lib/seo'
 
 function AboutPage() {
@@ -27,5 +28,11 @@ function AboutPage() {
 }
 
 export const Route = createFileRoute('/about/')({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ['about-content'],
+      queryFn: getAboutContent,
+      staleTime: 5 * 60 * 1000,
+    }),
   component: AboutPage,
 })

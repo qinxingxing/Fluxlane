@@ -19,16 +19,15 @@ For commercial licensing, please contact support@quantumnous.com
 /**
  * Bridge between the build-time prerenderer and the client bundle.
  *
- * The SEO post-build step emits `window.__FLUXLANE_PRERENDER__` into each
- * prerendered HTML file. The client uses it to (1) hydrate the react-query
- * cache with the exact data the HTML was rendered with, and (2) pin the
- * initial i18n language to the prerendered one so hydration is stable, then
- * switch to the visitor's detected language after mount.
+ * Prerendered pages ship TanStack Router's `window.$_TSR` bootstrap plus a
+ * small `__FLUXLANE_PRERENDER__` flag. Query/loader state is restored by
+ * the official dehydrate/hydrate callbacks; this module only records that
+ * the first client tree must match the static HTML (i18n pin, skip auth
+ * bootstrap) until hydration commits.
  */
 
 export type PrerenderState = {
   route: string
-  dehydratedQueries?: unknown
 }
 
 declare global {
@@ -79,8 +78,13 @@ export function readPrerenderState(): PrerenderState | null {
   const state = window.__FLUXLANE_PRERENDER__ ?? null
   if (state) {
     wasPrerendered = true
+    return state
   }
-  return state
+  if (window.$_TSR) {
+    wasPrerendered = true
+    return { route: window.location.pathname }
+  }
+  return null
 }
 
 /** Whether the current page was served from a prerendered HTML file. */

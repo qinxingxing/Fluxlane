@@ -32,9 +32,10 @@ For commercial licensing, please contact support@quantumnous.com
  *
  * Determinism contract (enforced): the prerenderer NEVER contacts the
  * production API. All request data comes from local, versioned-in-Git
- * defaults, and react-query dehydration timestamps are zeroed, so the same
- * commit always produces byte-identical HTML. Live data (prices, model
- * tables, admin content) is refreshed by the client after hydration.
+ * defaults. Query timestamps in the serialized payload use a fixed epoch
+ * so the same commit always produces byte-identical HTML. Live data
+ * (prices, model tables, admin content) is refreshed by the client after
+ * hydration.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -240,36 +241,6 @@ function gitLastmod(sources: string[]): string | null {
   }
 }
 
-/** Zero wall-clock fields so identical commits hydrate byte-identically. */
-function deterministicDehydrate(
-  dehydrated: Record<string, unknown>
-): Record<string, unknown> {
-  const copy: Record<string, unknown> = {
-    ...dehydrated,
-    dehydratedAt: 0,
-  }
-  const queries = copy.queries
-  if (Array.isArray(queries)) {
-    copy.queries = queries.map((entry) => {
-      const query = { ...(entry as Record<string, unknown>) }
-      query.dehydratedAt = 0
-      query.fetchStatus = 'idle'
-      const state = query.state
-        ? { ...(query.state as Record<string, unknown>) }
-        : undefined
-      if (state) {
-        state.dataUpdatedAt = 0
-        state.fetchSuccessTime = 0
-        state.errorUpdatedAt = 0
-        if (Array.isArray(state.fetchStatus)) state.fetchStatus = 'idle'
-        query.state = state
-      }
-      return query
-    })
-  }
-  return copy
-}
-
 // ============================================================================
 // Browser shims so the React tree can render outside a browser
 // ============================================================================
@@ -375,6 +346,9 @@ interface AdapterConfig {
 
 async function prerenderAdapter(config: AdapterConfig): Promise<AdapterResponse> {
   const url = config.url ?? ''
+  if (/api\.fluxlane\.ai/i.test(url)) {
+    fail(`prerender contacted production API via axios: ${url}`)
+  }
   const method = (config.method ?? 'get').toLowerCase()
 
   if (method === 'post' && url === '/api/user/auth/refresh') {
@@ -443,40 +417,38 @@ function headTagsFor(seo: ComposableSeo): string {
 const ROOT_DIV = '<div id="root" translate="no" class="notranslate"></div>'
 
 /**
- * React 19 Float prepends hoisted tags (<link preload>, <meta>, <title>)
- * to the renderToString output. In the browser React hoists them into
- * <head> during hydration, which would mismatch the static HTML, so drop
- * the leading hoisted run from the prerendered markup; the client re-adds
- * them to the head itself.
+ * Official renderRouterToString wraps the app in html/body so it can inject
+ * `window.$_TSR` before `</body>`. We keep the Rsbuild shell (assets live in
+ * its head/body) and hydrate only `#root`, so peel the app markup and the
+ * bootstrap scripts out of that temporary document.
  */
-function stripLeadingHoistedTags(content: string): string {
-  let out = content
-  for (;;) {
-    const next = out.replace(
-      /^\s*(?:<!--.*?-->\s*)?(?:<(?:link|meta)\b[^>]*\/>|<title>[\s\S]*?<\/title>)\s*/,
-      ''
-    )
-    if (next === out) break
-    out = next
+function splitSsrDocument(ssrHtml: string): { rootInner: string; tsrScripts: string } {
+  const withoutDoctype = ssrHtml.replace(/^<!DOCTYPE html>/i, '')
+  const rootOpen = withoutDoctype.match(/<div id="root"[^>]*>/)
+  if (!rootOpen || rootOpen.index === undefined) {
+    fail('SSR document is missing #root')
   }
-  return out
-}
-
-function stripSuspenseMarkers(content: string): string {
-  return content
-    .replaceAll('<!--$-->', '')
-    .replaceAll('<!--/$-->', '')
-    .replaceAll('<!--$?-->', '')
-    .replaceAll('<!--$!-->', '')
+  const innerStart = rootOpen.index + rootOpen[0].length
+  const bodyClose = withoutDoctype.lastIndexOf('</body>')
+  if (bodyClose === -1) fail('SSR document is missing </body>')
+  const beforeBodyClose = withoutDoctype.slice(innerStart, bodyClose)
+  const rootClose = beforeBodyClose.lastIndexOf('</div>')
+  if (rootClose === -1) fail('SSR document is missing the #root closer')
+  const rootInner = beforeBodyClose.slice(0, rootClose)
+  const tsrScripts = beforeBodyClose.slice(rootClose + '</div>'.length).trim()
+  if (!tsrScripts.includes('$_TSR')) {
+    fail('SSR document is missing TanStack Router dehydrate scripts')
+  }
+  return { rootInner, tsrScripts }
 }
 
 function composePageHtml(opts: {
   shell: string
   routeSeo: ComposableSeo
-  content: string
-  dehydratedQueries: unknown
+  rootInner: string
+  tsrScripts: string
 }): string {
-  const { shell, routeSeo, content, dehydratedQueries } = opts
+  const { shell, routeSeo, rootInner, tsrScripts } = opts
 
   let html = replaceLiteral(
     shell,
@@ -501,22 +473,16 @@ function composePageHtml(opts: {
   if (!html.includes(ROOT_DIV)) {
     fail('dist/index.html has no empty #root container to inject into')
   }
-  const normalizedContent = stripSuspenseMarkers(
-    stripLeadingHoistedTags(content)
-  )
   html = html.replace(
     /<div id="root"[^>]*><\/div>/,
     () =>
-      `<div id="root" translate="no" class="notranslate">${normalizedContent}</div>`
+      `<div id="root" translate="no" class="notranslate">${rootInner}</div>`
   )
 
-  // The hydration bridge must execute before the deferred bundle. Inline
-  // scripts run during parsing, so placing it right after <body> is enough.
-  const bridge = `<script>window.__FLUXLANE_PRERENDER__=${escapeJsonForScript({
+  const flag = `<script>window.__FLUXLANE_PRERENDER__=${escapeJsonForScript({
     route: routeSeo.canonicalPath,
-    dehydratedQueries,
   })};</script>`
-  html = replaceLiteral(html, '<body>', `<body>\n    ${bridge}`)
+  html = replaceLiteral(html, '<body>', `<body>\n    ${flag}\n    ${tsrScripts}`)
 
   return html
 }
@@ -763,7 +729,8 @@ function validateOutput(renderedRoutes: string[]): void {
       ['og:title', 'property="og:title"'],
       ['twitter:card', 'name="twitter:card"'],
       ['h1', '<h1'],
-      ['prerender bridge', '__FLUXLANE_PRERENDER__'],
+      ['prerender flag', '__FLUXLANE_PRERENDER__'],
+      ['router dehydrate', '$_TSR'],
     ]
     for (const [label, needle] of checks) {
       if (!html.includes(needle)) {
@@ -817,130 +784,75 @@ function validateOutput(renderedRoutes: string[]): void {
 // Prerender driver
 // ============================================================================
 
-type LoadedRouter = {
-  load: () => Promise<unknown>
-  loadRouteChunk: (route: unknown) => Promise<unknown>
-  routesById: Record<string, unknown>
-  state: { location: { pathname: string }; matches: { routeId: string }[] }
-}
-
-type PrefetchableQueryClient = {
-  prefetchQuery: (options: unknown) => Promise<unknown>
-}
-
 type PrerenderModules = {
-  QueryClient: new (options: unknown) => unknown
-  QueryClientProvider: unknown
-  ThemeProvider: unknown
-  FontProvider: unknown
-  DirectionProvider: unknown
-  createRouter: (options: unknown) => LoadedRouter
-  createMemoryHistory: (options: unknown) => unknown
-  RouterProvider: unknown
-  routeTree: unknown
-  renderToString: (element: unknown) => string
+  createAppRouter: () => {
+    serverSsr?: {
+      isSerializationFinished: () => boolean
+      onSerializationFinished: (listener: () => void) => unknown
+    }
+  }
+  createRequestHandler: (opts: {
+    request: Request
+    createRouter: () => unknown
+  }) => (cb: (args: {
+    request: Request
+    responseHeaders: Headers
+    router: unknown
+  }) => Promise<Response>) => Promise<Response>
+  renderRouterToString: (opts: {
+    request: Request
+    responseHeaders: Headers
+    router: unknown
+    children: unknown
+  }) => Promise<Response>
+  RouterServer: unknown
   createElement: (
     type: unknown,
     props: unknown,
     ...children: unknown[]
   ) => unknown
-  dehydrate: (client: unknown) => unknown
-  markPrerendering: () => void
-  prefetchRouteData: (
-    routePath: string,
-    queryClient: PrefetchableQueryClient
-  ) => Promise<void>
+}
+
+function waitForSerialization(router: {
+  serverSsr?: {
+    isSerializationFinished: () => boolean
+    onSerializationFinished: (listener: () => void) => unknown
+  }
+}): Promise<void> {
+  const ssr = router.serverSsr
+  if (!ssr) return Promise.resolve()
+  if (ssr.isSerializationFinished()) return Promise.resolve()
+  return new Promise((resolve) => {
+    ssr.onSerializationFinished(() => resolve())
+    setTimeout(resolve, 100)
+  })
 }
 
 async function loadPrerenderModules(): Promise<PrerenderModules> {
+  process.env.NODE_ENV = 'production'
   installShims()
   banProductionApi()
 
-  // Mark the runtime as the prerenderer before any route code runs, so
-  // origin-dependent behaviors (domain redirects, auth bootstrap) are
-  // skipped inside the rendered tree.
   const bridge = await import('../src/lib/prerender-bridge')
   bridge.markPrerendering()
 
   const http = await import('../src/lib/http-client')
   ;(http.api.defaults as { adapter: unknown }).adapter = prerenderAdapter
 
-  const reactQuery = await import('@tanstack/react-query')
-  const reactRouter = await import('@tanstack/react-router')
-  const history = await import('@tanstack/history')
-  const reactDomServer = await import('react-dom/server')
-  const react = await import('react')
-  // Route components render translated text; initialize i18n before render
-  // and pin English so the prerendered HTML is deterministic regardless of
-  // the build machine's environment (the root route switches the visitor to
-  // their detected language after hydration).
   const i18n = (await import('../src/i18n/config')).default
   await i18n.changeLanguage('en')
-  const { routeTree } = await import('../src/routeTree.gen')
-  const { ThemeProvider } = await import('../src/context/theme-provider')
-  const { FontProvider } = await import('../src/context/font-provider')
-  const { DirectionProvider } = await import(
-    '../src/context/direction-provider'
-  )
-  const { getAboutContent } = await import('../src/features/about/api')
-  const {
-    getPrivacyPolicy,
-    getUserAgreement,
-  } = await import('../src/features/legal/api')
-  const { getStatus } = await import('../src/lib/api')
 
-  const prefetchRouteData: PrerenderModules['prefetchRouteData'] = async (
-    routePath,
-    queryClient
-  ) => {
-    // Every query is answered by the local mock adapter: the prerendered
-    // HTML depends only on this repository's code, never on live data.
-    await queryClient.prefetchQuery({
-      queryKey: ['status'],
-      queryFn: () => getStatus(),
-      staleTime: 5 * 60 * 1000,
-    })
-    if (routePath === '/about') {
-      await queryClient.prefetchQuery({
-        queryKey: ['about-content'],
-        queryFn: () => getAboutContent(),
-        staleTime: 5 * 60 * 1000,
-      })
-    }
-    if (routePath === '/privacy-policy') {
-      await queryClient.prefetchQuery({
-        queryKey: ['privacy-policy'],
-        queryFn: () => getPrivacyPolicy(),
-        staleTime: 10 * 60 * 1000,
-      })
-    }
-    if (routePath === '/user-agreement') {
-      await queryClient.prefetchQuery({
-        queryKey: ['user-agreement'],
-        queryFn: () => getUserAgreement(),
-        staleTime: 10 * 60 * 1000,
-      })
-    }
-    // Deliberately NOT prefetched: pricing and rankings payloads. The live
-    // tables are dynamic data; the client renders them after hydration.
-  }
+  const react = await import('react')
+  const ssrServer = await import('@tanstack/react-router/ssr/server')
+  const { createAppRouter } = await import('../src/router')
 
   return {
-    QueryClient: reactQuery.QueryClient as PrerenderModules['QueryClient'],
-    QueryClientProvider: reactQuery.QueryClientProvider,
-    ThemeProvider,
-    FontProvider,
-    DirectionProvider,
-    createRouter: reactRouter.createRouter as PrerenderModules['createRouter'],
-    createMemoryHistory:
-      history.createMemoryHistory as PrerenderModules['createMemoryHistory'],
-    RouterProvider: reactRouter.RouterProvider,
-    routeTree,
-    renderToString: reactDomServer.renderToString,
+    createAppRouter,
+    createRequestHandler:
+      ssrServer.createRequestHandler as PrerenderModules['createRequestHandler'],
+    renderRouterToString: ssrServer.renderRouterToString,
+    RouterServer: ssrServer.RouterServer,
     createElement: react.createElement,
-    dehydrate: reactQuery.dehydrate,
-    markPrerendering: bridge.markPrerendering,
-    prefetchRouteData,
   }
 }
 
@@ -952,73 +864,69 @@ async function prerenderRoute(opts: {
   outputPath: string
 }): Promise<boolean> {
   const { routePath, routeSeo, shell, modules, outputPath } = opts
-
-  const queryClient = new modules.QueryClient({
-    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  const canonicalUrl = `${PUBLIC_ORIGIN}${routePath}`
+  const request = new Request(canonicalUrl)
+  const handler = modules.createRequestHandler({
+    request,
+    createRouter: modules.createAppRouter,
   })
 
-  await modules.prefetchRouteData(
-    routePath,
-    queryClient as unknown as PrefetchableQueryClient
-  )
-
-  const router = modules.createRouter({
-    routeTree: modules.routeTree,
-    context: { queryClient },
-    defaultPreload: 'intent',
-    ssr: { nonce: '' },
-    history: modules.createMemoryHistory({ initialEntries: [routePath] }),
-  })
-  ;(router as { ssr?: Record<string, never> }).ssr = {}
+  let response: Response
   try {
-    await router.load()
-    const routes = router.state.matches.map(
-      (match) => router.routesById[match.routeId]
-    )
-    for (const route of routes) {
-      await router.loadRouteChunk(route)
-    }
-  } catch (error) {
-    log(`router.load(${routePath}) threw: ${String(error)}`)
-  }
-  for (const route of Object.values(router.routesById)) {
-    const options = (route as { options?: { wrapInSuspense?: boolean } }).options
-    if (options) options.wrapInSuspense = false
-  }
-
-  const content = modules.renderToString(
-    modules.createElement(
-      modules.QueryClientProvider,
-      { client: queryClient },
-      modules.createElement(
-        modules.ThemeProvider,
-        null,
-        modules.createElement(
-          modules.FontProvider,
-          null,
+    response = await handler(
+      async ({ request: req, responseHeaders, router }) => {
+        await waitForSerialization(
+          router as Parameters<typeof waitForSerialization>[0]
+        )
+        const app = modules.createElement(modules.RouterServer, { router })
+        const document = modules.createElement(
+          'html',
+          { lang: 'en' },
+          modules.createElement('head', null),
           modules.createElement(
-            modules.DirectionProvider,
+            'body',
             null,
-            modules.createElement(modules.RouterProvider, { router })
+            modules.createElement(
+              'div',
+              { id: 'root', translate: 'no', className: 'notranslate' },
+              app
+            )
           )
         )
-      )
+        return modules.renderRouterToString({
+          request: req,
+          responseHeaders,
+          router,
+          children: document,
+        })
+      }
     )
-  )
-  if (content.trim().length < 200) {
+  } catch (error) {
+    log(`SSR ${routePath} threw: ${String(error)}`)
+    return false
+  }
+
+  if (!response.ok && response.status !== 404) {
+    log(`SSR ${routePath} status ${response.status}`)
+  }
+
+  const ssrHtml = await response.text()
+  if (ssrHtml.trim().length < 200) {
     log(`SKIP ${routePath}: rendered empty (module disabled or auth-gated)`)
     return false
   }
 
-  const dehydrated = deterministicDehydrate(
-    modules.dehydrate(queryClient) as Record<string, unknown>
-  )
+  const { rootInner, tsrScripts } = splitSsrDocument(ssrHtml)
+  if (rootInner.trim().length < 200) {
+    log(`SKIP ${routePath}: #root empty after SSR`)
+    return false
+  }
 
   const html = composePageHtml({
     shell,
     routeSeo,
-    content,
-    dehydratedQueries: dehydrated,
+    rootInner,
+    tsrScripts,
   })
 
   mkdirSync(path.dirname(outputPath), { recursive: true })

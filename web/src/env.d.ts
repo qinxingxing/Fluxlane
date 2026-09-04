@@ -21,6 +21,7 @@ For commercial licensing, please contact support@quantumnous.com
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   readonly VITE_PUBLIC_API_BASE_URL?: string
+  readonly VITE_SITE_MODE?: 'public' | 'console'
 }
 
 interface ImportMeta {

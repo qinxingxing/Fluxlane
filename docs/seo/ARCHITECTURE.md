@@ -21,7 +21,12 @@ Cloudflare Pages Preview (`*.pages.dev`) is a different origin. It will not rece
 
 - Public mode prerenders `/`, `/about`, `/pricing`, `/privacy-policy`, `/user-agreement` into `dist/<path>/index.html`.
 - The prerenderer uses an in-repo axios adapter. It must not fetch `api.fluxlane.ai`.
-- Query cache is dehydrated into `window.__FLUXLANE_PRERENDER__` with timestamps zeroed so the same commit produces the same HTML.
+- Query/loader state is dehydrated through TanStack Router's official
+  `$_TSR` payload (fixed timestamps in HTML; revived on the client so the
+  first frame is not treated as stale). A small `__FLUXLANE_PRERENDER__`
+  flag pins i18n. Same commit → same HTML.
+- Prerender uses `createRequestHandler` + `RouterServer`; the public
+  client hydrates `#root` with `RouterClient`. Console stays `createRoot`.
 - Live prices, notices, and admin HTML refresh only after hydration.
 - Console mode keeps the SPA shell, `robots.txt` Disallow all, and `X-Robots-Tag: noindex`.
 

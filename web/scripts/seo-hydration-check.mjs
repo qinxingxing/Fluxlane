@@ -38,8 +38,9 @@ For commercial licensing, please contact support@quantumnous.com
  */
 
 import { createServer } from 'node:http'
+import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -109,7 +110,68 @@ function startServer() {
 
 const PAGES = ['/', '/about', '/pricing', '/privacy-policy', '/user-agreement']
 
+function htmlPathFor(pagePath) {
+  return pagePath === '/'
+    ? path.join(DIST, 'index.html')
+    : path.join(DIST, pagePath, 'index.html')
+}
+
+function sha256File(filePath) {
+  return createHash('sha256').update(readFileSync(filePath)).digest('hex')
+}
+
+function isHydrationFailureText(text) {
+  return (
+    /hydration|hydrat/i.test(text) ||
+    /React error #4(18|23|25)/.test(text) ||
+    /did not match|Minified React error #418/i.test(text) ||
+    /discarded the server tree/i.test(text) ||
+    /mismatch/i.test(text) ||
+    text.includes('[fluxlane-hydration]')
+  )
+}
+
+async function checkJavaScriptDisabled(browser) {
+  let failures = 0
+  const context = await browser.newContext({ javaScriptEnabled: false })
+  for (const pagePath of PAGES) {
+    const page = await context.newPage()
+    await page.goto(`http://localhost:${PORT}${pagePath}`, {
+      waitUntil: 'domcontentloaded',
+    })
+    const snapshot = await page.evaluate(() => ({
+      h1: document.querySelector('h1')?.textContent?.trim() ?? null,
+      textLen: (document.getElementById('root')?.textContent || '').trim()
+        .length,
+    }))
+    const problems = []
+    if (!snapshot.h1) problems.push('no H1 with JavaScript disabled')
+    if (!snapshot.textLen) problems.push('no body text with JavaScript disabled')
+    if (problems.length > 0) {
+      failures += 1
+      console.log(`FAIL ${pagePath} (javascript disabled)`)
+      for (const problem of problems) console.log(`  - ${problem}`)
+    } else {
+      console.log(
+        `PASS ${pagePath} (javascript disabled, h1="${snapshot.h1.slice(0, 40)}")`
+      )
+    }
+    await page.close()
+  }
+  await context.close()
+  return failures
+}
+
 async function main() {
+  for (const pagePath of PAGES) {
+    const file = htmlPathFor(pagePath)
+    if (!existsSync(file)) {
+      console.error(`missing prerendered file ${file}`)
+      process.exit(1)
+    }
+    console.log(`SHA256 ${pagePath} ${sha256File(file)}`)
+  }
+
   const server = await startServer()
   const browser = await chromium.launch({
     headless: true,
@@ -137,18 +199,12 @@ async function main() {
     })
     page.on('console', (message) => {
       const text = message.text()
-      if (
-        message.type() === 'error' &&
-        (/hydration|hydrat/i.test(text) ||
-          /React error #4(18|23|25)/.test(text) ||
-          text.includes('[fluxlane-hydration]'))
-      ) {
+      if (message.type() === 'error' && isHydrationFailureText(text)) {
         hydrationErrors.push(text)
       }
     })
-    // Block the production API: the deterministic first frame must not
-    // depend on cross-origin network timing.
     await page.route('**/api/**', (route) => route.abort())
+    await page.route('**://api.fluxlane.ai/**', (route) => route.abort())
 
     await page.goto(`http://localhost:${PORT}${pagePath}`, {
       waitUntil: 'domcontentloaded',
@@ -209,6 +265,8 @@ async function main() {
     }
     await context.close()
   }
+
+  failures += await checkJavaScriptDisabled(browser)
 
   await browser.close()
   server.close()

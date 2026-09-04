@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute } from '@tanstack/react-router'
 
 import { PrivacyPolicy } from '@/features/legal'
+import { getPrivacyPolicy } from '@/features/legal/api'
 import { privacyPolicySeo, usePageSeo } from '@/lib/seo'
 
 function PrivacyPolicyPage() {
@@ -27,5 +28,11 @@ function PrivacyPolicyPage() {
 }
 
 export const Route = createFileRoute('/privacy-policy')({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ['privacy-policy'],
+      queryFn: getPrivacyPolicy,
+      staleTime: 10 * 60 * 1000,
+    }),
   component: PrivacyPolicyPage,
 })

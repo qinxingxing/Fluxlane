@@ -36,6 +36,7 @@ import { saveAffiliateCode } from '@/features/auth/lib/storage'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { getSetupStatus } from '@/features/setup/api'
+import { getStatus } from '@/lib/api'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import {
   bootstrapAuthentication,
@@ -194,6 +195,12 @@ let setupStatusChecked = getSetupStatusFromCache()
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ['status'],
+      queryFn: getStatus,
+      staleTime: 5 * 60 * 1000,
+    }),
   // 应用初始化与路由解析前统一校验会话
   beforeLoad: async ({ location }) => {
     // location.href 是本次导航的目标（相对路径）；客户端跳转时

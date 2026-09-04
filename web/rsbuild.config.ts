@@ -63,6 +63,9 @@ export default defineConfig(({ envMode }) => {
         'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
         'import.meta.env.VITE_PUBLIC_API_BASE_URL':
           JSON.stringify(publicApiBaseUrl),
+        'import.meta.env.VITE_SITE_MODE': JSON.stringify(
+          process.env.VITE_SITE_MODE === 'console' ? 'console' : 'public'
+        ),
       },
       entry: {
         index: './src/main.tsx',
