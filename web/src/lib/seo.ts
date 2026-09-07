@@ -48,7 +48,7 @@ const HOME_DESCRIPTION =
   'Access leading AI models through one OpenAI-compatible API. Compare pricing, manage usage, and integrate with Fluxlane using familiar SDKs.'
 
 export const homeSeo: PageSeo = {
-  title: 'Fluxlane – Unified AI API for Leading Models',
+  title: 'fluxlane 大模型聚合平台 - 一个API接入海量 AI 模型',
   description: HOME_DESCRIPTION,
   canonicalPath: '/',
   ogType: 'website',

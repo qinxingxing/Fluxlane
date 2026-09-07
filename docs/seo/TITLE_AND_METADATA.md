@@ -13,6 +13,7 @@ Page SEO is owned by `web/src/lib/seo.ts`. Route components call `usePageSeo` (p
 - Origin: `https://www.fluxlane.ai`
 - Paths have no trailing slash
 - Console routes are not canonicalized onto www
+- Home `<title>`: `fluxlane 大模型聚合平台 - 一个API接入海量 AI 模型`
 
 ## Robots
 
