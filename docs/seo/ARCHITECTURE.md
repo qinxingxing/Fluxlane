@@ -19,7 +19,7 @@ Cloudflare Pages Preview (`*.pages.dev`) is a different origin. It will not rece
 
 `web/scripts/seo-postbuild.ts` runs after `rsbuild build`.
 
-- Public mode prerenders `/`, `/about`, `/pricing`, `/privacy-policy`, `/user-agreement` into `dist/<path>/index.html`.
+- Public mode prerenders `/`, `/about`, `/pricing`, `/privacy-policy`, `/user-agreement` into `dist/index.html` and `dist/<path>.html` (not `dist/<path>/index.html`). Cloudflare Pages directory indexes 308 to a trailing slash; slash-stripping `_redirects` then loop. Pretty URLs on `about.html` keep the slashless canonical.
 - The prerenderer uses an in-repo axios adapter. It must not fetch `api.fluxlane.ai`.
 - Query/loader state is dehydrated through TanStack Router's official
   `$_TSR` payload (fixed timestamps in HTML; revived on the client so the

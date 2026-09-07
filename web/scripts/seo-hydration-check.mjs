@@ -82,6 +82,12 @@ function startServer() {
           const stat = statSync(candidate)
           if (stat.isFile()) return candidate
         }
+        const htmlFile = candidate.endsWith('.html')
+          ? candidate
+          : `${candidate}.html`
+        if (existsSync(htmlFile) && statSync(htmlFile).isFile()) {
+          return htmlFile
+        }
         const index = path.join(candidate, 'index.html')
         return existsSync(index) ? index : null
       }
@@ -113,7 +119,7 @@ const PAGES = ['/', '/about', '/pricing', '/privacy-policy', '/user-agreement']
 function htmlPathFor(pagePath) {
   return pagePath === '/'
     ? path.join(DIST, 'index.html')
-    : path.join(DIST, pagePath, 'index.html')
+    : path.join(DIST, `${pagePath.replace(/^\//, '')}.html`)
 }
 
 function sha256File(filePath) {
