@@ -51,7 +51,7 @@ API, relay, webhook, and health endpoints available.
 ## Security
 
 - Never put a secret in a `VITE_*` variable; build variables are public.
-- Google Tag Manager (`GTM-KCF54QNV`) used to be injected by Nginx `sub_filter` on www `index.html`. Pages does not run that Nginx. Public prerender inserts the same container on Cloudflare production builds (`CF_PAGES_BRANCH=main`) or when `GOOGLE_TAG_MANAGER_ID` is set. Override with that env var; set it empty to disable.
+- Google Tag Manager (`GTM-KCF54QNV`) is hardcoded in `web/index.html`: the official head script and the body noscript iframe. Pages Preview and production both ship it because they share that template.
 - Do not cache `/api/*`, `/v1/*`, login, billing, or webhook responses.
 - Use an exact CORS allowlist when browser credentials are enabled.
 - Keep Stripe webhooks and OAuth server callbacks on the API origin.
