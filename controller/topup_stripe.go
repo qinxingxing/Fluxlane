@@ -363,9 +363,20 @@ func genStripeLink(referenceId string, customerId string, email string, amount i
 				Quantity: stripe.Int64(amount),
 			},
 		},
-		Mode:                stripe.String(string(stripe.CheckoutSessionModePayment)),
-		AllowPromotionCodes: stripe.Bool(setting.StripePromotionCodesEnabled),
+		Mode:                     stripe.String(string(stripe.CheckoutSessionModePayment)),
+		UIMode:                   stripe.String(string(stripe.CheckoutSessionUIModeHosted)),
+		BillingAddressCollection: stripe.String(string(stripe.CheckoutSessionBillingAddressCollectionAuto)),
+		PhoneNumberCollection: &stripe.CheckoutSessionPhoneNumberCollectionParams{
+			Enabled: stripe.Bool(false),
+		},
+		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
+			Enabled: stripe.Bool(false),
+		},
+		AllowPromotionCodes: stripe.Bool(false),
+		SubmitType:          stripe.String(string(stripe.CheckoutSessionSubmitTypeAuto)),
 	}
+	params.AddExtra("integration_identifier", "hosted_web_0001")
+	params.AddExtra("origin_context", "web")
 
 	if "" == customerId {
 		if "" != email {
