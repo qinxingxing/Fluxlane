@@ -55,6 +55,15 @@ const CONSOLE_ORIGIN = 'https://console.fluxlane.ai'
 const GOOGLE_VERIFICATION = process.env.VITE_GOOGLE_SITE_VERIFICATION || ''
 const BING_VERIFICATION = process.env.VITE_BING_SITE_VERIFICATION || ''
 
+/**
+ * www GTM container historically injected by Nginx `sub_filter` on
+ * `/index.html` (`deploy/nginx/fluxlane-separated.conf`). Cloudflare Pages
+ * does not run that Nginx, so public HTML must carry the snippet itself.
+ * Preview/local builds omit it unless `GOOGLE_TAG_MANAGER_ID` is set;
+ * production Pages (`CF_PAGES_BRANCH=main`) uses the Nginx container id.
+ */
+const PRODUCTION_WWW_GTM_ID = 'GTM-KCF54QNV'
+
 type BreadcrumbEntry = { name: string; path: string }
 
 type RouteSeo = {
@@ -225,6 +234,46 @@ function replaceLiteral(
   return (
     subject.slice(0, index) + replacement + subject.slice(index + search.length)
   )
+}
+
+function publicGtmId(): string | null {
+  const override = process.env.GOOGLE_TAG_MANAGER_ID
+  if (override === '') return null
+  if (override !== undefined) {
+    if (!/^GTM-[A-Z0-9]+$/.test(override)) {
+      fail(`invalid GOOGLE_TAG_MANAGER_ID: ${override}`)
+    }
+    return override
+  }
+  if (process.env.CF_PAGES_BRANCH === 'main') return PRODUCTION_WWW_GTM_ID
+  return null
+}
+
+function withGoogleTagManager(html: string): string {
+  const id = publicGtmId()
+  if (!id) return html
+  const headSnippet =
+    `<!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':` +
+    `new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],` +
+    `j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=` +
+    `'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);` +
+    `})(window,document,'script','dataLayer','${id}');</script><!-- End Google Tag Manager -->`
+  const bodySnippet =
+    `<!-- Google Tag Manager (noscript) --><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${id}" ` +
+    `height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>` +
+    `<!-- End Google Tag Manager (noscript) -->`
+  let out = html
+  if (out.includes('<!--Google Analytics-->')) {
+    out = replaceLiteral(
+      out,
+      '<!--Google Analytics-->',
+      `${headSnippet}\n    <!--Google Analytics-->`
+    )
+  } else {
+    out = replaceLiteral(out, '</head>', `    ${headSnippet}\n  </head>`)
+  }
+  out = replaceLiteral(out, '<body>', `<body>\n    ${bodySnippet}`)
+  return out
 }
 
 function gitLastmod(sources: string[]): string | null {
@@ -485,7 +534,7 @@ function composePageHtml(opts: {
   })};</script>`
   html = replaceLiteral(html, '<body>', `<body>\n    ${flag}\n    ${tsrScripts}`)
 
-  return html
+  return withGoogleTagManager(html)
 }
 
 // ============================================================================
@@ -631,7 +680,7 @@ function composePricingModelShell(shell: string): string {
     '</head>',
     '    <meta name="robots" content="noindex, follow" />\n  </head>'
   )
-  return html
+  return withGoogleTagManager(html)
 }
 
 function writeStaticFiles(indexableRoutes: string[]): void {
@@ -767,6 +816,13 @@ function validateOutput(renderedRoutes: string[]): void {
     }
     if (html.includes('>New API</span>')) {
       fail(`${route}: default upstream brand leaked into prerendered HTML`)
+    }
+    const gtmId = publicGtmId()
+    if (gtmId && !html.includes(`dataLayer','${gtmId}'`)) {
+      fail(`${route}: missing Google Tag Manager snippet`)
+    }
+    if (gtmId && !html.includes(`ns.html?id=${gtmId}`)) {
+      fail(`${route}: missing Google Tag Manager noscript iframe`)
     }
   }
 
