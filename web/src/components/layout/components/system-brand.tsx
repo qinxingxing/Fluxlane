@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { BRAND_WORDMARK_INK } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 type SystemBrandProps = {
@@ -41,9 +42,8 @@ type SystemBrandProps = {
 
 /**
  * System brand component
- * Displays current system logo + name.
- * - inline: compact pill in the top app bar; clicking navigates to home (/)
- * - sidebar: stacked card in the sidebar header (display only)
+ * - inline: wordmark in the top app bar; clicking navigates to home (/)
+ * - sidebar: stacked logo + name + version card in the sidebar header
  */
 export function SystemBrand(props: SystemBrandProps) {
   const { t } = useTranslation()
@@ -61,18 +61,17 @@ export function SystemBrand(props: SystemBrandProps) {
         to='/'
         aria-label={t('Go to home')}
         className={cn(
-          'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
+          'inline-flex h-7 items-center rounded-md px-1.5 transition-colors outline-none select-none',
           'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
-          <img
-            src={logo}
-            alt={t('Logo')}
-            className='size-full rounded-md object-cover'
-          />
-        </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
+        <img
+          src={BRAND_WORDMARK_INK}
+          alt={name}
+          width={198}
+          height={20}
+          className='h-5 w-auto dark:brightness-0 dark:invert'
+        />
       </Link>
     )
   }
