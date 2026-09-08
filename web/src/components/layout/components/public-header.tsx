@@ -31,13 +31,12 @@ import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { useIsClient } from '@/lib/client-only'
-import { BRAND_WORDMARK, DEFAULT_LOGO } from '@/lib/constants'
+import { BRAND_WORDMARK } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
-import { HeaderLogo } from './header-logo'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -52,7 +51,6 @@ export interface PublicHeaderProps {
   navContent?: React.ReactNode
   showThemeSwitch?: boolean
   showLanguageSwitcher?: boolean
-  logo?: React.ReactNode
   siteName?: string
   homeUrl?: string
   leftContent?: React.ReactNode
@@ -68,7 +66,6 @@ export function PublicHeader(props: PublicHeaderProps) {
     navLinks = defaultTopNavLinks,
     showThemeSwitch = false,
     showLanguageSwitcher = false,
-    logo: customLogo,
     siteName: customSiteName,
     homeUrl = '/',
     showAuthButtons = true,
@@ -84,12 +81,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   const [authPromptSecondsLeft, setAuthPromptSecondsLeft] =
     useState(AUTH_PROMPT_SECONDS)
   const { auth } = useAuthStore()
-  const {
-    systemName,
-    logo: systemLogo,
-    loading,
-    logoLoaded,
-  } = useSystemConfig()
+  const { systemName, loading } = useSystemConfig()
   const dynamicLinks = useTopNavLinks()
   const notifications = useNotifications()
   const routerState = useRouterState()
@@ -101,8 +93,6 @@ export function PublicHeader(props: PublicHeaderProps) {
   const isAuthenticated = isClient && !!user
   const displaySiteName = customSiteName || systemName
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
-  // A deployment that uploaded its own logo keeps the icon + name pairing.
-  const showWordmark = !customLogo && systemLogo === DEFAULT_LOGO
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -201,39 +191,13 @@ export function PublicHeader(props: PublicHeaderProps) {
               to={homeUrl}
               className='group flex shrink-0 items-center gap-2.5'
             >
-              {showWordmark ? (
-                <img
-                  src={BRAND_WORDMARK}
-                  alt={displaySiteName}
-                  width={198}
-                  height={20}
-                  className='h-5 w-auto transition-all duration-300 group-hover:scale-105'
-                />
-              ) : (
-                <>
-                  <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
-                    {loading ? (
-                      <Skeleton className='size-full rounded-lg' />
-                    ) : customLogo ? (
-                      customLogo
-                    ) : (
-                      <HeaderLogo
-                        src={systemLogo}
-                        loading={loading}
-                        logoLoaded={logoLoaded}
-                        className='size-full rounded-lg object-contain'
-                      />
-                    )}
-                  </div>
-                  <span className='text-sm font-semibold tracking-tight'>
-                    {loading ? (
-                      <Skeleton className='h-4 w-16' />
-                    ) : (
-                      displaySiteName
-                    )}
-                  </span>
-                </>
-              )}
+              <img
+                src={BRAND_WORDMARK}
+                alt={displaySiteName}
+                width={198}
+                height={20}
+                className='h-5 w-auto transition-all duration-300 group-hover:scale-105'
+              />
             </Link>
 
             {/* Desktop nav */}
