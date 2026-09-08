@@ -15,7 +15,7 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 
 - **Model detail SEO: deferred.** `/pricing/<id>` uses a unified noindex SPA shell. Independent per-model titles, copy, and sitemap entries are not done.
 - Rankings as an indexable page. The public snapshot keeps rankings disabled; the URL 404s rather than redirecting home.
-- Real Privacy Policy, Terms, Refund Policy, Acceptable Use Policy, legal entity, and effective dates. Until those texts live in Git, legal URLs are `noindex` and omitted from the sitemap.
+- Real Terms, Refund Policy, Acceptable Use Policy, and remaining legal pages. Until those texts live in Git, those URLs stay `noindex` and omitted from the sitemap. The Privacy Policy is published in Git.
 - Production CORS changes for `*.pages.dev`.
 
 ## Prerender data
@@ -25,7 +25,8 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 | `/` | In-repo landing (not `/api/home_page_content`) |
 | `/about` | In-repo About copy |
 | `/pricing` | Stable heading + intro; live price table after hydration |
-| `/privacy-policy`, `/user-agreement` | Empty/not-published state, `noindex` |
+| `/privacy-policy` | In-repo Fluxlane privacy policy (indexable) |
+| `/user-agreement` | Empty/not-published state, `noindex` |
 | `/rankings` | Not prerendered; disabled → `notFound` |
 
 ## Acceptance (merge gate)
@@ -49,7 +50,7 @@ Done:
 
 - Public prerender does not contact `api.fluxlane.ai`
 - Same-commit consecutive public builds: prerendered HTML SHA256 match (frozen `Date.now` during SSR plus fixed Query dehydrate timestamps)
-- Legal URLs are `noindex` and absent from `sitemap.xml`
+- Legal URLs without published Git text are `noindex` and absent from `sitemap.xml`; `/privacy-policy` is in the sitemap
 - Rankings is absent from the sitemap; disabled rankings uses `notFound` (not `/`)
 - Console build: `Disallow: /`, meta robots, `X-Robots-Tag`
 - React hydration **#418 = 0** on `/`, `/about`, `/pricing`, `/privacy-policy`, `/user-agreement` (JS enabled and disabled; H1/body persist)

@@ -93,5 +93,10 @@ describe('legacy frontend route migration', () => {
     )
     assert.equal(resolveLegacyRoute('/dashboard'), null)
     assert.equal(resolveLegacyRoute('/api/status'), null)
+    assert.equal(resolveLegacyRoute('/privacy'), '/privacy-policy')
+    assert.equal(
+      resolveLegacyRoute('/privacy?from=footer#contact'),
+      '/privacy-policy?from=footer#contact'
+    )
   })
 })

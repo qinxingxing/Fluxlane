@@ -48,6 +48,7 @@ import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { beginPasskeyLogin, finishPasskeyLogin } from '@/features/auth/passkey'
 import type { AuthFormProps } from '@/features/auth/types'
+import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
 import { useStatus } from '@/hooks/use-status'
 import { isAuthBundle } from '@/lib/api'
 import {
@@ -96,7 +97,7 @@ export function UserAuthForm({
   )
 
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
-  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
+  const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
   const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
   const passkeyButtonDisabled =
     isPasskeyLoading ||

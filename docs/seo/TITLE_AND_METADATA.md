@@ -19,8 +19,9 @@ Page SEO is owned by `web/src/lib/seo.ts`. Route components call `usePageSeo` (p
 
 | URL | Index |
 | --- | --- |
-| `/`, `/about`, `/pricing` | index (sitemap) |
-| `/privacy-policy`, `/user-agreement` | noindex until policy text is in Git |
+| `/`, `/about`, `/pricing`, `/privacy-policy` | index (sitemap) |
+| `/privacy` | 301 to `/privacy-policy` |
+| `/user-agreement` | noindex until policy text is in Git |
 | `/pricing/<model>` | noindex shell; model SEO deferred |
 | `/rankings` | not prerendered; 404 while disabled |
 | unknown www paths | `404.html` noindex |
@@ -30,4 +31,4 @@ Page SEO is owned by `web/src/lib/seo.ts`. Route components call `usePageSeo` (p
 
 - Home: Organization + WebSite
 - About / Pricing: BreadcrumbList
-- Empty legal pages: none
+- Empty legal pages: none. Privacy Policy uses BreadcrumbList.

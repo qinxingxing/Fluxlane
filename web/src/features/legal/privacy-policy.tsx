@@ -16,21 +16,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { PublicLayout } from '@/components/layout'
+
 import { getPrivacyPolicy } from './api'
+import { FluxlanePrivacyPolicy } from './fluxlane-privacy-policy-page'
 import { LegalDocument } from './legal-document'
 
 export function PrivacyPolicy() {
   const { t } = useTranslation()
+  const { data } = useQuery({
+    queryKey: ['privacy-policy'],
+    queryFn: getPrivacyPolicy,
+    staleTime: 10 * 60 * 1000,
+  })
+
+  if ((data?.data?.trim() ?? '').length > 0) {
+    return (
+      <LegalDocument
+        title={t('Privacy Policy')}
+        queryKey='privacy-policy'
+        fetchDocument={getPrivacyPolicy}
+        emptyMessage={t(
+          'The administrator has not configured a privacy policy yet.'
+        )}
+      />
+    )
+  }
+
   return (
-    <LegalDocument
-      title={t('Privacy Policy')}
-      queryKey='privacy-policy'
-      fetchDocument={getPrivacyPolicy}
-      emptyMessage={t(
-        'The administrator has not configured a privacy policy yet.'
-      )}
-    />
+    <PublicLayout>
+      <FluxlanePrivacyPolicy />
+    </PublicLayout>
   )
 }

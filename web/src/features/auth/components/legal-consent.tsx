@@ -20,6 +20,8 @@ import { useTranslation } from 'react-i18next'
 
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
+import { publicSiteHref } from '@/lib/domain-routing'
 import { cn } from '@/lib/utils'
 
 import type { SystemStatus } from '../types'
@@ -39,7 +41,7 @@ export function LegalConsent({
 }: LegalConsentProps) {
   const { t } = useTranslation()
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
-  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
+  const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
 
   if (!hasUserAgreement && !hasPrivacyPolicy) {
     return null
@@ -70,7 +72,7 @@ export function LegalConsent({
           {t('I have read and agree to the')}{' '}
           {hasUserAgreement && (
             <a
-              href='/user-agreement'
+              href={publicSiteHref('/user-agreement')}
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary hover:underline'
@@ -81,7 +83,7 @@ export function LegalConsent({
           {hasUserAgreement && hasPrivacyPolicy && ' and the '}
           {hasPrivacyPolicy && (
             <a
-              href='/privacy-policy'
+              href={publicSiteHref('/privacy-policy')}
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary hover:underline'
