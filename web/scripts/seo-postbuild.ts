@@ -43,12 +43,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { looksLikeConsolePages, resolveSiteMode } from './resolve-site-mode'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const WEB_ROOT = path.resolve(__dirname, '..')
 const DIST = path.join(WEB_ROOT, 'dist')
 
-const SITE_MODE =
-  process.env.VITE_SITE_MODE === 'console' ? 'console' : 'public'
+const SITE_MODE = resolveSiteMode()
 const PUBLIC_ORIGIN = process.env.VITE_SITE_ORIGIN || 'https://www.fluxlane.ai'
 const CONSOLE_ORIGIN = 'https://console.fluxlane.ai'
 
@@ -1048,6 +1049,11 @@ async function main(): Promise<void> {
   log(
     `site mode: ${SITE_MODE} (origin ${SITE_MODE === 'console' ? CONSOLE_ORIGIN : PUBLIC_ORIGIN}), no remote API access`
   )
+  if (looksLikeConsolePages() && SITE_MODE !== 'console') {
+    fail(
+      'this Cloudflare Pages project looks like console; refusing to emit public www _redirects (they 301-loop /sign-in on console.fluxlane.ai)'
+    )
+  }
 
   if (SITE_MODE === 'console') {
     const html = replaceLiteral(

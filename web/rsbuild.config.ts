@@ -6,6 +6,8 @@ import { pluginReact } from '@rsbuild/plugin-react'
 import { pluginTailwindcss } from '@rsbuild/plugin-tailwindcss'
 import { tanstackRouter } from '@tanstack/router-plugin/rspack'
 
+import { resolveSiteMode } from './scripts/resolve-site-mode'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ envMode }) => {
@@ -63,9 +65,7 @@ export default defineConfig(({ envMode }) => {
         'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
         'import.meta.env.VITE_PUBLIC_API_BASE_URL':
           JSON.stringify(publicApiBaseUrl),
-        'import.meta.env.VITE_SITE_MODE': JSON.stringify(
-          process.env.VITE_SITE_MODE === 'console' ? 'console' : 'public'
-        ),
+        'import.meta.env.VITE_SITE_MODE': JSON.stringify(resolveSiteMode()),
       },
       entry: {
         index: './src/main.tsx',

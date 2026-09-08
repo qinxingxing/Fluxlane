@@ -6,7 +6,7 @@ Status: **SEO PHASE 1 IN PROGRESS**. This is not a production-ready declaration.
 
 ```text
 www.fluxlane.ai       Cloudflare Pages (VITE_SITE_MODE=public)
-console.fluxlane.ai   Cloudflare Pages (VITE_SITE_MODE=console)
+console.fluxlane.ai   Cloudflare Pages (VITE_SITE_MODE=console; build command `npm run build:console`)
 doc.fluxlane.ai       Cloudflare Pages (docs project)
 api.fluxlane.ai       API CLB
 ```

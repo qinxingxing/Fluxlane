@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rsbuild build && env -u NODE_ENV bun scripts/seo-postbuild.ts",
+    "build:public": "VITE_SITE_MODE=public bun run build",
+    "build:console": "VITE_SITE_MODE=console bun run build",
     "build:check": "tsgo -b && bun run build",
     "typecheck": "tsgo -b",
     "lint": "oxlint -c .oxlintrc.json .",

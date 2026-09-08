@@ -6,12 +6,18 @@ Go, PostgreSQL, or Redis after the build finishes.
 www, console, and docs are separate Cloudflare Pages projects that share this
 repository. `VITE_SITE_MODE` selects public prerender vs console SPA.
 
+The console Pages project must build with `VITE_SITE_MODE=console` (or
+`npm run build:console`). A public www dist on `console.fluxlane.ai` 301s
+`/sign-in` to itself and the browser reports `ERR_TOO_MANY_REDIRECTS`.
+
 ## Build
 
 ```sh
 cd web
 bun install --frozen-lockfile
 VITE_SITE_MODE=public bun run build
+# console Pages:
+VITE_SITE_MODE=console bun run build
 ```
 
 `bun run build` runs `scripts/seo-postbuild.ts`. That step must not call
