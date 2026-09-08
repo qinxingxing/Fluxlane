@@ -572,6 +572,9 @@ ${SECURITY_HEADERS.join('\n')}
 /logo.png
   Cache-Control: public, max-age=3600
 
+/logo-full.png
+  Cache-Control: public, max-age=3600
+
 /favicon.ico
   Cache-Control: public, max-age=3600
 

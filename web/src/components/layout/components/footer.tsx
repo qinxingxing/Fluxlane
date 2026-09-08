@@ -24,6 +24,7 @@ import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { trackEvent } from '@/lib/analytics'
+import { BRAND_WORDMARK, DEFAULT_LOGO } from '@/lib/constants'
 import { consoleSiteHref, publicSiteHref } from '@/lib/domain-routing'
 import { cn } from '@/lib/utils'
 
@@ -211,8 +212,10 @@ export function Footer(props: FooterProps) {
     demoSiteEnabled,
   } = useSystemConfig()
 
-  const displayLogo = systemLogo || props.logo || '/logo.png'
+  const displayLogo = systemLogo || props.logo || DEFAULT_LOGO
   const displayName = systemName || props.name || 'New API'
+  // A deployment that uploaded its own logo keeps the icon + name pairing.
+  const showWordmark = displayLogo === DEFAULT_LOGO
   const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
 
@@ -312,16 +315,28 @@ export function Footer(props: FooterProps) {
           {/* Brand column */}
           <div className='shrink-0'>
             <Link to='/' className='group flex items-center gap-2.5'>
-              <img
-                src={displayLogo}
-                alt={displayName}
-                width={28}
-                height={28}
-                className='size-7 rounded-lg object-contain'
-              />
-              <span className='text-sm font-semibold tracking-tight'>
-                {displayName}
-              </span>
+              {showWordmark ? (
+                <img
+                  src={BRAND_WORDMARK}
+                  alt={displayName}
+                  width={218}
+                  height={22}
+                  className='h-[22px] w-auto'
+                />
+              ) : (
+                <>
+                  <img
+                    src={displayLogo}
+                    alt={displayName}
+                    width={28}
+                    height={28}
+                    className='size-7 rounded-lg object-contain'
+                  />
+                  <span className='text-sm font-semibold tracking-tight'>
+                    {displayName}
+                  </span>
+                </>
+              )}
             </Link>
             <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
               {t('Powerful API Management Platform')}

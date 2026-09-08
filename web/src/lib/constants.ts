@@ -26,6 +26,9 @@ For commercial licensing, please contact support@quantumnous.com
 // Fluxlane page never flashes the upstream project name.
 export const DEFAULT_SYSTEM_NAME = 'Fluxlane'
 export const DEFAULT_LOGO = '/logo.png'
+// Wordmark for the public site chrome. It already spells the brand name, so
+// surfaces using it drop the separate name label.
+export const BRAND_WORDMARK = '/logo-full.png'
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {
