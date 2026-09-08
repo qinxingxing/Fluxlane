@@ -195,12 +195,17 @@ let setupStatusChecked = getSetupStatusFromCache()
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: ['status'],
-      queryFn: getStatus,
-      staleTime: 5 * 60 * 1000,
-    }),
+  loader: async ({ context }) => {
+    try {
+      await context.queryClient.ensureQueryData({
+        queryKey: ['status'],
+        queryFn: getStatus,
+        staleTime: 5 * 60 * 1000,
+      })
+    } catch {
+      // Preview hosts are not on production CORS. The shell must still render.
+    }
+  },
   // 应用初始化与路由解析前统一校验会话
   beforeLoad: async ({ location }) => {
     // location.href 是本次导航的目标（相对路径）；客户端跳转时

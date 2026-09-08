@@ -15,6 +15,14 @@ const PUBLIC_PATHS = new Set([
   '/user-agreement',
 ])
 
+function isConsoleHostname(hostname: string): boolean {
+  return (
+    hostname === CONSOLE_HOSTNAME ||
+    hostname === 'fluxlane-console.pages.dev' ||
+    hostname.endsWith('.fluxlane-console.pages.dev')
+  )
+}
+
 function normalizePathname(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
     return pathname.slice(0, -1)
@@ -38,7 +46,7 @@ function isPublicSitePath(pathname: string): boolean {
 export function publicSiteHref(path: string): string {
   if (
     typeof window !== 'undefined' &&
-    window.location.hostname === CONSOLE_HOSTNAME
+    isConsoleHostname(window.location.hostname)
   ) {
     return `${PUBLIC_ORIGIN}${path}`
   }
@@ -70,9 +78,9 @@ export function getDomainRedirect(href: string): string | null {
     return `${CONSOLE_ORIGIN}${current.pathname}${current.search}${current.hash}`
   }
 
-  if (current.hostname === CONSOLE_HOSTNAME) {
+  if (isConsoleHostname(current.hostname)) {
     if (pathname === '/') {
-      return `${CONSOLE_ORIGIN}/sign-in${current.search}${current.hash}`
+      return `${current.origin}/sign-in${current.search}${current.hash}`
     }
     if (isPublicSitePath(pathname)) {
       return `${PUBLIC_ORIGIN}${current.pathname}${current.search}${current.hash}`

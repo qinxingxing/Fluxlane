@@ -37,4 +37,15 @@ describe('public and console domain routing', () => {
       'https://www.fluxlane.ai/privacy'
     )
   })
+
+  test('sends the console homepage to sign-in on production and Pages Preview', () => {
+    assert.equal(
+      getDomainRedirect('https://console.fluxlane.ai/'),
+      'https://console.fluxlane.ai/sign-in'
+    )
+    assert.equal(
+      getDomainRedirect('https://213f12a0.fluxlane-console.pages.dev/'),
+      'https://213f12a0.fluxlane-console.pages.dev/sign-in'
+    )
+  })
 })
