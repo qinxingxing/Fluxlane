@@ -72,6 +72,9 @@ export function resolveLegacyRoute(rawHref: string): string | null {
   }
 
   const pathname = normalizeLegacyPath(source.pathname)
+  if (pathname === '/privacy') {
+    return buildTargetHref('/privacy-policy', source)
+  }
   if (pathname === '/login') {
     return buildTargetHref('/sign-in', source)
   }

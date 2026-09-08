@@ -20,6 +20,7 @@ import { Link } from '@tanstack/react-router'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { trackEvent } from '@/lib/analytics'
@@ -139,14 +140,14 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
     items.push({
       key: 'user-agreement',
       label: t('User Agreement'),
-      href: '/user-agreement',
+      href: publicSiteHref('/user-agreement'),
     })
   }
-  if (status?.privacy_policy_enabled) {
+  if (isPrivacyPolicyEnabled(status)) {
     items.push({
       key: 'privacy-policy',
       label: t('Privacy Policy'),
-      href: '/privacy-policy',
+      href: publicSiteHref('/privacy-policy'),
     })
   }
   if (items.length === 0) {
@@ -161,12 +162,12 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
               ·
             </span>
           )}
-          <Link
-            to={item.href}
+          <a
+            href={item.href}
             className='hover:text-foreground transition-colors duration-200'
           >
             {item.label}
-          </Link>
+          </a>
         </Fragment>
       ))}
     </>
@@ -333,14 +334,14 @@ export function Footer(props: FooterProps) {
           {/* Links columns */}
           {(isDemoSiteMode || props.columns) && (
             <div className='grid grid-cols-3 gap-8 md:gap-16'>
-              {displayColumns.map((column, index) => (
-                <div key={index}>
+              {displayColumns.map((column) => (
+                <div key={column.title}>
                   <p className='text-muted-foreground/50 mb-3 text-xs font-medium tracking-wider uppercase'>
                     {t(column.title)}
                   </p>
                   <ul className='space-y-2.5'>
-                    {column.links.map((link, linkIndex) => (
-                      <li key={linkIndex}>
+                    {column.links.map((link) => (
+                      <li key={`${link.href}:${link.text}`}>
                         <FooterLinkItem link={link} />
                       </li>
                     ))}

@@ -84,8 +84,9 @@ export const privacyPolicySeo: PageSeo = {
   description:
     'Read the Fluxlane privacy policy: what data we collect, how we use it, and the choices available to you.',
   canonicalPath: '/privacy-policy',
-  noindex: true,
-  jsonLd: [],
+  jsonLd: [
+    breadcrumbJsonLd([{ name: 'Privacy Policy', path: '/privacy-policy' }]),
+  ],
 }
 
 export const userAgreementSeo: PageSeo = {

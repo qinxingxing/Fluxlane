@@ -142,7 +142,7 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 
 - `web/scripts/seo-postbuild.ts` prerenders public HTML. The prerenderer must not contact `api.fluxlane.ai` or any live API. Snapshot data lives in Git.
 - Hydration must reuse the serialized prerender payload for the first frame. Cookies, `localStorage`, media queries, and live `/api/status` module flags apply only after hydration.
-- Empty legal pages stay `noindex` and out of `sitemap.xml` until real policy text is in Git.
+- Empty legal pages stay `noindex` and out of `sitemap.xml` until real policy text is in Git. The Privacy Policy is published in Git at `/privacy-policy` and is indexable; `/privacy` 301s to that canonical URL. `/user-agreement` stays unpublished until terms text is in Git.
 - Rankings, when disabled, must 404 / `notFound` — never redirect to `/`.
 - Model detail SEO is deferred. `/pricing/*` uses a noindex shell.
 - `www.fluxlane.ai` and `api.fluxlane.ai` are cross-origin. Pages Preview (`*.pages.dev`) is not on the production CORS allowlist; do not add `*.pages.dev`.

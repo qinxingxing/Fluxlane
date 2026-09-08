@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
+import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
+import { publicSiteHref } from '@/lib/domain-routing'
 import { cn } from '@/lib/utils'
 
 import type { SystemStatus } from '../types'
@@ -40,7 +42,7 @@ export function TermsFooter({
       : 'By creating an account, you agree to our'
 
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
-  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
+  const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
 
   if (!hasUserAgreement && !hasPrivacyPolicy) {
     return null
@@ -48,11 +50,11 @@ export function TermsFooter({
 
   const agreementLink = {
     label: 'User Agreement',
-    href: '/user-agreement',
+    href: publicSiteHref('/user-agreement'),
   }
   const privacyLink = {
     label: 'Privacy Policy',
-    href: '/privacy-policy',
+    href: publicSiteHref('/privacy-policy'),
   }
 
   const activeLinks =
@@ -67,13 +69,13 @@ export function TermsFooter({
 
   return (
     <p className={cn('text-muted-foreground text-center text-xs', className)}>
-      {text}{' '}
+      {t(text)}{' '}
       {firstLink && (
         <a
           href={firstLink.href}
           className='hover:text-primary underline underline-offset-4'
         >
-          {firstLink.label}
+          {t(firstLink.label)}
         </a>
       )}
       {secondLink && (
@@ -84,7 +86,7 @@ export function TermsFooter({
             href={secondLink.href}
             className='hover:text-primary underline underline-offset-4'
           >
-            {secondLink.label}
+            {t(secondLink.label)}
           </a>
         </>
       )}

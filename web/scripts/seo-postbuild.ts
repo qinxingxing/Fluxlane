@@ -93,8 +93,9 @@ function breadcrumb(items: BreadcrumbEntry[]): Record<string, unknown> {
  * - `/rankings` is intentionally absent: the module is disabled in the
  *   live admin configuration, and the build must not depend on live
  *   state. Its URL 404s on the public site until it is re-enabled.
- * - Legal pages render their "content not configured" state with noindex:
- *   real policy text must land in Git before they may be indexed.
+ * - `/privacy-policy` prerenders the in-repo Fluxlane policy and is
+ *   indexable. `/user-agreement` stays noindex until terms text lands in Git.
+ * - `/privacy` is a 301 to `/privacy-policy` and is not prerendered.
  * - `/pricing` prerenders the stable heading and intro; the live price
  *   table is client-rendered data, not SEO copy.
  */
@@ -146,11 +147,12 @@ const ROUTES: Record<string, RouteSeo> = {
       'Read the Fluxlane privacy policy: what data we collect, how we use it, and the choices available to you.',
     canonicalPath: '/privacy-policy',
     ogType: 'website',
-    noindex: true,
-    jsonLd: [],
+    jsonLd: [breadcrumb([{ name: 'Privacy Policy', path: '/privacy-policy' }])],
     lastmodSources: [
       'src/routes/privacy-policy.tsx',
       'src/features/legal/privacy-policy.tsx',
+      'src/features/legal/fluxlane-privacy-policy-page.tsx',
+      'src/features/legal/fluxlane-privacy-policy.ts',
     ],
   },
   '/user-agreement': {
@@ -643,6 +645,8 @@ function publicRedirects(): string {
     '# Cloudflare will not add a trailing slash that these rules undo.',
     '/about/ /about 308',
     '/pricing/ /pricing 308',
+    '/privacy /privacy-policy 301',
+    '/privacy/ /privacy-policy 308',
     '/privacy-policy/ /privacy-policy 308',
     '/user-agreement/ /user-agreement 308',
     '',
@@ -755,11 +759,17 @@ function validateOutput(renderedRoutes: string[]): void {
       `sitemap expected ${indexable.length} URLs, found ${locs.length}`
     )
   }
+  if (!locs.some((loc) => loc === `${PUBLIC_ORIGIN}/privacy-policy`)) {
+    fail('published privacy policy must appear in the sitemap')
+  }
   for (const loc of locs) {
     if (!loc.startsWith('https://')) fail(`sitemap URL not https: ${loc}`)
     if (loc.includes('?')) fail(`sitemap URL must be canonical: ${loc}`)
-    if (loc.endsWith('/privacy-policy') || loc.endsWith('/user-agreement')) {
+    if (loc.endsWith('/user-agreement')) {
       fail('legal pages without published content must stay out of the sitemap')
+    }
+    if (loc.endsWith('/privacy') && !loc.endsWith('/privacy-policy')) {
+      fail('short privacy URL must not be in the sitemap; canonical is /privacy-policy')
     }
     if (loc.endsWith('/rankings')) {
       fail('rankings is disabled in the live configuration and must not be indexed')
@@ -772,6 +782,9 @@ function validateOutput(renderedRoutes: string[]): void {
   }
   if (!redirects.includes('/pricing/* /pricing-model-shell.html 200')) {
     fail('public _redirects must route model URLs to the noindex shell')
+  }
+  if (!redirects.includes('/privacy /privacy-policy 301')) {
+    fail('public _redirects must send /privacy to /privacy-policy')
   }
   if (!redirects.includes('/about/ /about 308')) {
     fail('public _redirects must canonicalize trailing slashes')
@@ -808,6 +821,12 @@ function validateOutput(renderedRoutes: string[]): void {
     }
     if (seo.noindex && !html.includes('name="robots"')) {
       fail(`${route}: must carry a noindex meta tag`)
+    }
+    if (!seo.noindex && html.includes('name="robots" content="noindex')) {
+      fail(`${route}: published page must not be noindex`)
+    }
+    if (route === '/privacy-policy' && !html.includes('FLUX LANE PTE.LTD.')) {
+      fail(`${route}: prerender must include the published privacy policy`)
     }
     // Footer destinations required on every public page.
     const footerLinks: [string, string][] = [
