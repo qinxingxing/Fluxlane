@@ -5,7 +5,7 @@ Pure static documentation target for Cloudflare Pages.
 Cloudflare Pages configuration:
 
 - Project: `fluxlane-docs`
-- Production branch: `fluxlane/frontend-separation`
+- Production branch: `main`
 - Framework preset: None
 - Build command: leave empty
 - Build output directory: `public`
