@@ -77,6 +77,7 @@ export default defineConfig(({ envMode }) => {
       },
     },
     html: {
+      // GTM-KCF54QNV is hardcoded in index.html (head script + body noscript).
       template: './index.html',
     },
     server: {

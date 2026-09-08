@@ -242,6 +242,40 @@ function assertGoogleTagManager(html: string, label: string): void {
   }
 }
 
+function ensureGoogleTagManager(html: string): string {
+  const hasSnippet = html.includes('www.googletagmanager.com/gtm.js')
+  const hasNoscript = html.includes(`ns.html?id=${WWW_GTM_ID}`)
+  if (hasSnippet && hasNoscript) return html
+
+  const headSnippet =
+    `<!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':` +
+    `new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],` +
+    `j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=` +
+    `'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);` +
+    `})(window,document,'script','dataLayer','${WWW_GTM_ID}');</script><!-- End Google Tag Manager -->`
+  const bodySnippet =
+    `<!-- Google Tag Manager (noscript) --><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${WWW_GTM_ID}" ` +
+    `height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>` +
+    `<!-- End Google Tag Manager (noscript) -->`
+
+  let out = html
+  if (!hasSnippet) {
+    if (out.includes('<!--Google Analytics-->')) {
+      out = replaceLiteral(
+        out,
+        '<!--Google Analytics-->',
+        `${headSnippet}\n    <!--Google Analytics-->`
+      )
+    } else {
+      out = replaceLiteral(out, '</head>', `    ${headSnippet}\n  </head>`)
+    }
+  }
+  if (!hasNoscript) {
+    out = replaceLiteral(out, '<body>', `<body>\n    ${bodySnippet}`)
+  }
+  return out
+}
+
 function gitLastmod(sources: string[]): string | null {
   try {
     const result = spawnSync(
@@ -485,6 +519,7 @@ function composePageHtml(opts: {
     '</head>',
     `    ${headTagsFor(routeSeo)}\n  </head>`
   )
+  html = ensureGoogleTagManager(html)
 
   if (!html.includes(ROOT_DIV)) {
     fail('dist/index.html has no empty #root container to inject into')
@@ -654,7 +689,7 @@ function composePricingModelShell(shell: string): string {
     '</head>',
     '    <meta name="robots" content="noindex, follow" />\n  </head>'
   )
-  return html
+  return ensureGoogleTagManager(html)
 }
 
 function writeStaticFiles(indexableRoutes: string[]): void {
