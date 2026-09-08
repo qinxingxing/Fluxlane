@@ -825,7 +825,7 @@ function validateOutput(renderedRoutes: string[]): void {
     if (!seo.noindex && html.includes('name="robots" content="noindex')) {
       fail(`${route}: published page must not be noindex`)
     }
-    if (route === '/privacy-policy' && !html.includes('FLUX LANE PTE.LTD.')) {
+    if (route === '/privacy-policy' && !html.includes('FLUX LANE PTE. LTD.')) {
       fail(`${route}: prerender must include the published privacy policy`)
     }
     // Footer destinations required on every public page.

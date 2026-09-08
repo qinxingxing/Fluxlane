@@ -20,6 +20,8 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import {
+  FLUXLANE_API_SITE,
+  FLUXLANE_CONSOLE_SITE,
   FLUXLANE_LEGAL_ENTITY,
   FLUXLANE_PRIVACY_EFFECTIVE_DATE,
   FLUXLANE_PRIVACY_EMAIL,
@@ -29,8 +31,10 @@ import {
 
 describe('Fluxlane privacy policy', () => {
   test('identifies the Singapore company, public site, and privacy contact', () => {
-    assert.equal(FLUXLANE_LEGAL_ENTITY, 'FLUX LANE PTE.LTD.')
+    assert.equal(FLUXLANE_LEGAL_ENTITY, 'FLUX LANE PTE. LTD.')
     assert.equal(FLUXLANE_PUBLIC_SITE, 'https://www.fluxlane.ai')
+    assert.equal(FLUXLANE_CONSOLE_SITE, 'https://console.fluxlane.ai')
+    assert.equal(FLUXLANE_API_SITE, 'https://run.fluxlane.ai')
     assert.equal(FLUXLANE_PRIVACY_EMAIL, 'privacy@fluxlane.ai')
     assert.equal(FLUXLANE_PRIVACY_EFFECTIVE_DATE, '8 September 2026')
   })

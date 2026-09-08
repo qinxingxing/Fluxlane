@@ -17,9 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-export const FLUXLANE_LEGAL_ENTITY = 'FLUX LANE PTE.LTD.'
+export const FLUXLANE_LEGAL_ENTITY = 'FLUX LANE PTE. LTD.'
 export const FLUXLANE_PRIVACY_EMAIL = 'privacy@fluxlane.ai'
 export const FLUXLANE_PUBLIC_SITE = 'https://www.fluxlane.ai'
+export const FLUXLANE_CONSOLE_SITE = 'https://console.fluxlane.ai'
+export const FLUXLANE_API_SITE = 'https://run.fluxlane.ai'
 export const FLUXLANE_PRIVACY_EFFECTIVE_DATE = '8 September 2026'
 export const FLUXLANE_PRIVACY_POLICY_PUBLISHED = true
 
