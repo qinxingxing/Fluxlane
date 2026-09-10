@@ -36,6 +36,8 @@ The script fails closed and, in order: validates the tag format, requires an ann
 
 It creates `/home/codex/build` and `/home/codex/releases` when they are missing, then refuses to overwrite an existing per-tag artifact: a published tag is never rebuilt.
 
+If `schema_code_sha256` differs from the recorded production tag, complete the review in `schema-compatibility.md` before Test Agent PASS. Do not treat the hash change as a schema change by itself. Record `schema_changed` and `rollback_database_compatible` on the manifest. Unproven compatibility is FAIL.
+
 The rollback target comes from `releases/current-production.json` (written by `scripts/release/record-production.sh` after `PRODUCTION RELEASE PASS`) or from an explicit `FLUXLANE_ROLLBACK_TAG`. It is never inferred from Git tag creation time, because a tag can exist without ever having been deployed. If the recorded tag has no artifact on disk, the build stops.
 
 Then fill in `test-report.md`, `known_risks` (with `accepted_max_overdraft_quota`, `observed_max_overdraft_quota`, `test_model_charge_quota`), and — if any risk is recorded — `risk_accepted_by` / `risk_accepted_at` after the user accepts it.

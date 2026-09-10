@@ -33,6 +33,8 @@ Concurrent overdraft is **not** an automatic pass. Each manifest `known_risks` e
 
 Infrastructure: PostgreSQL/Redis reachability from the test path in use; no OOM/unexpected restart; Nginx; no new 500/502/503; rollback artifact present.
 
+`schema_code_sha256` mismatch vs live/previous is a compatibility review (`docs/operations/schema-compatibility.md`), not an automatic schema change and not an automatic FAIL. Record `schema_changed` and `rollback_database_compatible`. FAIL when compatibility cannot be proven.
+
 Output `RELEASE CANDIDATE PASS` or `RELEASE CANDIDATE FAIL`. FAIL blocks production.
 
 ## After production roll

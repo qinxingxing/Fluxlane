@@ -6,6 +6,7 @@
 | [TESTING_WORKFLOW.md](TESTING_WORKFLOW.md) | Test Agent gates and Billing notes |
 | [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md) | Tag, one build, four-node roll |
 | [ROLLBACK_WORKFLOW.md](ROLLBACK_WORKFLOW.md) | Previous image, schema gate |
+| [schema-compatibility.md](schema-compatibility.md) | `schema_code_sha256` review; hash ≠ schema change |
 | [DEVELOPMENT_SERVER.md](DEVELOPMENT_SERVER.md) | `43.160.247.94` layout and windows |
 | [RELEASE_MANIFEST.example.json](RELEASE_MANIFEST.example.json) | Artifact identity file |
 

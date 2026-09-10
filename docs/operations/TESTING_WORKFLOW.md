@@ -85,6 +85,16 @@ Reference measurement (Stage 5, 2026-08-27): `qa-billing-u09` and `u10`, 200,000
 
 PostgreSQL/Redis from the path under test; no OOM/unexpected restart; Nginx; no new 500/502/503; previous artifact and manifest present for rollback.
 
+### model/ tree hash (`schema_code_sha256`)
+
+A candidate whose `schema_code_sha256` differs from the live or previous
+release must go through the review in `schema-compatibility.md`. Hash
+mismatch alone is not a schema change and is not a Test Agent FAIL.
+
+Record `schema_changed` and `rollback_database_compatible`. FAIL only when
+compatibility cannot be proven (missing diff, Struct/GORM/AutoMigrate/DDL
+present and unassessed, or rollback safety unknown).
+
 ## Formal post-release entries
 
 ```text

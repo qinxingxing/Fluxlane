@@ -30,8 +30,10 @@
     "run": "replace-after-build"
   },
   "schema_mechanism": "gorm_automigrate",
-  "schema_code_sha256": "sha256 over every path+blob under model/ at this tag, including model/main.go explicit migrations",
-  "schema_notes": "Empty when schema_code_sha256 equals the previous tag. Otherwise state rollback compatibility explicitly.",
+  "schema_code_sha256": "sha256 over every path+blob under model/ at this tag, including model/main.go explicit migrations. Hash mismatch triggers review; it is not itself a schema change.",
+  "schema_changed": false,
+  "rollback_database_compatible": true,
+  "schema_notes": "When the hash equals the previous tag, leave schema_changed false and rollback_database_compatible true. When it differs, fill both booleans from schema-compatibility.md (Struct/GORM tag/AutoMigrate/DDL review). Unproven compatibility is FAIL.",
   "rollback_tag": "prod-YYYYMMDD-previous (from releases/current-production.json or FLUXLANE_ROLLBACK_TAG; empty before the first recorded production release)",
   "rollback_artifact_path": "/home/codex/releases/prod-YYYYMMDD-previous/fluxlane-new-api-prod-YYYYMMDD-previous.tar.zst",
   "test_report_path": "test-report.md",

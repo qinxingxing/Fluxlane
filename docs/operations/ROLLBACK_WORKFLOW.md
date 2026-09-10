@@ -8,9 +8,9 @@ Persistent `/readyz` or CLB failure, material 5xx, panic/restarts/OOM, PostgreSQ
 
 ## Schema gate
 
-`schema_code_sha256` in the manifest covers every path and blob under `model/` at that tag, including the explicit migrations in `model/main.go`. AutoMigrate only moves the schema forward.
+`schema_code_sha256` in the manifest covers every path and blob under `model/` at that tag, including the explicit migrations in `model/main.go`. A hash mismatch is a **compatibility review trigger**, not proof that AutoMigrate moved the schema. See `schema-compatibility.md`.
 
-If the current tag and the rollback target differ on that hash, an old binary would run against already-migrated tables. `deploy/*/rollback.sh` stops unless `FLUXLANE_SCHEMA_APPROVED=yes` is set, which must only be set after the user accepts that risk. The same gate applies when a manifest is missing and the comparison cannot be made.
+If the current tag and the rollback target differ on that hash, `deploy/*/rollback.sh` stops unless `FLUXLANE_SCHEMA_APPROVED=yes`. Set that only after the review records `schema_changed` and `rollback_database_compatible` (or after the user accepts a real schema risk). The same gate applies when a manifest is missing and the comparison cannot be made.
 
 ## Target selection
 
