@@ -43,7 +43,19 @@ SESSION_COOKIE_TRUSTED_URL=https://test.fluxlane.ai
 FRONTEND_BASE_URL=https://test.fluxlane.ai
 ```
 
-For production, replace the test origin with `https://www.fluxlane.ai`.
+`FRONTEND_BASE_URL` is the browser origin for payment return pages (Stripe
+Checkout `success_url` / `cancel_url`, Epay/Alipay `ReturnUrl`, and the
+post-notify redirect after `/api/subscription/epay/return`). You can also set
+the same value in System Settings as **Frontend Address**.
+
+Keep `ServerAddress` (and `CustomCallbackAddress` when used) as the API origin
+(`https://api.fluxlane.ai` in production). Stripe webhooks, Epay `NotifyUrl`,
+OAuth provider callbacks, and other server-side integrations stay on that
+origin. Do not point webhooks at the console domain.
+
+For production, replace the test origin with `https://www.fluxlane.ai` (CORS /
+session cookies) and set `FRONTEND_BASE_URL=https://console.fluxlane.ai` for
+wallet and usage-log return pages.
 Multiple exact origins are comma separated. Wildcards and URL paths are
 rejected. Do not add `*.pages.dev` so that Pages Preview can call production.
 

@@ -7,19 +7,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPaymentReturnPathUsesDefaultDashboardRoutes(t *testing.T) {
-	previousAddress := system_setting.ServerAddress
-	system_setting.ServerAddress = "https://dashboard.example.com/"
-	t.Cleanup(func() { system_setting.ServerAddress = previousAddress })
+func TestPaymentReturnPathUsesFrontendOriginNotServerAddress(t *testing.T) {
+	previousFrontend := system_setting.FrontendBaseURL
+	previousServer := system_setting.ServerAddress
+	t.Cleanup(func() {
+		system_setting.FrontendBaseURL = previousFrontend
+		system_setting.ServerAddress = previousServer
+	})
+
+	system_setting.ServerAddress = "https://api.fluxlane.ai"
+	system_setting.FrontendBaseURL = "https://console.fluxlane.ai"
+	t.Setenv("FRONTEND_BASE_URL", "")
 
 	assert.Equal(
 		t,
-		"https://dashboard.example.com/wallet?pay=success",
+		"https://console.fluxlane.ai/wallet?pay=success",
 		paymentReturnPath("/wallet?pay=success"),
 	)
 	assert.Equal(
 		t,
-		"https://dashboard.example.com/usage-logs",
+		"https://console.fluxlane.ai/usage-logs",
 		paymentReturnPath("/usage-logs"),
 	)
 }

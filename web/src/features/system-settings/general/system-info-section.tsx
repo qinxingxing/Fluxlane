@@ -48,6 +48,7 @@ import { useUpdateOption } from '../hooks/use-update-option'
 const _systemInfoSchema = z.object({
   SystemName: z.string().min(1),
   ServerAddress: z.string().optional(),
+  FrontendBaseURL: z.string().optional(),
   Logo: z.string().url().optional().or(z.literal('')),
   Footer: z.string().optional(),
   About: z.string().optional(),
@@ -76,6 +77,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
   const normalizedDefaults: SystemInfoFormValues = {
     SystemName: normalizeValue(defaultValues.SystemName),
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
+    FrontendBaseURL: normalizeValue(defaultValues.FrontendBaseURL),
     Logo: normalizeValue(defaultValues.Logo),
     Footer: normalizeValue(defaultValues.Footer),
     About: normalizeValue(defaultValues.About),
@@ -91,6 +93,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
       error: () => t('System name is required'),
     }),
     ServerAddress: z.string().optional(),
+    FrontendBaseURL: z.string().optional(),
     Logo: z.string().url().optional().or(z.literal('')),
     Footer: z.string().optional(),
     About: z.string().optional(),
@@ -112,7 +115,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
       onSubmit: async (_data, changedFields) => {
         for (const [key, value] of Object.entries(changedFields)) {
           let v = normalizeValue(value)
-          if (key === 'ServerAddress') {
+          if (key === 'ServerAddress' || key === 'FrontendBaseURL') {
             v = v.replace(/\/+$/, '')
           }
           await updateOption.mutateAsync({
@@ -166,7 +169,29 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t(
-                        'The public URL of your server, used for OAuth callbacks, webhooks, and other external integrations'
+                        'API origin for OAuth, webhooks, and other server callbacks (for example https://api.fluxlane.ai). Do not use the console domain.'
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='FrontendBaseURL'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Frontend Address')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='https://console.fluxlane.ai'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Console origin for Stripe Checkout and other browser payment returns (for example https://console.fluxlane.ai). If empty, FRONTEND_BASE_URL is used, then Server Address. Do not put webhook URLs here.'
                       )}
                     </FormDescription>
                     <FormMessage />
