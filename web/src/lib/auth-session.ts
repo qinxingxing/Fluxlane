@@ -20,6 +20,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { t } from 'i18next'
 
+import { applySavedInterfaceLanguage } from '@/features/auth/lib/auth-redirect'
 import { API_BASE_URL } from '@/lib/api-base-url'
 import { publishAuthSessionEvent } from '@/lib/auth-session-sync'
 import {
@@ -379,6 +380,7 @@ export async function bootstrapAuthentication(): Promise<RefreshOutcome> {
   const bundle = currentValidAuthBundle()
   if (bundle) {
     useAuthStore.getState().auth.setBootstrapState('complete')
+    await applySavedInterfaceLanguage(bundle.user)
     return { kind: 'authenticated', bundle }
   }
 
@@ -389,7 +391,11 @@ export async function bootstrapAuthentication(): Promise<RefreshOutcome> {
   }
 
   auth.setBootstrapState('checking')
-  return refreshAuthentication()
+  const outcome = await refreshAuthentication()
+  if (outcome.kind === 'authenticated') {
+    await applySavedInterfaceLanguage(outcome.bundle.user)
+  }
+  return outcome
 }
 
 export function getCommonHeaders(): Record<string, string> {

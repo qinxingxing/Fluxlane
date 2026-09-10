@@ -29,25 +29,95 @@ export const INTERFACE_LANGUAGE_OPTIONS = [
 export type InterfaceLanguageCode =
   (typeof INTERFACE_LANGUAGE_OPTIONS)[number]['code']
 
+export const I18N_STORAGE_KEY = 'i18nextLng'
+
+const INTERFACE_LANGUAGE_CODES = new Set<string>(
+  INTERFACE_LANGUAGE_OPTIONS.map((lang) => lang.code)
+)
+
+export type LanguageDetectionSource = {
+  storedLanguage?: string | null
+  navigatorLanguages?: readonly string[]
+}
+
+/**
+ * Resolve a stored, user, or browser locale onto an interface language code.
+ *
+ * Cached i18next codes (`zhCN` / `zhTW`) must match first: running them through
+ * `convertDetectedLanguage` would treat `zhTW` as generic `zh*` and map it to
+ * simplified Chinese. Browser tags such as `zh`, `zh-cn`, and `fr-FR` then map
+ * onto `supportedLngs` the same way i18next eventually would, instead of
+ * falling through to English.
+ */
+export function resolveInterfaceLanguage(
+  value?: string | null
+): InterfaceLanguageCode | undefined {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  if (INTERFACE_LANGUAGE_CODES.has(trimmed)) {
+    return trimmed as InterfaceLanguageCode
+  }
+
+  const converted = convertDetectedLanguage(trimmed)
+  if (INTERFACE_LANGUAGE_CODES.has(converted)) {
+    return converted as InterfaceLanguageCode
+  }
+
+  const lower = converted.replaceAll('_', '-').toLowerCase()
+  if (INTERFACE_LANGUAGE_CODES.has(lower)) {
+    return lower as InterfaceLanguageCode
+  }
+
+  const base = lower.split('-')[0]
+  if (base && INTERFACE_LANGUAGE_CODES.has(base)) {
+    return base as InterfaceLanguageCode
+  }
+  return undefined
+}
+
 export function normalizeInterfaceLanguage(value?: string | null): string {
-  if (!value) return 'en'
+  return resolveInterfaceLanguage(value) ?? 'en'
+}
 
-  let normalized = value.trim().replaceAll('_', '-').toLowerCase()
-  if (
-    value === 'zh-TW' ||
-    value === 'zh-HK' ||
-    value === 'zh-MO' ||
-    value === 'zhTW'
-  ) {
-    normalized = 'zhTW'
-  }
-  if (value === 'zh-CN' || value === 'zh-Hans' || value === 'zhCN') {
-    normalized = 'zhCN'
-  }
+/**
+ * Pick the language the first paint must use: persisted i18next value, then
+ * the browser locale list. Passing this into `i18n.init({ lng })` avoids the
+ * fallback-English frame that appears while LanguageDetector is still running.
+ */
+export function detectInitialLanguage(
+  source: LanguageDetectionSource = {}
+): InterfaceLanguageCode {
+  const storedLanguage =
+    source.storedLanguage !== undefined
+      ? source.storedLanguage
+      : readStoredLanguage()
+  const fromStored = resolveInterfaceLanguage(storedLanguage)
+  if (fromStored) return fromStored
 
-  return INTERFACE_LANGUAGE_OPTIONS.some((lang) => lang.code === normalized)
-    ? normalized
-    : 'en'
+  const navigatorLanguages =
+    source.navigatorLanguages ?? readNavigatorLanguages()
+  for (const candidate of navigatorLanguages) {
+    const resolved = resolveInterfaceLanguage(candidate)
+    if (resolved) return resolved
+  }
+  return 'en'
+}
+
+function readStoredLanguage(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage.getItem(I18N_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function readNavigatorLanguages(): readonly string[] {
+  if (typeof navigator === 'undefined') return []
+  return [...(navigator.languages ?? []), navigator.language].filter(
+    (value): value is string => Boolean(value)
+  )
 }
 
 /**
@@ -64,6 +134,7 @@ export function convertDetectedLanguage(value: string): string {
   const lower = value.trim().replaceAll('_', '-').toLowerCase()
   if (!lower.startsWith('zh')) return value
   if (
+    lower === 'zhtw' ||
     lower === 'zh-tw' ||
     lower === 'zh-hk' ||
     lower === 'zh-mo' ||
