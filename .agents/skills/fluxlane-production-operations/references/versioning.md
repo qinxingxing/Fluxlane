@@ -34,7 +34,7 @@ Consequences:
 
 - Forward: starting a new Tag can add columns. That is a one-way production schema change.
 - Reverse: loading an older image does **not** drop columns. An old binary may fail or mis-bill if it cannot tolerate the new schema.
-- The release manifest records `schema_code_sha256` and `schema_notes`. It hashes each path together with its blob SHA under `model/`, so a change to `model/main.go` migrations, a new model file, or a moved file all change the value. `deploy/*/rollback.sh` compares the two manifests and refuses to proceed unless `FLUXLANE_SCHEMA_APPROVED=yes` records explicit user acceptance.
+- The release manifest records `schema_code_sha256`, `schema_changed`, `rollback_database_compatible`, and `schema_notes`. The hash is every `model/` path plus blob SHA, so OptionMap-only edits, comments, new model files, and `model/main.go` migrations all change the value. Hash mismatch triggers the review in `docs/operations/schema-compatibility.md`; it does not by itself mean the schema changed. `deploy/*/rollback.sh` still refuses a hash mismatch unless `FLUXLANE_SCHEMA_APPROVED=yes` records that the **reviewed** risk was accepted.
 - Cloud database backups are not a commit↔schema map. Do not treat backup time as schema version.
 
 Do not invent a second migration framework in a hotfix. Document compatibility in the manifest.

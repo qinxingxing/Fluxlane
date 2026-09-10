@@ -137,11 +137,16 @@ if [[ -n $PREVIOUS_TAG ]]; then
       | sha256sum | cut -d' ' -f1
   )
 fi
-SCHEMA_NOTES="model/ unchanged vs $PREVIOUS_TAG; app rollback needs no schema statement"
+SCHEMA_CHANGED=null
+ROLLBACK_DB_COMPATIBLE=null
+SCHEMA_NOTES="model/ tree hash unchanged vs $PREVIOUS_TAG; schema_changed=false rollback_database_compatible=true"
 if [[ -z $PREVIOUS_TAG ]]; then
   SCHEMA_NOTES="no recorded production release; no unified previous schema baseline"
 elif [[ $PREVIOUS_SCHEMA_SHA != "$SCHEMA_CODE_SHA" ]]; then
-  SCHEMA_NOTES="model/ CHANGED vs $PREVIOUS_TAG; AutoMigrate moves the schema forward. Rollback requires an explicit compatibility statement and user approval."
+  SCHEMA_NOTES="model/ tree hash changed vs $PREVIOUS_TAG; compatibility review required (schema-compatibility.md). Hash mismatch is not a schema change. Record schema_changed and rollback_database_compatible; unproven compatibility is FAIL."
+else
+  SCHEMA_CHANGED=false
+  ROLLBACK_DB_COMPATIBLE=true
 fi
 
 jq -n \
@@ -168,6 +173,8 @@ jq -n \
   --arg run_nginx_sha256 "$RUN_NGINX_SHA" \
   --arg schema_code_sha256 "$SCHEMA_CODE_SHA" \
   --arg schema_notes "$SCHEMA_NOTES" \
+  --argjson schema_changed "$SCHEMA_CHANGED" \
+  --argjson rollback_database_compatible "$ROLLBACK_DB_COMPATIBLE" \
   --arg rollback_tag "$PREVIOUS_TAG" \
   --arg rollback_artifact_path "$PREVIOUS_ARTIFACT" \
   '{
@@ -193,6 +200,8 @@ jq -n \
     nginx_template_sha256: { api: $api_nginx_sha256, run: $run_nginx_sha256 },
     schema_mechanism: "gorm_automigrate",
     schema_code_sha256: $schema_code_sha256,
+    schema_changed: $schema_changed,
+    rollback_database_compatible: $rollback_database_compatible,
     schema_notes: $schema_notes,
     rollback_tag: $rollback_tag,
     rollback_artifact_path: $rollback_artifact_path,
