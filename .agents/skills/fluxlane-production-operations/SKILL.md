@@ -19,6 +19,7 @@ Canonical written procedures (no secrets):
 - `docs/operations/TESTING_WORKFLOW.md`
 - `docs/operations/RELEASE_WORKFLOW.md`
 - `docs/operations/ROLLBACK_WORKFLOW.md`
+- `docs/operations/schema-compatibility.md`
 - `docs/operations/DEVELOPMENT_SERVER.md`
 - `docs/operations/RELEASE_MANIFEST.example.json`
 
@@ -86,7 +87,7 @@ The Development Agent must not declare tests passed. The Test Agent must not mod
 - CLB uses `/readyz`. TCP-open is insufficient. Compose healthchecks probe `127.0.0.1:3000/readyz` inside the app container.
 - Drain RUN Streaming/SSE, initially 120 seconds unless observed duration requires more.
 - Do not `docker compose down` as a deploy or rollback step. Use `docker compose up -d` after switching the Tag.
-- Schema today is GORM AutoMigrate on start. Record `schema_code_sha256` (every path+blob under `model/`, including `model/main.go` migrations) in the manifest. Rollback across a differing hash requires user acceptance recorded as `FLUXLANE_SCHEMA_APPROVED=yes`.
+- Schema today is GORM AutoMigrate on start. Record `schema_code_sha256` (every path+blob under `model/`, including `model/main.go` migrations) in the manifest. A hash change is a compatibility review, not an automatic schema change or Test FAIL; see `docs/operations/schema-compatibility.md`. Record `schema_changed` and `rollback_database_compatible`. Rollback across a differing hash still requires `FLUXLANE_SCHEMA_APPROVED=yes` after that review (or after accepting a real schema risk). Unproven compatibility is FAIL.
 - A concurrent Billing overdraft is not an automatic pass. Each `known_risks` entry needs numeric `accepted_max_overdraft_quota`, `observed_max_overdraft_quota`, and `test_model_charge_quota`, plus `risk_accepted_by` and `risk_accepted_at`, with `|observed| <= |accepted|`. `verify-artifact.sh --release-gate` also requires `candidate_result` to be `RELEASE CANDIDATE PASS`.
 - Stop on ambiguity, unhealthy surviving peer, failed backup, missing rollback artifact, unexplained 5xx, or Billing inconsistency.
 - Prefer rollback of the saved previous image over degraded continuation.
