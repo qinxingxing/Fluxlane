@@ -36,26 +36,32 @@ import { saveAffiliateCode } from '@/features/auth/lib/storage'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { getSetupStatus } from '@/features/setup/api'
-import { getStatus } from '@/lib/api'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import {
+  detectInitialLanguage,
+  markDocumentI18nReady,
+  persistInterfaceLanguage,
+  setInterfaceLanguagePersistEnabled,
+} from '@/i18n/languages'
+import { getStatus } from '@/lib/api'
 import {
   bootstrapAuthentication,
   clearAuthenticatedClientState,
   clearAuthentication,
 } from '@/lib/auth-session'
 import { subscribeAuthSessionEvents } from '@/lib/auth-session-sync'
+import { useIsClient } from '@/lib/client-only'
 import { getDomainRedirect } from '@/lib/domain-routing'
 import { resolveLegacyRoute } from '@/lib/legacy-route'
-import { useIsClient } from '@/lib/client-only'
 import {
   endPrerenderHydration,
   isPrerenderHydration,
   wasPrerenderedPage,
 } from '@/lib/prerender-bridge'
 import { applyDefaultTitle, markNavigation } from '@/lib/seo'
+import { useAuthStore } from '@/stores/auth-store'
 import { useNotificationStore } from '@/stores/notification-store'
 import { useSystemConfigStore } from '@/stores/system-config-store'
-import { useAuthStore } from '@/stores/auth-store'
 
 function RootComponent() {
   const navigate = useNavigate()
@@ -86,19 +92,32 @@ function RootComponent() {
     applyDefaultTitle(pathname)
   }, [pathname])
 
-  // Prerendered pages hydrate with the prerendered language (en) so the
-  // first client render matches the server HTML. Switch to the visitor's
-  // detected language only after hydration completes.
+  // Prerendered pages hydrate with English so the first client render
+  // matches the server HTML. `#root` stays hidden until this effect
+  // switches to the visitor language (Chinese preferred) and then
+  // reveals the tree. SPA / console builds already init in that language.
   useEffect(() => {
-    if (!wasPrerenderedPage()) return
-    const detector = i18n.services?.languageDetector
-    if (!detector?.detect) return
-    const detected = detector.detect()
-    const preferred = Array.isArray(detected) ? detected[0] : detected
-    if (preferred && preferred !== i18n.language) {
-      void i18n.changeLanguage(preferred).catch(() => {
-        /* keep prerendered language on failure */
-      })
+    let cancelled = false
+
+    async function revealVisitorLanguage() {
+      if (wasPrerenderedPage()) {
+        const preferred = detectInitialLanguage()
+        if (preferred !== i18n.language) {
+          try {
+            await i18n.changeLanguage(preferred)
+          } catch {
+            /* keep prerendered language on failure */
+          }
+        }
+        setInterfaceLanguagePersistEnabled(true)
+        persistInterfaceLanguage(i18n.resolvedLanguage || i18n.language)
+      }
+      if (!cancelled) markDocumentI18nReady()
+    }
+
+    void revealVisitorLanguage()
+    return () => {
+      cancelled = true
     }
   }, [i18n])
 

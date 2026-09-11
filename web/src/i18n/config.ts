@@ -17,12 +17,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import i18n from 'i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
-import { readPrerenderState } from '@/lib/prerender-bridge'
+import { isPrerendering, readPrerenderState } from '@/lib/prerender-bridge'
 
-import { convertDetectedLanguage } from './languages'
+import {
+  detectInitialLanguage,
+  persistInterfaceLanguage,
+  setInterfaceLanguagePersistEnabled,
+  toIntlLocale,
+} from './languages'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import ja from './locales/ja.json'
@@ -41,33 +45,47 @@ export const resources = {
   zhTW,
 } as const
 
-// Prerendered pages ship English HTML. Pin the language to en for the
-// hydration pass (and skip caching so the visitor's stored preference is
-// not overwritten); the root route switches to the detected language right
-// after hydration.
-const prerendered = readPrerenderState() !== null
+function applyDocumentLanguage(code?: string | null) {
+  if (typeof document === 'undefined') return
+  const locale = toIntlLocale(code)
+  if (locale) {
+    document.documentElement.lang = locale
+  }
+}
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: 'en',
-    supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
-    load: 'currentOnly',
-    nsSeparator: false, // Allow literal colons in keys (e.g., URLs, labels)
-    debug: import.meta.env.DEV,
-    interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
-    },
-    ...(prerendered ? { lng: 'en' } : {}),
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: prerendered ? [] : ['localStorage'],
-      // Browsers report `zh-CN`/`zh-TW`/`zh`; map them onto our `zhCN`/`zhTW`
-      // codes (non-Chinese codes pass through for normal supportedLngs matching).
-      convertDetectedLanguage,
-    },
-  })
+function syncDocumentLanguage(code?: string | null) {
+  applyDocumentLanguage(code)
+  if (code) persistInterfaceLanguage(code)
+}
+
+// Prerendered pages (and the build-time prerenderer) ship English HTML.
+// Pin `en` for that first tree so hydration matches; do not write `en` to
+// localStorage. The root route switches to the visitor language after
+// hydration, then reveals `#root`.
+const pinEnglish = isPrerendering() || readPrerenderState() !== null
+if (pinEnglish) {
+  setInterfaceLanguagePersistEnabled(false)
+}
+
+const initialLanguage = pinEnglish ? 'en' : detectInitialLanguage()
+
+export const i18nReady = i18n.use(initReactI18next).init({
+  resources,
+  lng: initialLanguage,
+  fallbackLng: 'en',
+  supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
+  load: 'currentOnly',
+  nsSeparator: false, // Allow literal colons in keys (e.g., URLs, labels)
+  debug: import.meta.env.DEV,
+  interpolation: {
+    escapeValue: false, // not needed for react as it escapes by default
+  },
+})
+
+void i18nReady.then(() => {
+  syncDocumentLanguage(i18n.resolvedLanguage || i18n.language)
+})
+
+i18n.on('languageChanged', syncDocumentLanguage)
 
 export default i18n
