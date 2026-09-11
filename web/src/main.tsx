@@ -22,7 +22,9 @@ import { installBuildMetadata } from '@/lib/build-metadata'
 import '@/lib/dayjs'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
 import type { createAppRouter } from '@/router'
-import './i18n/config'
+
+import { i18nReady } from './i18n/config'
+
 import './styles/index.css'
 
 declare module '@tanstack/react-router' {
@@ -37,8 +39,10 @@ installBuildMetadata()
 const isConsoleBuild = import.meta.env.VITE_SITE_MODE === 'console'
 const isDev = import.meta.env.DEV
 
-if (isConsoleBuild || isDev) {
-  startSpa()
-} else {
-  startPublic()
-}
+void i18nReady.finally(() => {
+  if (isConsoleBuild || isDev) {
+    startSpa()
+  } else {
+    startPublic()
+  }
+})

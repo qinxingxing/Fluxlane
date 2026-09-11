@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <!-- Google Tag Manager -->
     <script>
-      (function (w, d, s, l, i) {
+      ;(function (w, d, s, l, i) {
         w[l] = w[l] || []
         w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
         var f = d.getElementsByTagName(s)[0],
@@ -46,6 +46,20 @@
         }
       })()
     </script>
+    <!-- Hide prerendered English HTML until the visitor language is applied.
+         noscript keeps the English tree visible for crawlers without JS. -->
+    <style>
+      #root:not([data-i18n-ready]) {
+        visibility: hidden;
+      }
+    </style>
+    <noscript>
+      <style>
+        #root:not([data-i18n-ready]) {
+          visibility: visible;
+        }
+      </style>
+    </noscript>
     <!--umami-->
     <!--Google Analytics-->
   </head>
