@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type TopNavLink } from '../types'
+import type { TopNavLink } from '../types'
 
 /**
  * Default top navigation links
@@ -27,9 +27,4 @@ import { type TopNavLink } from '../types'
  * This is intentionally empty to encourage backend configuration.
  * If you need fallback links, add them here.
  */
-export const defaultTopNavLinks: TopNavLink[] = [
-  { title: 'Features', href: '/#features' },
-  { title: 'Models', href: '/pricing' },
-  { title: 'Docs', href: 'https://doc.fluxlane.ai', external: true },
-  { title: 'Pricing', href: '/pricing' },
-]
+export const defaultTopNavLinks: TopNavLink[] = []

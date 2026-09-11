@@ -24,7 +24,7 @@ import {
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { AxiosError } from 'axios'
 import i18next from 'i18next'
-import { StrictMode } from 'react'
+import { StrictMode, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { toast } from 'sonner'
 
@@ -38,7 +38,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
-import './i18n/config'
+import { i18nReady } from './i18n/config'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 
@@ -113,6 +113,7 @@ const rootElement = document.querySelector<HTMLElement>('#root')
 if (!rootElement) {
   throw new Error('Root element not found')
 }
+const appRoot = rootElement
 // Set document.title and favicon from cached status, then refresh from network
 ;(function initSystemBranding() {
   try {
@@ -155,15 +156,19 @@ if (!rootElement) {
     /* empty */
   }
 })()
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
+
+function mountApp() {
+  if (appRoot.innerHTML) return
+  const root = ReactDOM.createRoot(appRoot)
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-              <RouterProvider router={router} />
+              <Suspense fallback={null}>
+                <RouterProvider router={router} />
+              </Suspense>
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>
@@ -171,3 +176,5 @@ if (!rootElement.innerHTML) {
     </StrictMode>
   )
 }
+
+void i18nReady.then(mountApp, mountApp)

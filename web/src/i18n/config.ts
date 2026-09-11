@@ -17,10 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import i18n from 'i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
-import { convertDetectedLanguage } from './languages'
+import {
+  DEFAULT_INTERFACE_LANGUAGE,
+  detectInitialLanguage,
+  persistInterfaceLanguage,
+  toIntlLocale,
+} from './languages'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import ja from './locales/ja.json'
@@ -39,26 +43,41 @@ export const resources = {
   zhTW,
 } as const
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: 'en',
-    supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
-    load: 'currentOnly',
-    nsSeparator: false, // Allow literal colons in keys (e.g., URLs, labels)
-    debug: import.meta.env.DEV,
-    interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-      // Browsers report `zh-CN`/`zh-TW`/`zh`; map them onto our `zhCN`/`zhTW`
-      // codes (non-Chinese codes pass through for normal supportedLngs matching).
-      convertDetectedLanguage,
-    },
-  })
+function applyDocumentLanguage(code?: string | null) {
+  if (typeof document === 'undefined') return
+  const locale = toIntlLocale(code)
+  if (locale) {
+    document.documentElement.lang = locale
+  }
+}
+
+const initialLanguage = detectInitialLanguage()
+
+export const i18nReady = i18n.use(initReactI18next).init({
+  resources,
+  lng: initialLanguage,
+  fallbackLng: DEFAULT_INTERFACE_LANGUAGE,
+  supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
+  load: 'currentOnly',
+  nsSeparator: false, // Allow literal colons in keys (e.g., URLs, labels)
+  debug: import.meta.env.DEV,
+  interpolation: {
+    escapeValue: false, // not needed for react as it escapes by default
+  },
+  react: {
+    useSuspense: true,
+  },
+})
+
+function syncDocumentLanguage(code?: string | null) {
+  applyDocumentLanguage(code)
+  if (code) persistInterfaceLanguage(code)
+}
+
+void i18nReady.then(() => {
+  syncDocumentLanguage(i18n.resolvedLanguage || i18n.language)
+})
+
+i18n.on('languageChanged', syncDocumentLanguage)
 
 export default i18n
