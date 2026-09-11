@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
@@ -15,6 +15,57 @@
     />
 
     <meta name="theme-color" content="#0c112e" />
+    <script>
+      (function () {
+        var key = 'i18nextLng'
+        var stored = ''
+        try {
+          stored = localStorage.getItem(key) || ''
+        } catch (e) {}
+        var langs = ''
+        try {
+          langs =
+            navigator.languages && navigator.languages.length
+              ? navigator.languages.join(',')
+              : navigator.language || ''
+        } catch (e) {}
+        var haystack = (stored + ',' + langs).toLowerCase()
+        var pick = 'zhCN'
+        if (stored) {
+          pick = stored
+        } else if (/zh-tw|zh-hk|zh-mo|zh-hant|zhtw/.test(haystack)) {
+          pick = 'zhTW'
+        } else if (/zh/.test(haystack)) {
+          pick = 'zhCN'
+        } else if (/\bja/.test(haystack)) {
+          pick = 'ja'
+        } else if (/\bfr/.test(haystack)) {
+          pick = 'fr'
+        } else if (/\bru/.test(haystack)) {
+          pick = 'ru'
+        } else if (/\bvi/.test(haystack)) {
+          pick = 'vi'
+        }
+        if (!stored) {
+          try {
+            localStorage.setItem(key, pick)
+          } catch (e) {}
+        }
+        var htmlLang = 'zh-CN'
+        if (pick === 'en') htmlLang = 'en'
+        else if (pick === 'zhTW') htmlLang = 'zh-TW'
+        else if (pick === 'ja') htmlLang = 'ja'
+        else if (pick === 'fr') htmlLang = 'fr'
+        else if (pick === 'ru') htmlLang = 'ru'
+        else if (pick === 'vi') htmlLang = 'vi'
+        document.documentElement.lang = htmlLang
+      })()
+    </script>
+    <style>
+      #root:not([data-i18n-ready]) {
+        visibility: hidden;
+      }
+    </style>
     <!--umami-->
     <!--Google Analytics-->
   </head>

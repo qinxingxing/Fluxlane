@@ -82,6 +82,26 @@ describe('detectInitialLanguage', () => {
     )
   })
 
+  test('prefers Chinese when the browser lists it after English', () => {
+    assert.equal(
+      detectInitialLanguage({
+        storedLanguage: null,
+        navigatorLanguages: ['en-US', 'en', 'zh-CN'],
+      }),
+      'zhCN'
+    )
+  })
+
+  test('uses a stored English preference even when the browser is Chinese', () => {
+    assert.equal(
+      detectInitialLanguage({
+        storedLanguage: 'en',
+        navigatorLanguages: ['zh-CN'],
+      }),
+      'en'
+    )
+  })
+
   test('uses the browser locale when nothing is stored', () => {
     assert.equal(
       detectInitialLanguage({
@@ -102,7 +122,7 @@ describe('detectInitialLanguage', () => {
         storedLanguage: null,
         navigatorLanguages: ['en-US'],
       }),
-      'en'
+      'zhCN'
     )
   })
 })

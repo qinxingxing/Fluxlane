@@ -17,14 +17,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { markDocumentI18nReady } from '@/i18n/languages'
 
 export function NotFoundError() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { history } = useRouter()
+  useLayoutEffect(() => {
+    markDocumentI18nReady()
+  }, [])
   return (
     <div className='h-svh'>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>

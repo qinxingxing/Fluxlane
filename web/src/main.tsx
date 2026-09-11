@@ -24,7 +24,7 @@ import {
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { AxiosError } from 'axios'
 import i18next from 'i18next'
-import { StrictMode } from 'react'
+import { StrictMode, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { toast } from 'sonner'
 
@@ -166,7 +166,9 @@ function mountApp() {
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-              <RouterProvider router={router} />
+              <Suspense fallback={null}>
+                <RouterProvider router={router} />
+              </Suspense>
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>

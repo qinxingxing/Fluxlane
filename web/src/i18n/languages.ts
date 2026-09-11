@@ -30,6 +30,8 @@ export type InterfaceLanguageCode =
   (typeof INTERFACE_LANGUAGE_OPTIONS)[number]['code']
 
 export const I18N_STORAGE_KEY = 'i18nextLng'
+export const I18N_READY_ATTR = 'data-i18n-ready'
+export const DEFAULT_INTERFACE_LANGUAGE: InterfaceLanguageCode = 'zhCN'
 
 const INTERFACE_LANGUAGE_CODES = new Set<string>(
   INTERFACE_LANGUAGE_OPTIONS.map((lang) => lang.code)
@@ -81,9 +83,13 @@ export function normalizeInterfaceLanguage(value?: string | null): string {
 }
 
 /**
- * Pick the language the first paint must use: persisted i18next value, then
- * the browser locale list. Passing this into `i18n.init({ lng })` avoids the
- * fallback-English frame that appears while LanguageDetector is still running.
+ * Pick the language the first paint must use.
+ *
+ * Stored i18next values win. Otherwise scan the whole browser locale list:
+ * English Chrome commonly reports `en-US` before `zh-CN`, and taking the first
+ * match would paint English then jump to Chinese. Prefer Chinese if it appears
+ * anywhere, then any other non-English supported locale. With no match, use
+ * Simplified Chinese — this product's public UI default.
  */
 export function detectInitialLanguage(
   source: LanguageDetectionSource = {}
@@ -97,11 +103,36 @@ export function detectInitialLanguage(
 
   const navigatorLanguages =
     source.navigatorLanguages ?? readNavigatorLanguages()
+  const resolved: InterfaceLanguageCode[] = []
   for (const candidate of navigatorLanguages) {
-    const resolved = resolveInterfaceLanguage(candidate)
-    if (resolved) return resolved
+    const language = resolveInterfaceLanguage(candidate)
+    if (language) resolved.push(language)
   }
-  return 'en'
+
+  const chinese = resolved.find(
+    (language) => language === 'zhCN' || language === 'zhTW'
+  )
+  if (chinese) return chinese
+
+  const localized = resolved.find((language) => language !== 'en')
+  if (localized) return localized
+
+  return DEFAULT_INTERFACE_LANGUAGE
+}
+
+export function persistInterfaceLanguage(code: string) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(I18N_STORAGE_KEY, code)
+  } catch {
+    /* empty */
+  }
+}
+
+export function markDocumentI18nReady() {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute(I18N_READY_ATTR, '')
+  document.querySelector('#root')?.setAttribute(I18N_READY_ATTR, '')
 }
 
 function readStoredLanguage(): string | null {
