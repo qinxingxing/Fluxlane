@@ -97,6 +97,7 @@ function breadcrumb(items: BreadcrumbEntry[]): Record<string, unknown> {
  * - `/privacy-policy` prerenders the in-repo Fluxlane policy and is
  *   indexable. `/user-agreement` stays noindex until terms text lands in Git.
  * - `/privacy` is a 301 to `/privacy-policy` and is not prerendered.
+ * - `/faq` prerenders the in-repo public FAQ and is indexable.
  * - `/pricing` prerenders the stable heading and intro; the live price
  *   table is client-rendered data, not SEO copy.
  */
@@ -168,6 +169,15 @@ const ROUTES: Record<string, RouteSeo> = {
       'src/routes/user-agreement.tsx',
       'src/features/legal/user-agreement.tsx',
     ],
+  },
+  '/faq': {
+    title: 'FAQ | Fluxlane',
+    description:
+      'Answers about FluxLane.AI models, OpenAI-compatible APIs, billing, invoices, and refunds.',
+    canonicalPath: '/faq',
+    ogType: 'website',
+    jsonLd: [breadcrumb([{ name: 'FAQ', path: '/faq' }])],
+    lastmodSources: ['src/routes/faq.tsx', 'src/features/faq'],
   },
 }
 
@@ -651,6 +661,7 @@ function publicRedirects(): string {
     '# Slashless URLs are canonical. Directory indexes are not used, so',
     '# Cloudflare will not add a trailing slash that these rules undo.',
     '/about/ /about 308',
+    '/faq/ /faq 308',
     '/pricing/ /pricing 308',
     '/privacy /privacy-policy 301',
     '/privacy/ /privacy-policy 308',
@@ -769,6 +780,9 @@ function validateOutput(renderedRoutes: string[]): void {
   if (!locs.some((loc) => loc === `${PUBLIC_ORIGIN}/privacy-policy`)) {
     fail('published privacy policy must appear in the sitemap')
   }
+  if (!locs.some((loc) => loc === `${PUBLIC_ORIGIN}/faq`)) {
+    fail('published FAQ must appear in the sitemap')
+  }
   for (const loc of locs) {
     if (!loc.startsWith('https://')) fail(`sitemap URL not https: ${loc}`)
     if (loc.includes('?')) fail(`sitemap URL must be canonical: ${loc}`)
@@ -795,6 +809,9 @@ function validateOutput(renderedRoutes: string[]): void {
   }
   if (!redirects.includes('/about/ /about 308')) {
     fail('public _redirects must canonicalize trailing slashes')
+  }
+  if (!redirects.includes('/faq/ /faq 308')) {
+    fail('public _redirects must canonicalize FAQ trailing slashes')
   }
   for (const route of CONSOLE_ONLY_ROUTES) {
     if (!redirects.includes(`${route} ${CONSOLE_ORIGIN}${route} 301`)) {
@@ -835,11 +852,15 @@ function validateOutput(renderedRoutes: string[]): void {
     if (route === '/privacy-policy' && !html.includes('FLUX LANE PTE. LTD.')) {
       fail(`${route}: prerender must include the published privacy policy`)
     }
+    if (route === '/faq' && !html.includes('FluxLane.AI')) {
+      fail(`${route}: prerender must include the published FAQ`)
+    }
     // Footer destinations required on every public page.
     const footerLinks: [string, string][] = [
       ['pricing link', 'href="/pricing"'],
       ['docs link', 'https://doc.fluxlane.ai'],
       ['about link', 'href="/about"'],
+      ['faq link', 'href="/faq"'],
       ['privacy link', 'href="/privacy-policy"'],
       ['terms link', 'href="/user-agreement"'],
       ['console link', 'https://console.fluxlane.ai'],

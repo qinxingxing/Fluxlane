@@ -16,6 +16,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import {
+  FAQ_ABUSE_ACTIONS,
+  FAQ_ADVANTAGES,
+  FAQ_ERROR_COLUMNS,
+  FAQ_ERROR_ROWS,
+  FAQ_REFUND_APPLICATION_ITEMS,
+  FAQ_REFUND_ELIGIBLE,
+  FAQ_REFUND_INELIGIBLE,
+  FAQ_REFUND_LIMITS,
+} from '@/features/faq/faq-content'
+
 // Static translation keys that don't get picked up by the t('...') regex.
 // These cover dynamic labels (e.g. constants, configs) that are passed into t at runtime.
 export const STATIC_I18N_KEYS = [
@@ -26,6 +37,7 @@ export const STATIC_I18N_KEYS = [
   'Rankings',
   'Docs',
   'About',
+  'FAQ',
 
   // Sidebar views (drill-in workspaces)
   'System Settings',
@@ -572,4 +584,16 @@ export const STATIC_I18N_KEYS = [
   'This user account is disabled.',
   'Telegram binding failed. Please try again.',
   'Verification scope is missing',
+
+  // Public FAQ page (keys passed to t() from faq-content.ts)
+  ...FAQ_ADVANTAGES,
+  ...FAQ_ERROR_COLUMNS,
+  ...FAQ_ERROR_ROWS.flatMap((row) => [row.cause, row.action]),
+  'Request timeout',
+  'Incomplete response',
+  ...FAQ_REFUND_ELIGIBLE,
+  ...FAQ_REFUND_INELIGIBLE,
+  ...FAQ_REFUND_APPLICATION_ITEMS,
+  ...FAQ_REFUND_LIMITS,
+  ...FAQ_ABUSE_ACTIONS,
 ] as const
