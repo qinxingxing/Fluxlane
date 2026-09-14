@@ -1977,6 +1977,7 @@
     "Filled {{count}} model(s)": "{{count}} 個のモデルを補完しました",
     "Filled {{count}} related model(s)": "{{count}} 個の関連モデルを補完しました",
     "Filter": "フィルター",
+    "Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.": "必要に応じて AI モデルを絞り込み、価格と能力を明確に比較し、用途に合ったモデルを選びます。",
     "Filter by API key...": "APIキーでフィルター...",
     "Filter by channel ID": "チャネルIDでフィルター",
     "Filter by group": "グループでフィルター",

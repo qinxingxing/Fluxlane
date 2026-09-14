@@ -1977,6 +1977,7 @@
     "Filled {{count}} model(s)": "{{count}} modèle(s) rempli(s)",
     "Filled {{count}} related model(s)": "{{count}} modèle(s) associé(s) rempli(s)",
     "Filter": "Filtre",
+    "Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.": "Filtrez les modèles IA à la demande, comparez clairement les prix et les capacités, puis choisissez le modèle adapté à chaque scénario.",
     "Filter by API key...": "Filtrer par clé API...",
     "Filter by channel ID": "Filtrer par ID de canal",
     "Filter by group": "Filtrer par groupe",

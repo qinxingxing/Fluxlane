@@ -1977,6 +1977,7 @@
     "Filled {{count}} model(s)": "Đã điền {{count}} mô hình",
     "Filled {{count}} related model(s)": "Đã điền {{count}} mô hình liên quan",
     "Filter": "Lọc",
+    "Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.": "Lọc mô hình AI theo nhu cầu, so sánh rõ ràng giá và khả năng, rồi chọn mô hình phù hợp cho từng kịch bản.",
     "Filter by API key...": "Lọc theo khóa API...",
     "Filter by channel ID": "Lọc theo ID kênh",
     "Filter by group": "Lọc theo nhóm",

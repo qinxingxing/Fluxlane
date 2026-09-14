@@ -1977,6 +1977,7 @@
     "Filled {{count}} model(s)": "已填充 {{count}} 個模型",
     "Filled {{count}} related model(s)": "已填充 {{count}} 個關聯模型",
     "Filter": "篩選",
+    "Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.": "按需篩選 AI 模型，清晰比較價格與能力，為不同場景選擇合適的模型。",
     "Filter by API key...": "按 API 金鑰篩選...",
     "Filter by channel ID": "按渠道 ID 篩選",
     "Filter by group": "按分組篩選",

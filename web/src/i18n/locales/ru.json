@@ -1977,6 +1977,7 @@
     "Filled {{count}} model(s)": "Заполнено {{count}} моделей",
     "Filled {{count}} related model(s)": "Заполнено {{count}} связанных моделей",
     "Filter": "Фильтр",
+    "Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.": "Фильтруйте модели ИИ по запросу, наглядно сравнивайте цены и возможности и выбирайте подходящую модель для каждого сценария.",
     "Filter by API key...": "Фильтр по API-ключу...",
     "Filter by channel ID": "Фильтр по ID канала",
     "Filter by group": "Фильтр по группе",

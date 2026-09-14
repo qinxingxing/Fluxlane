@@ -53,6 +53,7 @@ export const STATIC_I18N_KEYS = [
   'Drawing task polling',
 
   // Pricing constants
+  'Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.',
   'Name',
   'Price: Low to High',
   'Price: High to Low',

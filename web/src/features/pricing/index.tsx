@@ -110,7 +110,13 @@ export function Pricing() {
     clearSearch()
   }, [clearFilters, clearSearch])
 
+  const modelCount = models?.length ?? 0
+
   const renderPricingContent = () => {
+    if (isLoading) {
+      return <LoadingSkeleton viewMode={viewMode} />
+    }
+
     if (filteredModels.length === 0) {
       return (
         <EmptyState
@@ -148,24 +154,6 @@ export function Pricing() {
     )
   }
 
-  if (isLoading) {
-    return (
-      <PublicLayout showMainContainer={false}>
-        <div className='mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <h1 className='mb-2 text-3xl font-semibold tracking-tight'>
-            {t('AI Model API Pricing')}
-          </h1>
-          <p className='text-muted-foreground mb-8 max-w-2xl text-sm'>
-            {t(
-              'Compare pricing and availability for AI models available through the Fluxlane unified API. The live price table loads in a moment.'
-            )}
-          </p>
-          <LoadingSkeleton viewMode={viewMode} />
-        </div>
-      </PublicLayout>
-    )
-  }
-
   return (
     <PublicLayout showMainContainer={false}>
       <div className='relative'>
@@ -187,27 +175,32 @@ export function Pricing() {
         <PageTransition className='relative mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
             <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
-              模型广场
+              {t('Model Square')}
             </h1>
             <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>
               {t('This site currently has {{count}} models enabled', {
-                count: models?.length || 0,
+                count: modelCount,
               })}
             </p>
             <p className='text-muted-foreground/60 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-              按需筛选 AI 模型，清晰比较价格与能力，为不同场景选择合适的模型。
+              {t(
+                'Filter AI models on demand, compare pricing and capabilities clearly, and choose the right model for each scenario.'
+              )}
             </p>
             <SearchBar
               value={searchInput}
               onChange={setSearchInput}
               onClear={clearSearch}
-              placeholder='搜索模型名称、供应商、端点或标签...'
+              placeholder={t(
+                'Search model name, provider, endpoint, or tag...'
+              )}
               className='mx-auto mt-4 max-w-2xl sm:mt-6'
             />
           </header>
 
           <div className='grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]'>
-            <PricingSidebar
+            {!isLoading && (
+              <PricingSidebar
               quotaTypeFilter={quotaTypeFilter}
               endpointTypeFilter={endpointTypeFilter}
               vendorFilter={vendorFilter}
@@ -226,10 +219,12 @@ export function Pricing() {
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
               className='hover-scrollbar sticky top-4 hidden max-h-[calc(100dvh-2rem)] self-start overflow-y-auto xl:block'
-            />
+              />
+            )}
 
             <main className='min-w-0 space-y-4'>
-              <PricingToolbar
+              {!isLoading && (
+                <PricingToolbar
                 filteredCount={filteredModels.length}
                 totalCount={models?.length}
                 sortBy={sortBy}
@@ -258,7 +253,8 @@ export function Pricing() {
                 hasActiveFilters={hasActiveFilters}
                 activeFilterCount={activeFilterCount}
                 onClearFilters={clearFilters}
-              />
+                />
+              )}
 
               {renderPricingContent()}
             </main>
