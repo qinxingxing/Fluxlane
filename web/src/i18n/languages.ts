@@ -29,8 +29,10 @@ export const INTERFACE_LANGUAGE_OPTIONS = [
 export type InterfaceLanguageCode =
   (typeof INTERFACE_LANGUAGE_OPTIONS)[number]['code']
 
-export const I18N_STORAGE_KEY = 'i18nextLng'
+/** Written only when the visitor explicitly picks a language. */
+export const INTERFACE_LANGUAGE_STORAGE_KEY = 'fluxlaneInterfaceLng'
 export const I18N_READY_ATTR = 'data-i18n-ready'
+export const I18N_PENDING_ATTR = 'data-i18n-pending'
 export const DEFAULT_INTERFACE_LANGUAGE: InterfaceLanguageCode = 'zhCN'
 
 const INTERFACE_LANGUAGE_CODES = new Set<string>(
@@ -39,18 +41,6 @@ const INTERFACE_LANGUAGE_CODES = new Set<string>(
 
 export type LanguageDetectionSource = {
   storedLanguage?: string | null
-  navigatorLanguages?: readonly string[]
-}
-
-let persistEnabled = true
-
-/**
- * Prerendered pages hydrate in English. Disable localStorage writes until
- * the visitor language has been applied so the hydration pin cannot
- * overwrite a stored Chinese (or other) preference.
- */
-export function setInterfaceLanguagePersistEnabled(enabled: boolean) {
-  persistEnabled = enabled
 }
 
 /**
@@ -90,17 +80,14 @@ export function resolveInterfaceLanguage(
 }
 
 export function normalizeInterfaceLanguage(value?: string | null): string {
-  return resolveInterfaceLanguage(value) ?? 'en'
+  return resolveInterfaceLanguage(value) ?? DEFAULT_INTERFACE_LANGUAGE
 }
 
 /**
- * Pick the language the first visible paint must use.
- *
- * Stored i18next values win. Otherwise scan the whole browser locale list:
- * English Chrome commonly reports `en-US` before `zh-CN`, and taking the first
- * match would paint English then jump to Chinese. Prefer Chinese if it appears
- * anywhere, then any other non-English supported locale. With no match, use
- * Simplified Chinese — this product's public UI default.
+ * Language for the first paint. An explicit switcher/profile choice wins;
+ * otherwise Simplified Chinese. Browser `navigator.languages` and leftover
+ * `i18nextLng` values are ignored — the latter was written during English
+ * hydration and made nav/footer stick on English after refresh.
  */
 export function detectInitialLanguage(
   source: LanguageDetectionSource = {}
@@ -109,32 +96,15 @@ export function detectInitialLanguage(
     source.storedLanguage !== undefined
       ? source.storedLanguage
       : readStoredLanguage()
-  const fromStored = resolveInterfaceLanguage(storedLanguage)
-  if (fromStored) return fromStored
-
-  const navigatorLanguages =
-    source.navigatorLanguages ?? readNavigatorLanguages()
-  const resolved: InterfaceLanguageCode[] = []
-  for (const candidate of navigatorLanguages) {
-    const language = resolveInterfaceLanguage(candidate)
-    if (language) resolved.push(language)
-  }
-
-  const chinese = resolved.find(
-    (language) => language === 'zhCN' || language === 'zhTW'
-  )
-  if (chinese) return chinese
-
-  const localized = resolved.find((language) => language !== 'en')
-  if (localized) return localized
-
-  return DEFAULT_INTERFACE_LANGUAGE
+  return resolveInterfaceLanguage(storedLanguage) ?? DEFAULT_INTERFACE_LANGUAGE
 }
 
 export function persistInterfaceLanguage(code: string) {
-  if (!persistEnabled || typeof window === 'undefined') return
+  if (typeof window === 'undefined') return
+  const resolved = resolveInterfaceLanguage(code)
+  if (!resolved) return
   try {
-    window.localStorage.setItem(I18N_STORAGE_KEY, code)
+    window.localStorage.setItem(INTERFACE_LANGUAGE_STORAGE_KEY, resolved)
   } catch {
     /* empty */
   }
@@ -142,6 +112,7 @@ export function persistInterfaceLanguage(code: string) {
 
 export function markDocumentI18nReady() {
   if (typeof document === 'undefined') return
+  document.documentElement.removeAttribute(I18N_PENDING_ATTR)
   document.documentElement.setAttribute(I18N_READY_ATTR, '')
   document.querySelector('#root')?.setAttribute(I18N_READY_ATTR, '')
 }
@@ -149,17 +120,10 @@ export function markDocumentI18nReady() {
 function readStoredLanguage(): string | null {
   if (typeof window === 'undefined') return null
   try {
-    return window.localStorage.getItem(I18N_STORAGE_KEY)
+    return window.localStorage.getItem(INTERFACE_LANGUAGE_STORAGE_KEY)
   } catch {
     return null
   }
-}
-
-function readNavigatorLanguages(): readonly string[] {
-  if (typeof navigator === 'undefined') return []
-  return [...(navigator.languages ?? []), navigator.language].filter(
-    (value): value is string => Boolean(value)
-  )
 }
 
 /**

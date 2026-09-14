@@ -22,9 +22,8 @@ import { initReactI18next } from 'react-i18next'
 import { isPrerendering, readPrerenderState } from '@/lib/prerender-bridge'
 
 import {
+  DEFAULT_INTERFACE_LANGUAGE,
   detectInitialLanguage,
-  persistInterfaceLanguage,
-  setInterfaceLanguagePersistEnabled,
   toIntlLocale,
 } from './languages'
 import en from './locales/en.json'
@@ -53,26 +52,18 @@ function applyDocumentLanguage(code?: string | null) {
   }
 }
 
-function syncDocumentLanguage(code?: string | null) {
-  applyDocumentLanguage(code)
-  if (code) persistInterfaceLanguage(code)
-}
-
-// Prerendered pages (and the build-time prerenderer) ship English HTML.
-// Pin `en` for that first tree so hydration matches; do not write `en` to
-// localStorage. The root route switches to the visitor language after
-// hydration, then reveals `#root`.
-const pinEnglish = isPrerendering() || readPrerenderState() !== null
-if (pinEnglish) {
-  setInterfaceLanguagePersistEnabled(false)
-}
-
-const initialLanguage = pinEnglish ? 'en' : detectInitialLanguage()
+// Prerendered pages ship Simplified Chinese HTML. Pin zhCN for that first
+// tree so hydration matches. Do not persist here — leftover i18nextLng=en
+// from the old English pin made nav/footer stick on English after refresh.
+const prerendered = isPrerendering() || readPrerenderState() !== null
+const initialLanguage = prerendered
+  ? DEFAULT_INTERFACE_LANGUAGE
+  : detectInitialLanguage()
 
 export const i18nReady = i18n.use(initReactI18next).init({
   resources,
   lng: initialLanguage,
-  fallbackLng: 'en',
+  fallbackLng: ['zhCN', 'en'],
   supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
   load: 'currentOnly',
   nsSeparator: false, // Allow literal colons in keys (e.g., URLs, labels)
@@ -83,9 +74,9 @@ export const i18nReady = i18n.use(initReactI18next).init({
 })
 
 void i18nReady.then(() => {
-  syncDocumentLanguage(i18n.resolvedLanguage || i18n.language)
+  applyDocumentLanguage(i18n.resolvedLanguage || i18n.language)
 })
 
-i18n.on('languageChanged', syncDocumentLanguage)
+i18n.on('languageChanged', applyDocumentLanguage)
 
 export default i18n

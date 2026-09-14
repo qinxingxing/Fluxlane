@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" suppressHydrationWarning>
+<html lang="zh-CN" suppressHydrationWarning>
   <head>
     <meta charset="UTF-8" />
     <!-- Google Tag Manager -->
@@ -46,16 +46,28 @@
         }
       })()
     </script>
-    <!-- Hide prerendered English HTML until the visitor language is applied.
-         noscript keeps the English tree visible for crawlers without JS. -->
+    <!-- Hide Chinese HTML only when the visitor previously picked another
+         language. Default visitors see the prerendered Chinese tree immediately. -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('fluxlaneInterfaceLng') || ''
+          if (stored && stored !== 'zhCN' && stored !== 'zh' && stored !== 'zh-CN') {
+            document.documentElement.setAttribute('data-i18n-pending', '')
+          }
+        } catch (e) {
+          /* show Chinese HTML */
+        }
+      })()
+    </script>
     <style>
-      #root:not([data-i18n-ready]) {
+      html[data-i18n-pending] #root {
         visibility: hidden;
       }
     </style>
     <noscript>
       <style>
-        #root:not([data-i18n-ready]) {
+        html[data-i18n-pending] #root {
           visibility: visible;
         }
       </style>
