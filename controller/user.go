@@ -228,34 +228,29 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
 		return
 	}
-	if common.EmailVerificationEnabled {
-		if user.Email == "" || user.VerificationCode == "" {
-			common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
-			return
-		}
-		valid, verifyErr := common.VerifyCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose)
-		if verifyErr != nil {
-			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to verify registration email code: %s", verifyErr.Error()))
-			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
-			return
-		}
-		if !valid {
-			common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
-			return
-		}
-		if err := model.EnsureEmailAvailable(user.Email, 0); err != nil {
-			if errors.Is(err, model.ErrEmailAlreadyTaken) {
-				common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
-				return
-			}
-			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
-			return
-		}
+	if err := common.Validate.Var(user.Email, "required,email"); err != nil || user.VerificationCode == "" {
+		common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
+		return
 	}
-	emailForExistCheck := ""
-	if common.EmailVerificationEnabled {
-		emailForExistCheck = user.Email
+	valid, verifyErr := common.VerifyCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose)
+	if verifyErr != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("failed to verify registration email code: %s", verifyErr.Error()))
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
 	}
+	if !valid {
+		common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
+		return
+	}
+	if err := model.EnsureEmailAvailable(user.Email, 0); err != nil {
+		if errors.Is(err, model.ErrEmailAlreadyTaken) {
+			common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
+			return
+		}
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
+	}
+	emailForExistCheck := user.Email
 	exist, err := model.CheckUserExistOrDeleted(user.Username, emailForExistCheck)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
@@ -274,9 +269,7 @@ func Register(c *gin.Context) {
 		DisplayName: user.Username,
 		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
-	}
-	if common.EmailVerificationEnabled {
-		cleanUser.Email = user.Email
+		Email:       user.Email,
 	}
 	if err := cleanUser.Insert(inviterId); err != nil {
 		if errors.Is(err, model.ErrEmailAlreadyTaken) {

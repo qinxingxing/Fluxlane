@@ -99,7 +99,6 @@ export function SignUpForm({
   })
 
   const emailValue = form.watch('email')
-  const emailVerificationRequired = !!status?.email_verification
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
   const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
   const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
@@ -145,16 +144,9 @@ export function SignUpForm({
       return
     }
 
-    // Validate email verification if required
-    if (emailVerificationRequired) {
-      if (!data.email) {
-        toast.error(t('Please enter your email'))
-        return
-      }
-      if (!verificationCode) {
-        toast.error(t('Please enter the verification code'))
-        return
-      }
+    if (!verificationCode) {
+      toast.error(t('Please enter the verification code'))
+      return
     }
 
     if (!validateTurnstile()) return
@@ -164,8 +156,8 @@ export function SignUpForm({
       const res = await register({
         username: data.username,
         password: data.password,
-        email: data.email || undefined,
-        verification_code: verificationCode || undefined,
+        email: data.email,
+        verification_code: verificationCode,
         aff_code: getAffiliateCode(),
         turnstile: turnstileToken,
       })
@@ -263,6 +255,55 @@ export function SignUpForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name='email'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('Email')}</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder={t('name@example.com')}
+                  type='email'
+                  autoComplete='email'
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className='grid gap-2'>
+          <FormLabel htmlFor='register-verification-code'>
+            {t('Verification code')}
+          </FormLabel>
+          <div className='flex items-end gap-2'>
+            <Input
+              id='register-verification-code'
+              className='flex-1'
+              placeholder={t('Verification code')}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              autoComplete='one-time-code'
+            />
+            <Button
+              variant='outline'
+              type='button'
+              disabled={
+                isLoading ||
+                isSendingCode ||
+                isActive ||
+                !emailValue ||
+                !turnstileReady
+              }
+              onClick={handleSendVerificationCode}
+            >
+              {verificationCodeAction}
+            </Button>
+          </div>
+        </div>
+
         {/* Password Field */}
         <FormField
           control={form.control}
@@ -295,57 +336,6 @@ export function SignUpForm({
             </FormItem>
           )}
         />
-
-        {/* Email Verification Section */}
-        {emailVerificationRequired && (
-          <>
-            {/* Email Field */}
-            <FormField
-              control={form.control}
-              name='email'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('Email (required for verification)')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('name@example.com')}
-                      type='email'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Verification Code Field */}
-            <div className='flex items-end gap-2'>
-              <div className='flex-1'>
-                <Input
-                  placeholder={t('Verification code')}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
-              </div>
-              <Button
-                variant='outline'
-                type='button'
-                disabled={
-                  isLoading ||
-                  isSendingCode ||
-                  isActive ||
-                  !emailValue ||
-                  !turnstileReady
-                }
-                onClick={handleSendVerificationCode}
-              >
-                {verificationCodeAction}
-              </Button>
-            </div>
-          </>
-        )}
 
         {/* Turnstile */}
         {isTurnstileEnabled && (
