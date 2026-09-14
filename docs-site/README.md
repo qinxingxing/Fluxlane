@@ -1,4 +1,4 @@
-# FluxLane Docs
+# Fluxlane Docs
 
 Pure static documentation target for Cloudflare Pages.
 
