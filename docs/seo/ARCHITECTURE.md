@@ -34,7 +34,7 @@ Cloudflare Pages Preview (`*.pages.dev`) is a different origin. It will not rece
 
 The first client render must match the prerendered tree:
 
-- English
+- Simplified Chinese
 - Default theme / font / direction (cookies apply in `useEffect`)
 - Signed-out chrome (`useIsClient` gates auth UI)
 - Serialized react-query cache, not `localStorage` placeholders

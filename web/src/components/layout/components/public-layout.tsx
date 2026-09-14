@@ -27,6 +27,7 @@ type PublicLayoutProps = {
   headerProps?: Omit<PublicHeaderProps, 'navContent'>
   navLinks?: TopNavLink[]
   showThemeSwitch?: boolean
+  showLanguageSwitcher?: boolean
   showAuthButtons?: boolean
   showNotifications?: boolean
   siteName?: string
@@ -36,13 +37,14 @@ export function PublicLayout(props: PublicLayoutProps) {
   return (
     <div className='bg-background text-foreground relative flex min-h-svh flex-col overflow-x-clip'>
       <PublicHeader
+        {...props.headerProps}
         navContent={props.navContent}
         navLinks={props.navLinks}
         showThemeSwitch={props.showThemeSwitch}
+        showLanguageSwitcher={props.showLanguageSwitcher ?? true}
         showAuthButtons={props.showAuthButtons}
         showNotifications={props.showNotifications}
         siteName={props.siteName}
-        {...props.headerProps}
       />
 
       {props.showMainContainer !== false ? (

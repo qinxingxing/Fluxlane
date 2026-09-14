@@ -53,96 +53,24 @@ describe('resolveInterfaceLanguage', () => {
 })
 
 describe('normalizeInterfaceLanguage', () => {
-  test('falls back to English only when the locale is missing or unsupported', () => {
+  test('falls back to simplified Chinese when the locale is missing or unsupported', () => {
     assert.equal(normalizeInterfaceLanguage('zh'), 'zhCN')
     assert.equal(normalizeInterfaceLanguage('zhTW'), 'zhTW')
-    assert.equal(normalizeInterfaceLanguage('pt-BR'), 'en')
-    assert.equal(normalizeInterfaceLanguage(undefined), 'en')
+    assert.equal(normalizeInterfaceLanguage('pt-BR'), 'zhCN')
+    assert.equal(normalizeInterfaceLanguage(undefined), 'zhCN')
   })
 })
 
 describe('detectInitialLanguage', () => {
-  test('uses a stored zh value instead of falling back to English before navigator detection', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: 'zh',
-        navigatorLanguages: ['en-US', 'en'],
-      }),
-      'zhCN'
-    )
+  test('uses an explicit stored preference', () => {
+    assert.equal(detectInitialLanguage({ storedLanguage: 'zh' }), 'zhCN')
+    assert.equal(detectInitialLanguage({ storedLanguage: 'zhTW' }), 'zhTW')
+    assert.equal(detectInitialLanguage({ storedLanguage: 'en' }), 'en')
   })
 
-  test('prefers the stored interface language over the browser locale', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: 'zhTW',
-        navigatorLanguages: ['zh-CN'],
-      }),
-      'zhTW'
-    )
-  })
-
-  test('prefers Chinese when the browser lists it after English', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: null,
-        navigatorLanguages: ['en-US', 'en', 'zh-CN'],
-      }),
-      'zhCN'
-    )
-  })
-
-  test('prefers traditional Chinese when it appears after English', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: null,
-        navigatorLanguages: ['en-US', 'zh-TW'],
-      }),
-      'zhTW'
-    )
-  })
-
-  test('uses a stored English preference even when the browser is Chinese', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: 'en',
-        navigatorLanguages: ['zh-CN'],
-      }),
-      'en'
-    )
-  })
-
-  test('uses the browser locale when nothing is stored', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: null,
-        navigatorLanguages: ['zh-CN', 'en'],
-      }),
-      'zhCN'
-    )
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: null,
-        navigatorLanguages: ['fr-FR'],
-      }),
-      'fr'
-    )
-  })
-
-  test('defaults to simplified Chinese when the browser only reports English', () => {
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: null,
-        navigatorLanguages: ['en-US'],
-      }),
-      'zhCN'
-    )
-    assert.equal(
-      detectInitialLanguage({
-        storedLanguage: null,
-        navigatorLanguages: [],
-      }),
-      'zhCN'
-    )
+  test('ignores leftover i18nextLng English and defaults to simplified Chinese', () => {
+    assert.equal(detectInitialLanguage({ storedLanguage: null }), 'zhCN')
+    assert.equal(detectInitialLanguage({ storedLanguage: '' }), 'zhCN')
+    assert.equal(detectInitialLanguage({ storedLanguage: 'i18nextLng' }), 'zhCN')
   })
 })

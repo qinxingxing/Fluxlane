@@ -40,8 +40,6 @@ import { useSystemConfig } from '@/hooks/use-system-config'
 import {
   detectInitialLanguage,
   markDocumentI18nReady,
-  persistInterfaceLanguage,
-  setInterfaceLanguagePersistEnabled,
 } from '@/i18n/languages'
 import { getStatus } from '@/lib/api'
 import {
@@ -92,14 +90,14 @@ function RootComponent() {
     applyDefaultTitle(pathname)
   }, [pathname])
 
-  // Prerendered pages hydrate with English so the first client render
-  // matches the server HTML. `#root` stays hidden until this effect
-  // switches to the visitor language (Chinese preferred) and then
-  // reveals the tree. SPA / console builds already init in that language.
+  // Prerendered pages hydrate in Simplified Chinese so the first client
+  // render matches the server HTML. Apply an explicit switcher preference
+  // after hydration; default visitors never change language and never
+  // persist a hydration pin into localStorage.
   useEffect(() => {
     let cancelled = false
 
-    async function revealVisitorLanguage() {
+    async function applyExplicitLanguage() {
       if (wasPrerenderedPage()) {
         const preferred = detectInitialLanguage()
         if (preferred !== i18n.language) {
@@ -108,14 +106,21 @@ function RootComponent() {
           } catch {
             /* keep prerendered language on failure */
           }
+          await new Promise<void>((resolve) => {
+            if (typeof requestAnimationFrame !== 'function') {
+              resolve()
+              return
+            }
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => resolve())
+            })
+          })
         }
-        setInterfaceLanguagePersistEnabled(true)
-        persistInterfaceLanguage(i18n.resolvedLanguage || i18n.language)
       }
       if (!cancelled) markDocumentI18nReady()
     }
 
-    void revealVisitorLanguage()
+    void applyExplicitLanguage()
     return () => {
       cancelled = true
     }

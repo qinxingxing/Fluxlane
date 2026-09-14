@@ -937,7 +937,7 @@ async function loadPrerenderModules(): Promise<PrerenderModules> {
   ;(http.api.defaults as { adapter: unknown }).adapter = prerenderAdapter
 
   const i18n = (await import('../src/i18n/config')).default
-  await i18n.changeLanguage('en')
+  await i18n.changeLanguage('zhCN')
 
   const react = await import('react')
   const ssrServer = await import('@tanstack/react-router/ssr/server')
