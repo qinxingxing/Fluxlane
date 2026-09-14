@@ -64,6 +64,11 @@ function FluxlaneFooterNav() {
     },
     { key: 'about', label: t('About'), href: publicSiteHref('/about') },
     {
+      key: 'faq',
+      label: t('FAQ'),
+      href: publicSiteHref('/faq'),
+    },
+    {
       key: 'privacy',
       label: t('Privacy Policy'),
       href: publicSiteHref('/privacy-policy'),

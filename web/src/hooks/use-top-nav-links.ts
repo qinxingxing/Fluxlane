@@ -107,5 +107,10 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('About'), href: publicSiteHref('/about') })
   }
 
+  links.push({
+    title: t('FAQ'),
+    href: publicSiteHref('/faq'),
+  })
+
   return links
 }

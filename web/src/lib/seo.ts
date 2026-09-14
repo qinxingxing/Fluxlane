@@ -98,6 +98,14 @@ export const userAgreementSeo: PageSeo = {
   jsonLd: [],
 }
 
+export const faqSeo: PageSeo = {
+  title: 'FAQ | Fluxlane',
+  description:
+    'Answers about FluxLane.AI models, OpenAI-compatible APIs, billing, invoices, and refunds.',
+  canonicalPath: '/faq',
+  jsonLd: [breadcrumbJsonLd([{ name: 'FAQ', path: '/faq' }])],
+}
+
 /** SEO for a `/pricing/<model-id>` detail page. */
 export function modelDetailSeo(modelName: string, modelId: string): PageSeo {
   const safeName = modelName.trim() || modelId
