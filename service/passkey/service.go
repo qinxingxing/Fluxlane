@@ -23,10 +23,7 @@ func BuildWebAuthn(r *http.Request) (*webauthn.WebAuthn, error) {
 		return nil, errors.New("未找到 Passkey 设置")
 	}
 
-	displayName := strings.TrimSpace(settings.RPDisplayName)
-	if displayName == "" {
-		displayName = common.SystemName
-	}
+	displayName := common.PublicBrandName(settings.RPDisplayName)
 
 	origins, err := resolveOrigins(r, settings)
 	if err != nil {

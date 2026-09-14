@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { sanitizePublicStatus } from '@/lib/fluxlane-brand'
 import { api } from '@/lib/http-client'
 
 export {
@@ -70,7 +71,11 @@ export async function getUserGroups(): Promise<{
 export async function getStatus() {
   // Passive branding/config refresh with a localStorage fallback: failures stay silent
   const res = await api.get('/api/status', { skipErrorHandler: true })
-  return res.data?.data as Record<string, unknown>
+  const data = res.data?.data as Record<string, unknown> | undefined
+  if (!data) {
+    return undefined
+  }
+  return sanitizePublicStatus(data)
 }
 
 export async function getNotice(): Promise<{

@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { useStatus } from '@/hooks/use-status'
+import { publicDocsLink } from '@/lib/fluxlane-brand'
 
 import { HeroTerminalDemo } from '../hero-terminal-demo'
 
@@ -48,8 +49,7 @@ const MoreIcon = () => (
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
-  const docsUrl =
-    (status?.docs_link as string | undefined) || 'https://docs.newapi.pro'
+  const docsUrl = publicDocsLink(status?.docs_link as string | undefined)
 
   const renderDocsButton = () => {
     const isExternal = docsUrl.startsWith('http')

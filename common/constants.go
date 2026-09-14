@@ -16,7 +16,7 @@ var Version = "v0.0.0"            // this hard coding will be replaced automatic
 // it so a running node can be mapped back to exactly one source commit; an
 // unset value means the binary was not produced by a release build.
 var GitCommit = "unknown"
-var SystemName = "New API"
+var SystemName = "Fluxlane"
 var Footer = ""
 var Logo = ""
 var TopUpLink = ""

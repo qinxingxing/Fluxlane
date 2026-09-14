@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 import { consoleSiteHref, publicSiteHref } from '@/lib/domain-routing'
+import { FLUXLANE_DOCS_URL } from '@/lib/fluxlane-brand'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -59,7 +60,7 @@ export function useTopNavLinks(): TopNavLink[] {
   // Documentation link. Fluxlane docs always live on the dedicated docs
   // origin; the admin-configured docs_link may still point at the upstream
   // project docs and must not leak into Fluxlane public navigation.
-  const docsLink = 'https://doc.fluxlane.ai'
+  const docsLink = FLUXLANE_DOCS_URL
 
   const isAuthed = !!auth?.user
 
