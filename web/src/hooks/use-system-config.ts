@@ -19,7 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 import { useEffect, useCallback } from 'react'
 
 import { resolveApiUrl } from '@/lib/api-base-url'
-import { DEFAULT_SYSTEM_NAME, DEFAULT_LOGO } from '@/lib/constants'
+import { DEFAULT_LOGO } from '@/lib/constants'
+import { publicBrandName } from '@/lib/fluxlane-brand'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import {
   useSystemConfigStore,
@@ -94,7 +95,7 @@ export function mapStatusDataToConfig(
   }
 
   return {
-    systemName: data.system_name || DEFAULT_SYSTEM_NAME,
+    systemName: publicBrandName(data.system_name),
     logo: data.logo || DEFAULT_LOGO,
     footerHtml: data.footer_html,
     demoSiteEnabled: data.demo_site_enabled,

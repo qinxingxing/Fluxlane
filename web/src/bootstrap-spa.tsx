@@ -22,6 +22,7 @@ import { createRoot } from 'react-dom/client'
 
 import { getStatus } from '@/lib/api'
 import { applyFaviconToDom } from '@/lib/dom-utils'
+import { publicBrandName } from '@/lib/fluxlane-brand'
 import { applyBrandFallbackTitle } from '@/lib/seo'
 import { createAppRouter } from '@/router'
 
@@ -33,7 +34,7 @@ function initSystemBranding(): void {
         system_name?: string
         logo?: string
       }
-      if (status?.system_name) applyBrandFallbackTitle(status.system_name)
+      if (status?.system_name) applyBrandFallbackTitle(publicBrandName(status.system_name))
       if (status?.logo) applyFaviconToDom(status.logo)
     }
   } catch {
@@ -42,7 +43,7 @@ function initSystemBranding(): void {
   getStatus()
     .then((status) => {
       if (status?.system_name) {
-        applyBrandFallbackTitle(status.system_name as string)
+        applyBrandFallbackTitle(publicBrandName(status.system_name as string))
         try {
           localStorage.setItem('status', JSON.stringify(status))
         } catch {

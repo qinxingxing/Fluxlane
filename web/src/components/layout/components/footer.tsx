@@ -24,8 +24,13 @@ import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { trackEvent } from '@/lib/analytics'
-import { BRAND_WORDMARK } from '@/lib/constants'
+import { BRAND_WORDMARK, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { consoleSiteHref, publicSiteHref } from '@/lib/domain-routing'
+import {
+  FLUXLANE_DOCS_URL,
+  FLUXLANE_SITE_URL,
+  publicBrandName,
+} from '@/lib/fluxlane-brand'
 import { cn } from '@/lib/utils'
 
 interface FooterLink {
@@ -45,12 +50,6 @@ interface FooterProps {
   className?: string
 }
 
-const NEW_API_FOOTER_ATTRIBUTION_KEY = [
-  'footer',
-  'new' + 'api',
-  'projectAttributionSuffix',
-].join('.')
-
 // Standard link row shown on Fluxlane public pages so crawlers and visitors
 // always find the main public destinations, independent of admin footer HTML.
 function FluxlaneFooterNav() {
@@ -60,7 +59,7 @@ function FluxlaneFooterNav() {
     {
       key: 'docs',
       label: t('Documentation'),
-      href: 'https://doc.fluxlane.ai',
+      href: FLUXLANE_DOCS_URL,
     },
     { key: 'about', label: t('About'), href: publicSiteHref('/about') },
     {
@@ -177,19 +176,15 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
 // inline=true returns just the inner span for composition in a parent flex
 // row. inline=false wraps in a centered/right-aligned div (default).
 function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
-  const { t } = useTranslation()
   const content = (
     <span className='text-muted-foreground/45'>
       &copy; {props.currentYear}{' '}
       <a
-        href='https://github.com/QuantumNous/new-api'
-        target='_blank'
-        rel='noopener noreferrer'
+        href={FLUXLANE_SITE_URL}
         className='text-foreground/70 hover:text-foreground font-medium transition-colors'
       >
-        {t('New API')}
+        {DEFAULT_SYSTEM_NAME}
       </a>
-      . {t(NEW_API_FOOTER_ATTRIBUTION_KEY)}
     </span>
   )
   if (props.inline) {
@@ -206,7 +201,7 @@ export function Footer(props: FooterProps) {
   const { t } = useTranslation()
   const { systemName, footerHtml, demoSiteEnabled } = useSystemConfig()
 
-  const displayName = systemName || props.name || 'New API'
+  const displayName = publicBrandName(systemName || props.name)
   const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
 
@@ -217,15 +212,15 @@ export function Footer(props: FooterProps) {
         links: [
           {
             text: t('footer.columns.about.links.aboutProject'),
-            href: 'https://docs.newapi.pro/wiki/project-introduction/',
+            href: `${FLUXLANE_SITE_URL}/about`,
           },
           {
             text: t('footer.columns.about.links.contact'),
-            href: 'https://docs.newapi.pro/support/community-interaction/',
+            href: FLUXLANE_SITE_URL,
           },
           {
             text: t('footer.columns.about.links.features'),
-            href: 'https://docs.newapi.pro/wiki/features-introduction/',
+            href: FLUXLANE_DOCS_URL,
           },
         ],
       },
@@ -234,15 +229,15 @@ export function Footer(props: FooterProps) {
         links: [
           {
             text: t('footer.columns.docs.links.quickStart'),
-            href: 'https://docs.newapi.pro/getting-started/',
+            href: FLUXLANE_DOCS_URL,
           },
           {
             text: t('footer.columns.docs.links.installation'),
-            href: 'https://docs.newapi.pro/installation/',
+            href: FLUXLANE_DOCS_URL,
           },
           {
             text: t('footer.columns.docs.links.apiDocs'),
-            href: 'https://docs.newapi.pro/api/',
+            href: FLUXLANE_DOCS_URL,
           },
         ],
       },
@@ -259,7 +254,7 @@ export function Footer(props: FooterProps) {
           },
           {
             text: t('footer.columns.related.links.newApiKeyTool'),
-            href: 'https://github.com/Calcium-Ion/new-api-key-tool',
+            href: FLUXLANE_SITE_URL,
           },
         ],
       },

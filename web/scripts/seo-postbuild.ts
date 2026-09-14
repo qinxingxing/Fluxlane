@@ -852,6 +852,9 @@ function validateOutput(renderedRoutes: string[]): void {
     if (html.includes('>New API</span>')) {
       fail(`${route}: default upstream brand leaked into prerendered HTML`)
     }
+    if (html.includes('docs.newapi.pro') || html.includes('github.com/QuantumNous/new-api')) {
+      fail(`${route}: upstream documentation URL leaked into prerendered HTML`)
+    }
     assertGoogleTagManager(html, route)
   }
 

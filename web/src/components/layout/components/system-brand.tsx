@@ -27,6 +27,7 @@ import {
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { BRAND_WORDMARK_INK } from '@/lib/constants'
+import { publicBrandName } from '@/lib/fluxlane-brand'
 import { cn } from '@/lib/utils'
 
 type SystemBrandProps = {
@@ -51,7 +52,7 @@ export function SystemBrand(props: SystemBrandProps) {
   const { logo } = useSystemConfig()
 
   const variant = props.variant ?? 'sidebar'
-  const name = status?.system_name || props.defaultName || 'New API'
+  const name = publicBrandName(status?.system_name, props.defaultName)
   const version =
     status?.version || props.defaultVersion || t('Unknown version')
 
