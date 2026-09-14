@@ -32,8 +32,8 @@ import {
 import { TitledCard } from '@/components/ui/titled-card'
 import {
   INTERFACE_LANGUAGE_OPTIONS,
+  applyInterfaceLanguage,
   normalizeInterfaceLanguage,
-  persistInterfaceLanguage,
 } from '@/i18n/languages'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -70,8 +70,7 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
     const previousLanguage = currentLanguage
     setCurrentLanguage(nextLanguage)
     setSaving(true)
-    await i18n.changeLanguage(nextLanguage)
-    persistInterfaceLanguage(nextLanguage)
+    await applyInterfaceLanguage(i18n, nextLanguage)
 
     try {
       const response = await updateUserLanguage(nextLanguage)
@@ -97,8 +96,7 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
       toast.success(t('Language preference saved'))
     } catch {
       setCurrentLanguage(previousLanguage)
-      await i18n.changeLanguage(previousLanguage)
-      persistInterfaceLanguage(previousLanguage)
+      await applyInterfaceLanguage(i18n, previousLanguage)
       toast.error(t('Failed to update settings'))
     } finally {
       setSaving(false)

@@ -20,6 +20,8 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import {
+  INTERFACE_LANGUAGE_STORAGE_KEY,
+  applyInterfaceLanguage,
   convertDetectedLanguage,
   detectInitialLanguage,
   normalizeInterfaceLanguage,
@@ -72,5 +74,85 @@ describe('detectInitialLanguage', () => {
     assert.equal(detectInitialLanguage({ storedLanguage: null }), 'zhCN')
     assert.equal(detectInitialLanguage({ storedLanguage: '' }), 'zhCN')
     assert.equal(detectInitialLanguage({ storedLanguage: 'i18nextLng' }), 'zhCN')
+  })
+})
+
+describe('applyInterfaceLanguage', () => {
+  test('persists the choice before awaiting changeLanguage so a re-pin cannot revert it', async () => {
+    const order: string[] = []
+    const store = new Map<string, string>()
+    const previousWindow = globalThis.window
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        localStorage: {
+          getItem: (key: string) => store.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            order.push(`persist:${value}`)
+            store.set(key, value)
+          },
+          removeItem: (key: string) => {
+            store.delete(key)
+          },
+          clear: () => store.clear(),
+          key: () => null,
+          get length() {
+            return store.size
+          },
+        },
+      },
+    })
+
+    try {
+      await applyInterfaceLanguage(
+        {
+          language: 'zhCN',
+          changeLanguage: async (language: string) => {
+            order.push(`change:${language}`)
+            assert.equal(
+              store.get(INTERFACE_LANGUAGE_STORAGE_KEY),
+              'en',
+              'stored preference must already be English before i18n switches'
+            )
+          },
+        },
+        'en'
+      )
+      assert.deepEqual(order, ['persist:en', 'change:en'])
+      assert.equal(detectInitialLanguage({ storedLanguage: store.get(INTERFACE_LANGUAGE_STORAGE_KEY) }), 'en')
+    } finally {
+      Object.defineProperty(globalThis, 'window', {
+        configurable: true,
+        value: previousWindow,
+      })
+    }
+  })
+
+  test('does not call changeLanguage when i18n is already on that code', async () => {
+    let changed = 0
+    const applied = await applyInterfaceLanguage(
+      {
+        language: 'en',
+        changeLanguage: async () => {
+          changed += 1
+        },
+      },
+      'en'
+    )
+    assert.equal(applied, 'en')
+    assert.equal(changed, 0)
+  })
+
+  test('returns undefined for an unsupported language without switching', async () => {
+    const applied = await applyInterfaceLanguage(
+      {
+        language: 'zhCN',
+        changeLanguage: async () => {
+          throw new Error('should not change')
+        },
+      },
+      'pt-BR'
+    )
+    assert.equal(applied, undefined)
   })
 })

@@ -110,6 +110,28 @@ export function persistInterfaceLanguage(code: string) {
   }
 }
 
+/**
+ * Store the visitor's explicit choice first, then ask i18next to switch.
+ * Persisting after `await changeLanguage` lost a race: a prerender hydration
+ * effect could re-read the old stored value and pin Chinese again, so the
+ * header switcher looked like it needed a second click.
+ */
+export async function applyInterfaceLanguage(
+  i18n: {
+    language: string
+    changeLanguage: (language: string) => Promise<unknown>
+  },
+  code: string
+): Promise<InterfaceLanguageCode | undefined> {
+  const resolved = resolveInterfaceLanguage(code)
+  if (!resolved) return undefined
+  persistInterfaceLanguage(resolved)
+  if (i18n.language !== resolved) {
+    await i18n.changeLanguage(resolved)
+  }
+  return resolved
+}
+
 export function markDocumentI18nReady() {
   if (typeof document === 'undefined') return
   document.documentElement.removeAttribute(I18N_PENDING_ATTR)

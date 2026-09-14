@@ -29,8 +29,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   INTERFACE_LANGUAGE_OPTIONS,
+  applyInterfaceLanguage,
   normalizeInterfaceLanguage,
   persistInterfaceLanguage,
+  resolveInterfaceLanguage,
 } from '@/i18n/languages'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -41,32 +43,40 @@ export function LanguageSwitcher() {
   const user = useAuthStore((s) => s.auth.user)
   const currentLanguage = normalizeInterfaceLanguage(i18n.language)
   const handleChangeLanguage = useCallback(
-    async (code: string) => {
-      await i18n.changeLanguage(code)
-      persistInterfaceLanguage(code)
-      if (user) {
-        try {
-          await api.put('/api/user/self', { language: code })
-        } catch {
-          // Best-effort persistence; don't block the UI on failure
+    (code: string) => {
+      const resolved = resolveInterfaceLanguage(code)
+      if (!resolved || i18n.language === resolved) {
+        if (resolved) {
+          persistInterfaceLanguage(resolved)
         }
+        return
       }
+      void applyInterfaceLanguage(i18n, resolved).then((applied) => {
+        if (!applied || !user) return
+        return api.put('/api/user/self', { language: applied }).catch(() => {
+          // Best-effort persistence; don't block the UI on failure
+        })
+      })
     },
     [i18n, user]
   )
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu>
       <DropdownMenuTrigger
         render={<Button variant='ghost' size='icon' className='h-9 w-9' />}
       >
         <Languages className='size-[1.2rem]' />
         <span className='sr-only'>{t('Change language')}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
+      <DropdownMenuContent align='end' positionerClassName='z-[60]'>
         {INTERFACE_LANGUAGE_OPTIONS.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
+            onPointerDown={(event) => {
+              if (event.button !== 0) return
+              handleChangeLanguage(lang.code)
+            }}
             onClick={() => handleChangeLanguage(lang.code)}
           >
             {lang.label}

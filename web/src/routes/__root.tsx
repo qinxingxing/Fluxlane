@@ -92,8 +92,9 @@ function RootComponent() {
 
   // Prerendered pages hydrate in Simplified Chinese so the first client
   // render matches the server HTML. Apply an explicit switcher preference
-  // after hydration; default visitors never change language and never
-  // persist a hydration pin into localStorage.
+  // once after hydration. Do not depend on `i18n` — a language change
+  // re-render must not re-read a stale store and pin Chinese over a click
+  // that already called changeLanguage but had not persisted yet.
   useEffect(() => {
     let cancelled = false
 
@@ -124,7 +125,10 @@ function RootComponent() {
     return () => {
       cancelled = true
     }
-  }, [i18n])
+    // Hydration-time only. Re-running on i18n identity would re-pin the
+    // stored language over a switcher click that had not persisted yet.
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const aff = new URLSearchParams(window.location.search).get('aff')?.trim()
