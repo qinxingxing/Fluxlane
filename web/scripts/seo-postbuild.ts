@@ -846,12 +846,18 @@ function validateOutput(renderedRoutes: string[]): void {
     if (route === '/privacy-policy' && !html.includes('FLUX LANE PTE. LTD.')) {
       fail(`${route}: prerender must include the published privacy policy`)
     }
+    if (route === '/') {
+      if (!html.includes('联系销售')) {
+        fail('home: missing contact-sales CTA')
+      }
+    }
     // Footer destinations required on every public page.
     const footerLinks: [string, string][] = [
       ['pricing link', 'href="/pricing"'],
       ['docs link', 'https://doc.fluxlane.ai'],
       ['about link', 'href="/about"'],
       ['contact link', 'href="/contact"'],
+      ['contact new window', 'target="_blank"'],
       ['privacy link', 'href="/privacy-policy"'],
       ['terms link', 'href="/user-agreement"'],
       ['console link', 'https://console.fluxlane.ai'],

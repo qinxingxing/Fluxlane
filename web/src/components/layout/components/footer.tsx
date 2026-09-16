@@ -54,7 +54,12 @@ interface FooterProps {
 // always find the main public destinations, independent of admin footer HTML.
 function FluxlaneFooterNav() {
   const { t } = useTranslation()
-  const links: { key: string; label: string; href: string }[] = [
+  const links: {
+    key: string
+    label: string
+    href: string
+    newWindow?: boolean
+  }[] = [
     { key: 'pricing', label: t('Pricing'), href: publicSiteHref('/pricing') },
     {
       key: 'docs',
@@ -66,6 +71,7 @@ function FluxlaneFooterNav() {
       key: 'contact',
       label: t('Contact'),
       href: publicSiteHref('/contact'),
+      newWindow: true,
     },
     {
       key: 'privacy',
@@ -93,6 +99,9 @@ function FluxlaneFooterNav() {
           key={link.key}
           href={link.href}
           className='hover:text-foreground text-sm transition-colors duration-200'
+          {...(link.newWindow
+            ? { target: '_blank', rel: 'noopener noreferrer' }
+            : {})}
           onClick={() => {
             if (link.key === 'docs') trackEvent('click_documentation')
             if (link.key === 'console') trackEvent('click_console')

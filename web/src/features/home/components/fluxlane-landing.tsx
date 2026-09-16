@@ -19,24 +19,23 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle2,
   Copy,
   Globe2,
   Gauge,
+  Mail,
   ShieldCheck,
   Zap,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { trackEvent } from '@/lib/analytics'
+import { publicSiteHref } from '@/lib/domain-routing'
 
 interface FluxlaneLandingProps {
   isAuthenticated: boolean
 }
-
-/** Fluxlane public docs always live on the dedicated docs origin. */
-const FLUXLANE_DOCS_URL = 'https://doc.fluxlane.ai'
 
 const stats = [
   ['50+', '上游服务适配'],
@@ -69,7 +68,8 @@ const features = [
 ]
 
 export function FluxlaneLanding({ isAuthenticated }: FluxlaneLandingProps) {
-  const docsUrl = FLUXLANE_DOCS_URL
+  const { t } = useTranslation()
+  const contactUrl = publicSiteHref('/contact')
 
   return (
     <div className='min-h-screen bg-[#0c112e] text-[#dee0ff]'>
@@ -107,12 +107,15 @@ export function FluxlaneLanding({ isAuthenticated }: FluxlaneLandingProps) {
               variant='outline'
               className='h-12 border-cyan-300/50 bg-transparent px-7 text-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-200'
               render={
-                <a href={docsUrl} target='_blank' rel='noopener noreferrer' />
+                <a
+                  href={contactUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                />
               }
-              onClick={() => trackEvent('click_documentation')}
             >
-              <BookOpen className='mr-1 size-4' />
-              查看文档
+              <Mail className='mr-1 size-4' />
+              {t('Talk to sales')}
             </Button>
           </div>
 
