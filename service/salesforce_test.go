@@ -220,8 +220,18 @@ func TestSalesforceClientCreateLeadWebToLead(t *testing.T) {
 func TestNormalizeSalesforceLoginURL(t *testing.T) {
 	assert.Equal(
 		t,
-		"https://aidroplet.my.salesforce.cn",
+		"https://aidroplet.my.sfcrmproducts.cn",
 		normalizeSalesforceLoginURL("https://aidroplet.lightning.sfcrmapps.cn/"),
+	)
+	assert.Equal(
+		t,
+		"https://aidroplet.my.sfcrmproducts.cn",
+		normalizeSalesforceLoginURL("https://aidroplet.my.salesforce.cn/"),
+	)
+	assert.Equal(
+		t,
+		"https://aidroplet.my.sfcrmproducts.cn",
+		normalizeSalesforceLoginURL("https://aidroplet.my.sfcrmproducts.cn/"),
 	)
 	assert.Equal(
 		t,
@@ -246,7 +256,7 @@ func TestNewSalesforceClientFromEnvClientCredentials(t *testing.T) {
 	client, err := NewSalesforceClientFromEnv()
 	require.NoError(t, err)
 	assert.True(t, client.config.clientCredentialsConfigured())
-	assert.Equal(t, "https://aidroplet.my.salesforce.cn", client.config.LoginURL)
+	assert.Equal(t, "https://aidroplet.my.sfcrmproducts.cn", client.config.LoginURL)
 	assert.Equal(t, defaultSalesforceUsecaseField, client.config.UsecaseField)
 }
 

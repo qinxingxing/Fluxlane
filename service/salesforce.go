@@ -361,7 +361,12 @@ func normalizeSalesforceLoginURL(raw string) string {
 	switch {
 	case strings.HasSuffix(host, ".lightning.sfcrmapps.cn"):
 		sub := strings.TrimSuffix(host, ".lightning.sfcrmapps.cn")
-		return "https://" + sub + ".my.salesforce.cn"
+		return "https://" + sub + ".my.sfcrmproducts.cn"
+	case strings.HasSuffix(host, ".my.salesforce.cn"):
+		// China My Domain for REST/OAuth is *.my.sfcrmproducts.cn.
+		// *.my.salesforce.cn is the legacy alias and times out from these nodes.
+		sub := strings.TrimSuffix(host, ".my.salesforce.cn")
+		return "https://" + sub + ".my.sfcrmproducts.cn"
 	case strings.HasSuffix(host, ".lightning.force.com"):
 		sub := strings.TrimSuffix(host, ".lightning.force.com")
 		return "https://" + sub + ".my.salesforce.com"
