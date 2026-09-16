@@ -9,15 +9,25 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/i18n"
+	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 )
 
 type salesforceLeadCreator interface {
-	CreateLead(ctx context.Context, inquiry dto.SalesInquiry) error
+	CreateLead(ctx context.Context, lead service.SalesforceLead) error
 }
 
 var newSalesforceLeadCreator = func() (salesforceLeadCreator, error) {
 	return service.NewSalesforceClientFromEnv()
+}
+
+var enqueueSalesforceLead = service.EnqueueSalesforceLead
+
+func enqueueRegistrationSalesforceLead(user *model.User) {
+	if user == nil {
+		return
+	}
+	enqueueSalesforceLead(service.LeadFromRegistration(user.Username, user.Email, user.DisplayName))
 }
 
 func SubmitSalesInquiry(c *gin.Context) {
@@ -50,7 +60,7 @@ func SubmitSalesInquiry(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgSalesInquiryFailed)
 		return
 	}
-	if err := client.CreateLead(c.Request.Context(), inquiry); err != nil {
+	if err := client.CreateLead(c.Request.Context(), service.LeadFromSalesInquiry(inquiry)); err != nil {
 		if service.IsSalesforceUnconfigured(err) {
 			common.ApiErrorI18n(c, i18n.MsgFeatureDisabled)
 			return

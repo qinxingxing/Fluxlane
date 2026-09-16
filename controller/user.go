@@ -279,6 +279,7 @@ func Register(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	enqueueRegistrationSalesforceLead(&cleanUser)
 
 	// 获取插入后的用户ID
 	var insertedUser model.User

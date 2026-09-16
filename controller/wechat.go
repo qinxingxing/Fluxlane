@@ -101,6 +101,7 @@ func WeChatAuth(c *gin.Context) {
 				})
 				return
 			}
+			enqueueRegistrationSalesforceLead(&user)
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,

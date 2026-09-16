@@ -430,6 +430,7 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 		user.FinalizeOAuthUserCreation(inviterId)
 	}
 
+	enqueueRegistrationSalesforceLead(user)
 	return user, nil
 }
 

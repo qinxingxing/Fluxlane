@@ -82,12 +82,12 @@ func TestLeadRecordMapsUsecaseField(t *testing.T) {
 		MonthlyBudget:  dto.SalesInquiryBudget20000Plus,
 		Description:    "Enterprise volume",
 	}
-	record := leadRecord(inquiry, salesforceConfig{LeadSource: "Website"})
+	record := leadRecord(LeadFromSalesInquiry(inquiry), salesforceConfig{LeadSource: defaultSalesforceLeadSource})
 	assert.Equal(t, "Fluxlane", record["LastName"])
 	assert.Equal(t, "Fluxlane", record["Company"])
 	assert.Equal(t, "ops@example.com", record["Email"])
 	assert.Equal(t, "+14155552671", record["Phone"])
-	assert.Equal(t, "Website", record["LeadSource"])
+	assert.Equal(t, "Fluxlane", record["LeadSource"])
 	assert.Equal(
 		t,
 		"月度预算：More than $20,000\n需求模型：Claude 4\n需求详细描述：Enterprise volume",
@@ -95,6 +95,32 @@ func TestLeadRecordMapsUsecaseField(t *testing.T) {
 	)
 	_, hasDescription := record["Description"]
 	assert.False(t, hasDescription)
+}
+
+func TestLeadFromRegistration(t *testing.T) {
+	lead := LeadFromRegistration("alice", "alice@example.com", "Alice")
+	assert.Equal(t, "alice", lead.Company)
+	assert.Equal(t, "alice", lead.LastName)
+	assert.Equal(t, "alice@example.com", lead.Email)
+	assert.Empty(t, lead.Phone)
+	assert.Equal(t, "注册用户名：alice\n显示名称：Alice", lead.Usecase)
+	assert.True(t, leadReadyForSync(lead))
+
+	sameName := LeadFromRegistration("bob", "bob@example.com", "bob")
+	assert.Equal(t, "注册用户名：bob", sameName.Usecase)
+
+	missingEmail := LeadFromRegistration("carol", "", "Carol")
+	assert.False(t, leadReadyForSync(missingEmail))
+}
+
+func TestLeadRecordOmitsEmptyPhone(t *testing.T) {
+	record := leadRecord(LeadFromRegistration("alice", "alice@example.com", "alice"), salesforceConfig{
+		LeadSource: defaultSalesforceLeadSource,
+	})
+	assert.Equal(t, "Fluxlane", record["LeadSource"])
+	assert.Equal(t, "alice@example.com", record["Email"])
+	_, hasPhone := record["Phone"]
+	assert.False(t, hasPhone)
 }
 
 func TestLeadUsecaseOmitsEmptyDescription(t *testing.T) {
@@ -154,17 +180,18 @@ func TestSalesforceClientCreateLeadREST(t *testing.T) {
 			LeadSource:  defaultSalesforceLeadSource,
 		},
 	}
-	err := client.CreateLead(context.Background(), dto.SalesInquiry{
+	err := client.CreateLead(context.Background(), LeadFromSalesInquiry(dto.SalesInquiry{
 		Company:        "Fluxlane",
 		Email:          "ops@example.com",
 		Phone:          "+14155552671",
 		RequestedModel: "GPT-4o",
 		MonthlyBudget:  dto.SalesInquiryBudget0To1000,
-	})
+	}))
 	require.NoError(t, err)
 	assert.Equal(t, "Bearer token-1", gotAuth)
 	assert.Equal(t, "Fluxlane", gotBody["Company"])
 	assert.Equal(t, "ops@example.com", gotBody["Email"])
+	assert.Equal(t, "Fluxlane", gotBody["LeadSource"])
 	assert.Equal(
 		t,
 		"月度预算：$0 – $1,000\n需求模型：GPT-4o",
@@ -197,18 +224,19 @@ func TestSalesforceClientCreateLeadWebToLead(t *testing.T) {
 			WebToLeadUsecaseField: "00Nusecase",
 		},
 	}
-	err := client.CreateLead(context.Background(), dto.SalesInquiry{
+	err := client.CreateLead(context.Background(), LeadFromSalesInquiry(dto.SalesInquiry{
 		Company:        "Fluxlane",
 		Email:          "ops@example.com",
 		Phone:          "+14155552671",
 		RequestedModel: "Gemini",
 		MonthlyBudget:  dto.SalesInquiryBudget5000To20000,
 		Description:    "Batch jobs",
-	})
+	}))
 	require.NoError(t, err)
 	assert.Equal(t, "00Dxx0000000001", got.Get("oid"))
 	assert.Equal(t, "Fluxlane", got.Get("company"))
 	assert.Equal(t, "ops@example.com", got.Get("email"))
+	assert.Equal(t, "Fluxlane", got.Get("lead_source"))
 	assert.Equal(
 		t,
 		"月度预算：$5,000 – $20,000\n需求模型：Gemini\n需求详细描述：Batch jobs",
@@ -253,11 +281,13 @@ func TestNewSalesforceClientFromEnvClientCredentials(t *testing.T) {
 	t.Setenv("SALESFORCE_JWT_PRIVATE_KEY", "")
 	t.Setenv("SALESFORCE_JWT_PRIVATE_KEY_BASE64", "")
 	t.Setenv("SALESFORCE_WEB_TO_LEAD_OID", "")
+	t.Setenv("SALESFORCE_LEAD_SOURCE", "")
 	client, err := NewSalesforceClientFromEnv()
 	require.NoError(t, err)
 	assert.True(t, client.config.clientCredentialsConfigured())
 	assert.Equal(t, "https://aidroplet.my.sfcrmproducts.cn", client.config.LoginURL)
 	assert.Equal(t, defaultSalesforceUsecaseField, client.config.UsecaseField)
+	assert.Equal(t, "Fluxlane", client.config.LeadSource)
 }
 
 func TestSalesforceClientCreateLeadClientCredentials(t *testing.T) {
@@ -304,16 +334,17 @@ func TestSalesforceClientCreateLeadClientCredentials(t *testing.T) {
 			LeadSource:   defaultSalesforceLeadSource,
 		},
 	}
-	err := client.CreateLead(context.Background(), dto.SalesInquiry{
+	err := client.CreateLead(context.Background(), LeadFromSalesInquiry(dto.SalesInquiry{
 		Company:        "Fluxlane",
 		Email:          "ops@example.com",
 		Phone:          "+14155552671",
 		RequestedModel: "GPT-4o",
 		MonthlyBudget:  dto.SalesInquiryBudget1000To5000,
 		Description:    "Need a gateway",
-	})
+	}))
 	require.NoError(t, err)
 	assert.Equal(t, "client_credentials", grant)
+	assert.Equal(t, "Fluxlane", gotBody["LeadSource"])
 	assert.Equal(
 		t,
 		"月度预算：$1,000 – $5,000\n需求模型：GPT-4o\n需求详细描述：Need a gateway",

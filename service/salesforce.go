@@ -28,7 +28,7 @@ import (
 
 const (
 	defaultSalesforceAPIVersion   = "v61.0"
-	defaultSalesforceLeadSource   = "Website"
+	defaultSalesforceLeadSource   = "Fluxlane"
 	defaultSalesforceUsecaseField = "usecase__c"
 	defaultSalesforceWebToLeadURL = "https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8"
 	salesforceHTTPTimeout         = 15 * time.Second
@@ -84,14 +84,88 @@ func NewSalesforceClientFromEnv() (*SalesforceClient, error) {
 	}, nil
 }
 
-func (c *SalesforceClient) CreateLead(ctx context.Context, inquiry dto.SalesInquiry) error {
+// SalesforceLead is the Lead payload for the public contact form and new user registration.
+type SalesforceLead struct {
+	LastName string
+	Company  string
+	Email    string
+	Phone    string
+	Usecase  string
+}
+
+func LeadFromSalesInquiry(inquiry dto.SalesInquiry) SalesforceLead {
+	return SalesforceLead{
+		LastName: truncateRunes(inquiry.Company, 80),
+		Company:  inquiry.Company,
+		Email:    inquiry.Email,
+		Phone:    inquiry.Phone,
+		Usecase:  leadUsecase(inquiry),
+	}
+}
+
+func LeadFromRegistration(username, email, displayName string) SalesforceLead {
+	username = strings.TrimSpace(username)
+	email = strings.TrimSpace(email)
+	displayName = strings.TrimSpace(displayName)
+	company := username
+	if company == "" {
+		company = displayName
+	}
+	if company == "" {
+		company = email
+	}
+	var b strings.Builder
+	b.WriteString("注册用户名：")
+	b.WriteString(username)
+	if displayName != "" && displayName != username {
+		b.WriteString("\n显示名称：")
+		b.WriteString(displayName)
+	}
+	return SalesforceLead{
+		LastName: truncateRunes(company, 80),
+		Company:  company,
+		Email:    email,
+		Usecase:  b.String(),
+	}
+}
+
+func (c *SalesforceClient) CreateLead(ctx context.Context, lead SalesforceLead) error {
 	if c == nil || !c.config.configured() {
 		return ErrSalesforceUnconfigured
 	}
 	if c.config.restConfigured() {
-		return c.createLeadREST(ctx, inquiry)
+		return c.createLeadREST(ctx, lead)
 	}
-	return c.createLeadWebToLead(ctx, inquiry)
+	return c.createLeadWebToLead(ctx, lead)
+}
+
+func EnqueueSalesforceLead(lead SalesforceLead) {
+	if !leadReadyForSync(lead) {
+		return
+	}
+	go runSalesforceLeadSync(lead)
+}
+
+func runSalesforceLeadSync(lead SalesforceLead) {
+	ctx, cancel := context.WithTimeout(context.Background(), salesforceHTTPTimeout+5*time.Second)
+	defer cancel()
+	client, err := NewSalesforceClientFromEnv()
+	if err != nil {
+		if IsSalesforceUnconfigured(err) {
+			return
+		}
+		common.SysError("salesforce client: " + err.Error())
+		return
+	}
+	if err := client.CreateLead(ctx, lead); err != nil && !IsSalesforceUnconfigured(err) {
+		common.SysError("salesforce lead: " + err.Error())
+	}
+}
+
+func leadReadyForSync(lead SalesforceLead) bool {
+	return strings.TrimSpace(lead.Email) != "" &&
+		strings.TrimSpace(lead.Company) != "" &&
+		strings.TrimSpace(lead.LastName) != ""
 }
 
 func NormalizeSalesInquiry(req dto.SalesInquiryRequest) (dto.SalesInquiry, error) {
@@ -131,24 +205,27 @@ func IsSalesInquiryHoneypot(req dto.SalesInquiryRequest) bool {
 	return strings.TrimSpace(req.Website) != ""
 }
 
-func leadRecord(inquiry dto.SalesInquiry, cfg salesforceConfig) map[string]any {
-	return map[string]any{
-		"LastName":            truncateRunes(inquiry.Company, 80),
-		"Company":             inquiry.Company,
-		"Email":               inquiry.Email,
-		"Phone":               inquiry.Phone,
+func leadRecord(lead SalesforceLead, cfg salesforceConfig) map[string]any {
+	record := map[string]any{
+		"LastName":            lead.LastName,
+		"Company":             lead.Company,
+		"Email":               lead.Email,
 		"LeadSource":          cfg.LeadSource,
-		leadUsecaseField(cfg): leadUsecase(inquiry),
+		leadUsecaseField(cfg): lead.Usecase,
 	}
+	if strings.TrimSpace(lead.Phone) != "" {
+		record["Phone"] = lead.Phone
+	}
+	return record
 }
 
-func (c *SalesforceClient) createLeadREST(ctx context.Context, inquiry dto.SalesInquiry) error {
+func (c *SalesforceClient) createLeadREST(ctx context.Context, lead SalesforceLead) error {
 	accessToken, instanceURL, err := c.getAccessToken(ctx)
 	if err != nil {
 		common.SysError("salesforce token: " + err.Error())
 		return errSalesforceSyncFailed
 	}
-	payload, err := common.Marshal(leadRecord(inquiry, c.config))
+	payload, err := common.Marshal(leadRecord(lead, c.config))
 	if err != nil {
 		return errSalesforceSyncFailed
 	}
@@ -173,15 +250,17 @@ func (c *SalesforceClient) createLeadREST(ctx context.Context, inquiry dto.Sales
 	return nil
 }
 
-func (c *SalesforceClient) createLeadWebToLead(ctx context.Context, inquiry dto.SalesInquiry) error {
+func (c *SalesforceClient) createLeadWebToLead(ctx context.Context, lead SalesforceLead) error {
 	values := url.Values{}
 	values.Set("oid", c.config.WebToLeadOID)
-	values.Set("last_name", truncateRunes(inquiry.Company, 80))
-	values.Set("company", inquiry.Company)
-	values.Set("email", inquiry.Email)
-	values.Set("phone", inquiry.Phone)
+	values.Set("last_name", lead.LastName)
+	values.Set("company", lead.Company)
+	values.Set("email", lead.Email)
+	if strings.TrimSpace(lead.Phone) != "" {
+		values.Set("phone", lead.Phone)
+	}
 	values.Set("lead_source", c.config.LeadSource)
-	values.Set(webToLeadUsecaseField(c.config), leadUsecase(inquiry))
+	values.Set(webToLeadUsecaseField(c.config), lead.Usecase)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.config.WebToLeadURL, strings.NewReader(values.Encode()))
 	if err != nil {
 		return errSalesforceSyncFailed
