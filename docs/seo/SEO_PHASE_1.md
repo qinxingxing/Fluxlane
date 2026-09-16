@@ -23,7 +23,7 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 | Page | First-frame content |
 | --- | --- |
 | `/` | In-repo landing (not `/api/home_page_content`) |
-| `/about` | In-repo About copy |
+| `/contact` | In-repo sales inquiry form |
 | `/pricing` | Stable heading + intro; live price table after hydration |
 | `/privacy-policy` | In-repo Fluxlane privacy policy (indexable) |
 | `/user-agreement` | Empty/not-published state, `noindex` |

@@ -16,21 +16,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type TopNavLink } from '../types'
+export const MONTHLY_BUDGETS = [
+  '0-1000',
+  '1000-5000',
+  '5000-20000',
+  '20000-plus',
+] as const
 
-/**
- * Default top navigation links
- *
- * In practice, navigation links are dynamically fetched from backend.
- * Priority: Backend dynamic links > Provided navLinks > defaultTopNavLinks
- *
- * This is intentionally empty to encourage backend configuration.
- * If you need fallback links, add them here.
- */
-export const defaultTopNavLinks: TopNavLink[] = [
-  { title: 'Features', href: '/#features' },
-  { title: 'Models', href: '/pricing' },
-  { title: 'Docs', href: 'https://doc.fluxlane.ai', external: true },
-  { title: 'Pricing', href: '/pricing' },
-  { title: 'Contact', href: '/contact' },
+export type MonthlyBudget = (typeof MONTHLY_BUDGETS)[number]
+
+export const MONTHLY_BUDGET_OPTIONS: {
+  value: MonthlyBudget
+  labelKey: string
+}[] = [
+  { value: '0-1000', labelKey: '$0 – $1,000' },
+  { value: '1000-5000', labelKey: '$1,000 – $5,000' },
+  { value: '5000-20000', labelKey: '$5,000 – $20,000' },
+  { value: '20000-plus', labelKey: 'More than $20,000' },
 ]
+
+export const MAX_CONTACT_COMPANY_LEN = 255
+export const MAX_CONTACT_EMAIL_LEN = 80
+export const MAX_CONTACT_PHONE_LEN = 40
+export const MAX_CONTACT_MODEL_LEN = 255
+export const MAX_CONTACT_DESCRIPTION_LEN = 4000

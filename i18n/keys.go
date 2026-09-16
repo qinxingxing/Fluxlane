@@ -336,3 +336,9 @@ const (
 	MsgCustomOAuthBindingNotFound   = "custom_oauth.binding_not_found"
 	MsgCustomOAuthProviderIdInvalid = "custom_oauth.provider_id_field_invalid"
 )
+
+// Public sales inquiry form
+const (
+	MsgSalesInquirySubmitted = "sales_inquiry.submitted"
+	MsgSalesInquiryFailed    = "sales_inquiry.failed"
+)

@@ -19,7 +19,7 @@ Page SEO is owned by `web/src/lib/seo.ts`. Route components call `usePageSeo` (p
 
 | URL | Index |
 | --- | --- |
-| `/`, `/about`, `/pricing`, `/privacy-policy` | index (sitemap) |
+| `/`, `/about`, `/contact`, `/pricing`, `/privacy-policy` | index (sitemap) |
 | `/privacy` | 301 to `/privacy-policy` |
 | `/user-agreement` | noindex until policy text is in Git |
 | `/pricing/<model>` | noindex shell; model SEO deferred |

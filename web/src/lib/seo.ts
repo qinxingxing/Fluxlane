@@ -71,6 +71,14 @@ export const aboutSeo: PageSeo = {
   jsonLd: [breadcrumbJsonLd([{ name: 'About', path: '/about' }])],
 }
 
+export const contactSeo: PageSeo = {
+  title: 'Contact Sales | Fluxlane',
+  description:
+    'Tell Fluxlane about your company, model needs, and monthly API budget. Our team will follow up by email.',
+  canonicalPath: '/contact',
+  jsonLd: [breadcrumbJsonLd([{ name: 'Contact', path: '/contact' }])],
+}
+
 export const rankingsSeo: PageSeo = {
   title: 'AI Model Rankings and Availability | Fluxlane',
   description:

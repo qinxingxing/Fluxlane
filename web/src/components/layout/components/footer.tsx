@@ -63,6 +63,11 @@ function FluxlaneFooterNav() {
     },
     { key: 'about', label: t('About'), href: publicSiteHref('/about') },
     {
+      key: 'contact',
+      label: t('Contact'),
+      href: publicSiteHref('/contact'),
+    },
+    {
       key: 'privacy',
       label: t('Privacy Policy'),
       href: publicSiteHref('/privacy-policy'),
@@ -216,7 +221,7 @@ export function Footer(props: FooterProps) {
           },
           {
             text: t('footer.columns.about.links.contact'),
-            href: FLUXLANE_SITE_URL,
+            href: publicSiteHref('/contact'),
           },
           {
             text: t('footer.columns.about.links.features'),

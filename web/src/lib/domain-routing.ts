@@ -8,6 +8,7 @@ const PUBLIC_ORIGIN = `https://${PUBLIC_HOSTNAME}`
 const PUBLIC_PATHS = new Set([
   '/',
   '/about',
+  '/contact',
   '/pricing',
   '/rankings',
   '/privacy',

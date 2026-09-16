@@ -22,7 +22,8 @@ import { describe, test } from 'node:test'
 import { getDomainRedirect } from '../domain-routing'
 
 describe('public and console domain routing', () => {
-  test('keeps privacy URLs on the public origin', () => {
+  test('keeps contact and privacy URLs on the public origin', () => {
+    assert.equal(getDomainRedirect('https://www.fluxlane.ai/contact'), null)
     assert.equal(getDomainRedirect('https://www.fluxlane.ai/privacy'), null)
     assert.equal(
       getDomainRedirect('https://www.fluxlane.ai/privacy-policy'),
@@ -35,6 +36,10 @@ describe('public and console domain routing', () => {
     assert.equal(
       getDomainRedirect('https://console.fluxlane.ai/privacy'),
       'https://www.fluxlane.ai/privacy'
+    )
+    assert.equal(
+      getDomainRedirect('https://console.fluxlane.ai/contact'),
+      'https://www.fluxlane.ai/contact'
     )
   })
 

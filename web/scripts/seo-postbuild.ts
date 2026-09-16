@@ -97,6 +97,8 @@ function breadcrumb(items: BreadcrumbEntry[]): Record<string, unknown> {
  * - `/privacy-policy` prerenders the in-repo Fluxlane policy and is
  *   indexable. `/user-agreement` stays noindex until terms text lands in Git.
  * - `/privacy` is a 301 to `/privacy-policy` and is not prerendered.
+ * - `/contact` prerenders the sales inquiry form shell; submission hits
+ *   `/api/sales-inquiry` after hydration.
  * - `/pricing` prerenders the stable heading and intro; the live price
  *   table is client-rendered data, not SEO copy.
  */
@@ -132,6 +134,15 @@ const ROUTES: Record<string, RouteSeo> = {
     ogType: 'website',
     jsonLd: [breadcrumb([{ name: 'About', path: '/about' }])],
     lastmodSources: ['src/routes/about', 'src/features/about'],
+  },
+  '/contact': {
+    title: 'Contact Sales | Fluxlane',
+    description:
+      'Tell Fluxlane about your company, model needs, and monthly API budget. Our team will follow up by email.',
+    canonicalPath: '/contact',
+    ogType: 'website',
+    jsonLd: [breadcrumb([{ name: 'Contact', path: '/contact' }])],
+    lastmodSources: ['src/routes/contact.tsx', 'src/features/contact'],
   },
   '/pricing': {
     title: 'AI Model API Pricing | Fluxlane',
@@ -840,6 +851,7 @@ function validateOutput(renderedRoutes: string[]): void {
       ['pricing link', 'href="/pricing"'],
       ['docs link', 'https://doc.fluxlane.ai'],
       ['about link', 'href="/about"'],
+      ['contact link', 'href="/contact"'],
       ['privacy link', 'href="/privacy-policy"'],
       ['terms link', 'href="/user-agreement"'],
       ['console link', 'https://console.fluxlane.ai'],
