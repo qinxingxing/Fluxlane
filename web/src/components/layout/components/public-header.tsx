@@ -166,7 +166,7 @@ export function PublicHeader(props: PublicHeaderProps) {
         setMobileOpen(false)
       }
     },
-    [t]
+    []
   )
 
   return (
@@ -202,15 +202,19 @@ export function PublicHeader(props: PublicHeaderProps) {
 
             {/* Desktop nav */}
             <div className='hidden items-center gap-0.5 sm:flex'>
-              {links.map((link, i) => {
+              {links.map((link) => {
                 const isActive = pathname === link.href
-                if (link.external) {
+                const itemKey = `${link.title}-${link.href}`
+                const absolute = /^https?:\/\//i.test(link.href)
+                if (link.external || absolute) {
                   return (
                     <a
-                      key={i}
+                      key={itemKey}
                       href={link.href}
-                      target='_blank'
-                      rel='noopener noreferrer'
+                      {...(link.external && {
+                        target: '_blank',
+                        rel: 'noopener noreferrer',
+                      })}
                       aria-disabled={link.disabled}
                       tabIndex={link.disabled ? -1 : undefined}
                       onClick={(event) => handleNavLinkClick(event, link)}
@@ -225,7 +229,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                 }
                 return (
                   <Link
-                    key={i}
+                    key={itemKey}
                     to={link.href}
                     disabled={link.disabled}
                     onClick={(event) => handleNavLinkClick(event, link)}
@@ -266,11 +270,9 @@ export function PublicHeader(props: PublicHeaderProps) {
               {showAuthButtons && (
                 <>
                   <div className='bg-border/40 mx-1 h-4 w-px' />
-                  {loading ? (
-                    <Skeleton className='h-8 w-20 rounded-lg' />
-                  ) : isAuthenticated ? (
-                    <ProfileDropdown />
-                  ) : (
+                  {loading && <Skeleton className='h-8 w-20 rounded-lg' />}
+                  {!loading && isAuthenticated && <ProfileDropdown />}
+                  {!loading && !isAuthenticated && (
                     <Button
                       size='sm'
                       className='h-8 rounded-lg px-3.5 text-xs font-medium'
@@ -337,6 +339,8 @@ export function PublicHeader(props: PublicHeaderProps) {
           <nav className='flex flex-col gap-1'>
             {links.map((link, i) => {
               const isActive = pathname === link.href
+              const itemKey = `${link.title}-${link.href}`
+              const absolute = /^https?:\/\//i.test(link.href)
               const linkClassName = cn(
                 'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
                 mobileOpen
@@ -348,13 +352,15 @@ export function PublicHeader(props: PublicHeaderProps) {
               const transitionStyle = {
                 transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
               }
-              if (link.external) {
+              if (link.external || absolute) {
                 return (
                   <a
-                    key={i}
+                    key={itemKey}
                     href={link.href}
-                    target='_blank'
-                    rel='noopener noreferrer'
+                    {...(link.external && {
+                      target: '_blank',
+                      rel: 'noopener noreferrer',
+                    })}
                     aria-disabled={link.disabled}
                     tabIndex={link.disabled ? -1 : undefined}
                     onClick={(event) => handleNavLinkClick(event, link, true)}
@@ -367,7 +373,7 @@ export function PublicHeader(props: PublicHeaderProps) {
               }
               return (
                 <Link
-                  key={i}
+                  key={itemKey}
                   to={link.href}
                   disabled={link.disabled}
                   onClick={(event) => handleNavLinkClick(event, link, true)}

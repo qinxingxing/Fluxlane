@@ -33,6 +33,13 @@ export type TopNavLink = {
   external?: boolean
 }
 
+export type BuildPublicNavLinksOptions = {
+  t: (key: string) => string
+  status: Record<string, unknown> | null
+  isAuthed: boolean
+  docsLink?: string
+}
+
 /**
  * Generate top navigation links based on HeaderNavModules configuration from backend /api/status
  * Backend format example (stringified JSON):
@@ -45,68 +52,70 @@ export type TopNavLink = {
  *   about: true
  * }
  */
-export function useTopNavLinks(): TopNavLink[] {
-  const { t } = useTranslation()
-  const { status } = useStatus()
-  const { auth } = useAuthStore()
-
-  // Parse HeaderNavModules
-  const modules = useMemo(() => {
-    return parseHeaderNavModulesFromStatus(
-      status as Record<string, unknown> | null
-    )
-  }, [status])
-
-  // Documentation link. Fluxlane docs always live on the dedicated docs
-  // origin; the admin-configured docs_link may still point at the upstream
-  // project docs and must not leak into Fluxlane public navigation.
-  const docsLink = FLUXLANE_DOCS_URL
-
-  const isAuthed = !!auth?.user
-
+export function buildPublicNavLinks({
+  t,
+  status,
+  isAuthed,
+  docsLink = FLUXLANE_DOCS_URL,
+}: BuildPublicNavLinksOptions): TopNavLink[] {
+  const modules = parseHeaderNavModulesFromStatus(status)
   const links: TopNavLink[] = []
 
-  // Home
-  if (modules?.home !== false) {
+  if (modules.home !== false) {
     links.push({ title: t('Home'), href: publicSiteHref('/') })
   }
 
-  // Console -> /dashboard (new console path)
-  if (modules?.console !== false) {
+  if (modules.console !== false) {
     links.push({ title: t('Console'), href: consoleSiteHref('/dashboard') })
   }
 
-  // Pricing
-  const pricing = modules?.pricing
+  const pricing = modules.pricing
   if (pricing && typeof pricing === 'object' && pricing.enabled) {
-    const requiresAuth = pricing.requireAuth && !isAuthed
     links.push({
       title: t('Model Square'),
       href: publicSiteHref('/pricing'),
-      requiresAuth,
+      requiresAuth: pricing.requireAuth && !isAuthed,
     })
   }
 
-  // Rankings
-  const rankings = modules?.rankings
-  if (rankings && typeof rankings === 'object' && rankings.enabled) {
-    const requiresAuth = rankings.requireAuth && !isAuthed
+  // Rankings defaults to enabled when HeaderNavModules is missing. That
+  // flashes a /rankings link (and a 404 on deployments that disable the
+  // module) before /api/status loads, and the extra item can reuse a
+  // sibling Link's identity. Only render it once a real status payload
+  // confirms the module is on.
+  const rankings = modules.rankings
+  if (status && rankings && typeof rankings === 'object' && rankings.enabled) {
     links.push({
       title: t('Rankings'),
       href: publicSiteHref('/rankings'),
-      requiresAuth,
+      requiresAuth: rankings.requireAuth && !isAuthed,
     })
   }
 
-  // Docs (external link)
-  if (modules?.docs !== false) {
+  if (modules.docs !== false) {
     links.push({ title: t('Docs'), href: docsLink, external: true })
   }
 
-  // About
-  if (modules?.about !== false) {
+  if (modules.about !== false) {
     links.push({ title: t('About'), href: publicSiteHref('/about') })
   }
 
   return links
+}
+
+export function useTopNavLinks(): TopNavLink[] {
+  const { t } = useTranslation()
+  const { status } = useStatus()
+  const { auth } = useAuthStore()
+  const isAuthed = !!auth?.user
+
+  return useMemo(
+    () =>
+      buildPublicNavLinks({
+        t: (key) => t(key),
+        status: status as Record<string, unknown> | null,
+        isAuthed,
+      }),
+    [t, status, isAuthed]
+  )
 }
