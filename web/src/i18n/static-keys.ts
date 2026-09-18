@@ -52,6 +52,12 @@ export const STATIC_I18N_KEYS = [
   'Worker instances do not run master-only background tasks.',
   'Drawing task polling',
 
+  // Contact form budget options
+  '$0 – $1,000',
+  '$1,000 – $5,000',
+  '$5,000 – $20,000',
+  'More than $20,000',
+
   // Pricing constants
   'Name',
   'Price: Low to High',
@@ -60,6 +66,9 @@ export const STATIC_I18N_KEYS = [
   'Token-based',
   'Per Request',
   'All Types',
+  'All Endpoints',
+  'Providers',
+  'All Providers',
   'Chat',
   'Response',
   'Anthropic',
@@ -550,6 +559,14 @@ export const STATIC_I18N_KEYS = [
   'The user group applied to the requests',
   'The model that was requested',
   'The upstream channel that served the requests',
+
+  // About page values (looked up from constants)
+  'Keep it simple',
+  'Lower integration cost with a unified interface and clear docs, so teams can focus on product innovation instead of tedious adapters.',
+  'Transparent and trustworthy',
+  'Show prices, token usage, and spend records clearly, so costs are understandable and traceable, with no hidden fees.',
+  'Stability first',
+  'Protect every request with ongoing load tests, capacity safeguards, monitoring alerts, and failure drills, building enterprise-grade high availability.',
 
   // Misc
   'Cancel',
