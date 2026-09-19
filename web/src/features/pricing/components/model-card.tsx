@@ -20,16 +20,16 @@ import { ChevronRight, Copy } from 'lucide-react'
 import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/components/ui/button'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getLobeIcon } from '@/lib/lobe-icon'
-import { cn } from '@/lib/utils'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
 import {
   getDynamicDisplayGroupRatio,
   getDynamicPricingSummary,
 } from '../lib/dynamic-price'
-import { parseTags } from '../lib/filters'
+import { pricingLayout } from '../lib/layout'
 import { isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
@@ -56,7 +56,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const showRechargePrice = props.showRechargePrice ?? false
   const isTokenBased = isTokenBasedModel(props.model)
   const tokenUnitLabel = tokenUnit === 'K' ? '1K' : '1M'
-  const tags = parseTags(props.model.tags)
   const groups = props.model.enable_groups || []
   const endpoints = props.model.supported_endpoint_types || []
   const modelIconKey = props.model.icon || props.model.vendor_icon
@@ -80,15 +79,25 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     : null
 
   const primaryGroup = groups[0]
-  const bottomTags = [...endpoints.slice(0, 2), ...tags.slice(0, 2)]
-  const hiddenCount =
-    Math.max(groups.length - 1, 0) +
-    Math.max(endpoints.length - 2, 0) +
-    Math.max(tags.length - 2, 0)
+  const primaryEndpoint = endpoints[0]
+  let fallbackStatus: ReactNode = tokenUnitLabel
+  if (primaryEndpoint) {
+    fallbackStatus = (
+      <span className='flex items-center justify-end gap-1'>
+        <span className='truncate'>{primaryEndpoint}</span>
+        <span className='opacity-50'>{tokenUnitLabel}</span>
+      </span>
+    )
+  }
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
     copyToClipboard(props.model.model_name || '')
+  }
+
+  const handleDetails = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    props.onClick()
   }
 
   let priceSummary: ReactNode
@@ -96,7 +105,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     if (dynamicSummary.isSpecialExpression) {
       priceSummary = (
         <span className='min-w-0'>
-          <span className='text-amber-700 dark:text-amber-300'>
+          <span className='text-warning'>
             {t('Special billing expression')}
           </span>
           <code className='text-muted-foreground/70 mt-0.5 line-clamp-1 block font-mono text-[11px] break-all'>
@@ -113,9 +122,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               className='text-muted-foreground whitespace-nowrap'
             >
               {t(entry.shortLabel)}{' '}
-              <span className='text-foreground font-mono font-semibold'>
+              <strong className='text-foreground font-mono font-semibold'>
                 {entry.formatted}
-              </span>
+              </strong>
             </span>
           ))}
         </>
@@ -132,7 +141,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       <>
         <span className='text-muted-foreground whitespace-nowrap'>
           {t('Input')}{' '}
-          <span className='text-foreground font-mono font-semibold'>
+          <strong className='text-foreground font-mono font-semibold'>
             {formatPrice(
               props.model,
               'input',
@@ -142,11 +151,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               usdExchangeRate,
               props.selectedGroup
             )}
-          </span>
+          </strong>
         </span>
         <span className='text-muted-foreground whitespace-nowrap'>
           {t('Output')}{' '}
-          <span className='text-foreground font-mono font-semibold'>
+          <strong className='text-foreground font-mono font-semibold'>
             {formatPrice(
               props.model,
               'output',
@@ -156,12 +165,12 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               usdExchangeRate,
               props.selectedGroup
             )}
-          </span>
+          </strong>
         </span>
         {hasCachedPrice && (
           <span className='text-muted-foreground whitespace-nowrap'>
             {t('Cached')}{' '}
-            <span className='text-foreground font-mono font-semibold'>
+            <strong className='text-foreground font-mono font-semibold'>
               {formatPrice(
                 props.model,
                 'cache',
@@ -171,7 +180,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                 usdExchangeRate,
                 props.selectedGroup
               )}
-            </span>
+            </strong>
           </span>
         )}
       </>
@@ -179,7 +188,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   } else {
     priceSummary = (
       <span className='text-muted-foreground whitespace-nowrap'>
-        <span className='text-foreground font-mono font-semibold'>
+        <strong className='text-foreground font-mono font-semibold'>
           {formatRequestPrice(
             props.model,
             showRechargePrice,
@@ -187,92 +196,85 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             usdExchangeRate,
             props.selectedGroup
           )}
-        </span>{' '}
+        </strong>{' '}
         / {t('request')}
       </span>
     )
   }
 
   return (
-    <div
-      className={cn(
-        'group relative flex flex-col rounded-xl border p-3 transition-colors sm:p-5',
-        'hover:bg-muted/20'
-      )}
-    >
-      {/* Header: icon + name + price + actions */}
-      <div className='flex items-start justify-between gap-2.5 sm:gap-3'>
-        <div className='flex min-w-0 items-start gap-2.5 sm:gap-3'>
-          <div className='bg-muted/40 flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-10 sm:rounded-xl'>
+    <article data-slot='model-card' className={pricingLayout.card}>
+      <div
+        aria-hidden
+        className='via-primary absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100'
+      />
+
+      <div className='mb-6 flex items-start justify-between gap-3'>
+        <div className='flex min-w-0 items-start gap-4'>
+          <div className='bg-muted/40 border-border/60 flex size-12 shrink-0 items-center justify-center rounded-xl border'>
             {modelIcon || (
-              <span className='text-muted-foreground text-sm font-bold'>
+              <span className='text-muted-foreground text-lg font-bold'>
                 {initial}
               </span>
             )}
           </div>
           <div className='min-w-0'>
-            <h3 className='text-foreground truncate font-mono text-[15px] leading-tight font-bold'>
+            <h3 className='text-foreground mb-1 truncate text-xl leading-tight font-semibold'>
               {props.model.model_name}
             </h3>
-            <div className='mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm sm:mt-1 sm:gap-x-3'>
+            <div className='flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-sm'>
               {priceSummary}
             </div>
           </div>
         </div>
 
-        <div className='flex shrink-0 items-center gap-1.5'>
-          <button
+        <div className='flex shrink-0 items-center gap-2'>
+          <Button
             type='button'
-            onClick={props.onClick}
-            className='text-muted-foreground hover:text-foreground hover:bg-muted inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors sm:px-2.5 sm:py-1.5'
+            variant='outline'
+            size='sm'
+            onClick={handleDetails}
+            className='h-8 gap-1 px-3 text-[11px] font-semibold tracking-wider uppercase'
           >
             {t('Details')}
             <ChevronRight className='size-3.5' />
-          </button>
-          <button
+          </Button>
+          <Button
             type='button'
+            variant='outline'
+            size='icon-sm'
             onClick={handleCopy}
-            className='text-muted-foreground hover:text-foreground hover:bg-muted rounded-md border p-1.5 transition-colors'
+            className='size-8'
+            aria-label={t('Copy')}
             title={t('Copy')}
           >
             <Copy className='size-3.5' />
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Description */}
-      <p className='text-muted-foreground mt-2 line-clamp-1 flex-1 text-[13px] leading-relaxed sm:mt-4 sm:line-clamp-2 sm:min-h-[2.5rem]'>
+      <p className='text-muted-foreground mb-8 line-clamp-2 min-h-[2.5rem] flex-1 text-sm leading-relaxed'>
         {props.model.description || t('No description available.')}
       </p>
 
-      {/* Footer: left metadata and right performance summary share row alignment */}
-      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-1 sm:mt-4'>
-        <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
+      <div className='border-border/60 flex items-end justify-between gap-3 border-t pt-4'>
+        <div className='flex min-w-0 flex-wrap items-center gap-2'>
           {primaryGroup && (
-            <span className='text-muted-foreground text-sm font-medium'>
+            <span className='bg-muted text-muted-foreground rounded-md px-2 py-1 text-[11px] font-semibold tracking-wider uppercase'>
               {primaryGroup}
             </span>
           )}
-          <ModelBillingModeBadge model={props.model} />
+          <ModelBillingModeBadge
+            model={props.model}
+            className='border-primary/20 bg-primary/10 rounded-md border px-2 py-1 text-[11px] tracking-wider uppercase'
+          />
         </div>
-        <ModelPerfBadge perf={props.perf} className='row-span-2 self-start' />
-
-        <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
-          {bottomTags.map((item) => (
-            <span key={item} className='text-muted-foreground/70 text-xs'>
-              {item}
-            </span>
-          ))}
-          <span className='text-muted-foreground/50 text-xs'>
-            {tokenUnitLabel}
-          </span>
-          {hiddenCount > 0 && (
-            <span className='text-muted-foreground/40 text-xs'>
-              +{hiddenCount}
-            </span>
-          )}
-        </div>
+        <ModelPerfBadge
+          perf={props.perf}
+          fallbackStatus={fallbackStatus}
+          className='shrink-0 self-end'
+        />
       </div>
-    </div>
+    </article>
   )
 })

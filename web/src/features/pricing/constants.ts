@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type TFunction } from 'i18next'
+import type { TFunction } from 'i18next'
 
 import type { TokenUnit } from './types'
 
@@ -85,7 +85,7 @@ export function getEndpointTypeLabels(
   t: TFunction
 ): Record<EndpointTypeOption, string> {
   return {
-    [ENDPOINT_TYPES.ALL]: t('All Types'),
+    [ENDPOINT_TYPES.ALL]: t('All Endpoints'),
     [ENDPOINT_TYPES.OPENAI]: 'Chat',
     [ENDPOINT_TYPES.OPENAI_RESPONSE]: 'Response',
     [ENDPOINT_TYPES.ANTHROPIC]: 'Anthropic',
@@ -113,7 +113,7 @@ export const MAX_TAGS_DISPLAY = 5
 export const MAX_FILTER_ITEMS = 5
 
 /** Sidebar width */
-export const SIDEBAR_WIDTH = 'w-64'
+export const SIDEBAR_WIDTH = 'w-[260px]'
 
 /** Excluded groups */
 export const EXCLUDED_GROUPS = ['', 'auto']

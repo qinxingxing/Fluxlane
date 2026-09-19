@@ -17,27 +17,56 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
+import { cn } from '@/lib/utils'
 
 import {
   LoadingSkeleton,
   EmptyState,
-  SearchBar,
   PricingTable,
   PricingSidebar,
   PricingToolbar,
+  PricingHero,
   ModelCardGrid,
   ModelDetailsDrawer,
 } from './components'
 import { EXCLUDED_GROUPS, VIEW_MODES } from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
+import { pricingLayout } from './lib/layout'
+
+function PricingAtmosphere() {
+  return (
+    <>
+      <div
+        aria-hidden
+        data-slot='pricing-atmosphere-fill'
+        className={pricingLayout.atmosphereFill}
+      />
+      <div
+        aria-hidden
+        data-slot='pricing-atmosphere-glow'
+        className={pricingLayout.atmosphereGlow}
+        style={{
+          background: [
+            'radial-gradient(ellipse 70% 55% at 18% 12%, oklch(0.72 0.18 280 / 90%) 0%, transparent 72%)',
+            'radial-gradient(ellipse 55% 45% at 82% 8%, oklch(0.65 0.16 250 / 70%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 40% at 48% 42%, oklch(0.70 0.14 290 / 50%) 0%, transparent 72%)',
+          ].join(', '),
+        }}
+      />
+      <div
+        aria-hidden
+        data-slot='pricing-atmosphere-grid'
+        className={pricingLayout.atmosphereGrid}
+      />
+    </>
+  )
+}
 
 export function Pricing() {
-  const { t } = useTranslation()
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
@@ -148,121 +177,85 @@ export function Pricing() {
     )
   }
 
-  if (isLoading) {
-    return (
-      <PublicLayout showMainContainer={false}>
-        <div className='mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <h1 className='mb-2 text-3xl font-semibold tracking-tight'>
-            {t('AI Model API Pricing')}
-          </h1>
-          <p className='text-muted-foreground mb-8 max-w-2xl text-sm'>
-            {t(
-              'Compare pricing and availability for AI models available through the Fluxlane unified API. The live price table loads in a moment.'
-            )}
-          </p>
-          <LoadingSkeleton viewMode={viewMode} />
-        </div>
-      </PublicLayout>
-    )
+  const sidebarProps = {
+    quotaTypeFilter,
+    endpointTypeFilter,
+    vendorFilter,
+    groupFilter,
+    tagFilter,
+    onQuotaTypeChange: setQuotaTypeFilter,
+    onEndpointTypeChange: setEndpointTypeFilter,
+    onVendorChange: setVendorFilter,
+    onGroupChange: setGroupFilter,
+    onTagChange: setTagFilter,
+    vendors: vendors || [],
+    groups: availableGroups,
+    groupRatios: groupRatio,
+    tags: availableTags,
+    models: models || [],
+    hasActiveFilters,
+    onClearFilters: clearFilters,
   }
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className='relative'>
-        <div
-          aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
-          style={{
-            background: [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-            ].join(', '),
-            maskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-            WebkitMaskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-          }}
-        />
-        <PageTransition className='relative mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
-            <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
-              模型广场
-            </h1>
-            <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>
-              {t('This site currently has {{count}} models enabled', {
-                count: models?.length || 0,
-              })}
-            </p>
-            <p className='text-muted-foreground/60 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-              按需筛选 AI 模型，清晰比较价格与能力，为不同场景选择合适的模型。
-            </p>
-            <SearchBar
-              value={searchInput}
-              onChange={setSearchInput}
-              onClear={clearSearch}
-              placeholder='搜索模型名称、供应商、端点或标签...'
-              className='mx-auto mt-4 max-w-2xl sm:mt-6'
-            />
-          </header>
-
-          <div className='grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]'>
-            <PricingSidebar
-              quotaTypeFilter={quotaTypeFilter}
-              endpointTypeFilter={endpointTypeFilter}
-              vendorFilter={vendorFilter}
-              groupFilter={groupFilter}
-              tagFilter={tagFilter}
-              onQuotaTypeChange={setQuotaTypeFilter}
-              onEndpointTypeChange={setEndpointTypeFilter}
-              onVendorChange={setVendorFilter}
-              onGroupChange={setGroupFilter}
-              onTagChange={setTagFilter}
-              vendors={vendors || []}
-              groups={availableGroups}
-              groupRatios={groupRatio}
-              tags={availableTags}
-              models={models || []}
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={clearFilters}
-              className='hover-scrollbar sticky top-4 hidden max-h-[calc(100dvh-2rem)] self-start overflow-y-auto xl:block'
-            />
-
-            <main className='min-w-0 space-y-4'>
-              <PricingToolbar
-                filteredCount={filteredModels.length}
-                totalCount={models?.length}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                tokenUnit={tokenUnit}
-                onTokenUnitChange={setTokenUnit}
-                showRechargePrice={showRechargePrice}
-                onRechargePriceChange={setShowRechargePrice}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                quotaTypeFilter={quotaTypeFilter}
-                endpointTypeFilter={endpointTypeFilter}
-                vendorFilter={vendorFilter}
-                groupFilter={groupFilter}
-                tagFilter={tagFilter}
-                onQuotaTypeChange={setQuotaTypeFilter}
-                onEndpointTypeChange={setEndpointTypeFilter}
-                onVendorChange={setVendorFilter}
-                onGroupChange={setGroupFilter}
-                onTagChange={setTagFilter}
-                vendors={vendors || []}
-                groups={availableGroups}
-                groupRatios={groupRatio}
-                tags={availableTags}
-                models={models || []}
-                hasActiveFilters={hasActiveFilters}
-                activeFilterCount={activeFilterCount}
-                onClearFilters={clearFilters}
+      <div className={pricingLayout.pageShell}>
+        <PricingAtmosphere />
+        <PageTransition className={cn('relative', pricingLayout.pageContainer)}>
+          {isLoading ? (
+            <LoadingSkeleton viewMode={viewMode} />
+          ) : (
+            <div className={pricingLayout.pageGrid}>
+              <PricingSidebar
+                {...sidebarProps}
+                className={pricingLayout.sidebarSticky}
               />
 
-              {renderPricingContent()}
-            </main>
-          </div>
+              <div className='min-w-0'>
+                <PricingHero
+                  modelCount={models?.length || 0}
+                  searchInput={searchInput}
+                  onSearchChange={setSearchInput}
+                  onSearchClear={clearSearch}
+                />
+
+                <div className='flex flex-col gap-4'>
+                  <PricingToolbar
+                    filteredCount={filteredModels.length}
+                    totalCount={models?.length}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    tokenUnit={tokenUnit}
+                    onTokenUnitChange={setTokenUnit}
+                    showRechargePrice={showRechargePrice}
+                    onRechargePriceChange={setShowRechargePrice}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    quotaTypeFilter={quotaTypeFilter}
+                    endpointTypeFilter={endpointTypeFilter}
+                    vendorFilter={vendorFilter}
+                    groupFilter={groupFilter}
+                    tagFilter={tagFilter}
+                    onQuotaTypeChange={setQuotaTypeFilter}
+                    onEndpointTypeChange={setEndpointTypeFilter}
+                    onVendorChange={setVendorFilter}
+                    onGroupChange={setGroupFilter}
+                    onTagChange={setTagFilter}
+                    vendors={vendors || []}
+                    groups={availableGroups}
+                    groupRatios={groupRatio}
+                    tags={availableTags}
+                    models={models || []}
+                    hasActiveFilters={hasActiveFilters}
+                    activeFilterCount={activeFilterCount}
+                    onClearFilters={clearFilters}
+                  />
+
+                  {renderPricingContent()}
+                </div>
+              </div>
+            </div>
+          )}
 
           {selectedModel && (
             <ModelDetailsDrawer

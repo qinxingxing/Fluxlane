@@ -16,17 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronDown, RotateCcw } from 'lucide-react'
+import { Boxes, CreditCard, Plug, RotateCcw, Tag, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
@@ -38,6 +32,7 @@ import {
   getQuotaTypeLabels,
 } from '../constants'
 import { parseTags } from '../lib/filters'
+import { pricingLayout } from '../lib/layout'
 import type { PricingModel, PricingVendor } from '../types'
 
 type FilterOption = {
@@ -50,6 +45,7 @@ type FilterOption = {
 
 type FilterSectionProps = {
   title: string
+  icon: ReactNode
   value: string
   options: FilterOption[]
   onChange: (value: string) => void
@@ -100,11 +96,13 @@ function FilterChip(props: {
     <button
       type='button'
       onClick={props.onClick}
+      aria-pressed={props.active}
+      data-slot='filter-chip'
       className={cn(
-        'group inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-all',
+        pricingLayout.filterChip,
         props.active
-          ? 'border-foreground/30 bg-foreground/5 text-foreground shadow-sm'
-          : 'border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground'
+          ? pricingLayout.filterChipActive
+          : pricingLayout.filterChipInactive
       )}
       title={props.option.label}
     >
@@ -113,14 +111,7 @@ function FilterChip(props: {
       )}
       <span className='truncate'>{props.option.label}</span>
       {(props.option.suffix || props.option.count != null) && (
-        <span
-          className={cn(
-            'rounded-md px-1.5 py-0.5 text-[12px]',
-            props.active
-              ? 'bg-background text-foreground'
-              : 'bg-muted text-muted-foreground'
-          )}
-        >
+        <span className='opacity-50'>
           {props.option.suffix ?? props.option.count}
         </span>
       )}
@@ -130,29 +121,22 @@ function FilterChip(props: {
 
 function FilterSection(props: FilterSectionProps) {
   return (
-    <Collapsible
-      defaultOpen
-      className='border-border/70 border-b pb-3 last:border-b-0'
-    >
-      <CollapsibleTrigger className='group flex w-full items-center justify-between py-2.5 text-left'>
-        <span className='text-foreground text-sm font-semibold'>
-          {props.title}
-        </span>
-        <ChevronDown className='text-muted-foreground size-4 transition-transform group-data-[panel-open]:rotate-180' />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className='flex flex-wrap gap-1.5'>
-          {props.options.map((option) => (
-            <FilterChip
-              key={option.value}
-              option={option}
-              active={props.value === option.value}
-              onClick={() => props.onChange(option.value)}
-            />
-          ))}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+    <section className='flex flex-col gap-3'>
+      <h3 className='text-muted-foreground flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase'>
+        {props.icon}
+        {props.title}
+      </h3>
+      <div className='flex flex-wrap gap-2'>
+        {props.options.map((option) => (
+          <FilterChip
+            key={option.value}
+            option={option}
+            active={props.value === option.value}
+            onClick={() => props.onChange(option.value)}
+          />
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -164,7 +148,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
   const vendorOptions: FilterOption[] = [
     {
       value: FILTER_ALL,
-      label: t('All Vendors'),
+      label: t('All Providers'),
       count: props.models.length,
     },
     ...props.vendors
@@ -183,7 +167,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
   const groupOptions: FilterOption[] = [
     {
       value: FILTER_ALL,
-      label: t('All Groups'),
+      label: t('All'),
     },
     ...props.groups.map((group) => ({
       value: group,
@@ -214,7 +198,6 @@ export function PricingSidebar(props: PricingSidebarProps) {
     {
       value: FILTER_ALL,
       label: t('All Tags'),
-      count: props.models.length,
     },
     ...props.tags.map((tag) => ({
       value: tag,
@@ -246,14 +229,12 @@ export function PricingSidebar(props: PricingSidebarProps) {
   ]
 
   return (
-    <aside className={cn('rounded-xl border p-3', props.className)}>
-      <div className='mb-2.5 flex items-center justify-between gap-2'>
-        <div>
-          <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
-          <p className='text-muted-foreground mt-1 text-xs'>
-            {t('Refine models by provider, group, type, and tags.')}
-          </p>
-        </div>
+    <aside
+      data-slot='pricing-sidebar'
+      className={cn(pricingLayout.sidebar, props.className)}
+    >
+      <div className='mb-4 flex items-center justify-between gap-2'>
+        <h2 className='text-foreground text-sm font-semibold'>{t('Filter')}</h2>
         <Button
           type='button'
           variant='ghost'
@@ -267,39 +248,38 @@ export function PricingSidebar(props: PricingSidebarProps) {
         </Button>
       </div>
 
-      {props.hasActiveFilters && (
-        <Badge variant='secondary' className='mb-3'>
-          {t('Filters active')}
-        </Badge>
-      )}
-
-      <div className='space-y-1'>
+      <div className='flex flex-col gap-6'>
         <FilterSection
           title={t('Groups')}
+          icon={<Users className='size-4' aria-hidden='true' />}
           value={props.groupFilter}
           options={groupOptions}
           onChange={props.onGroupChange}
         />
         <FilterSection
-          title={t('All Vendors')}
+          title={t('Providers')}
+          icon={<Boxes className='size-4' aria-hidden='true' />}
           value={props.vendorFilter}
           options={vendorOptions}
           onChange={props.onVendorChange}
         />
         <FilterSection
           title={t('Model Tags')}
+          icon={<Tag className='size-4' aria-hidden='true' />}
           value={props.tagFilter}
           options={tagOptions}
           onChange={props.onTagChange}
         />
         <FilterSection
           title={t('Pricing Type')}
+          icon={<CreditCard className='size-4' aria-hidden='true' />}
           value={props.quotaTypeFilter}
           options={quotaOptions}
           onChange={props.onQuotaTypeChange}
         />
         <FilterSection
           title={t('Endpoint Type')}
+          icon={<Plug className='size-4' aria-hidden='true' />}
           value={props.endpointTypeFilter}
           options={endpointOptions}
           onChange={props.onEndpointTypeChange}

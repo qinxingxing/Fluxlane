@@ -53,6 +53,7 @@ import {
   type SortOption,
   type ViewMode,
 } from '../constants'
+import { pricingLayout } from '../lib/layout'
 import type { PricingModel, PricingVendor, TokenUnit } from '../types'
 import { PricingSidebar } from './pricing-sidebar'
 
@@ -134,7 +135,7 @@ function SegmentedControl(props: {
 
         return (
           <Tooltip key={option.value}>
-            <TooltipTrigger render={button}></TooltipTrigger>
+            <TooltipTrigger render={button} />
             <TooltipContent side='bottom' className='text-xs'>
               {option.tooltip}
             </TooltipContent>
@@ -166,111 +167,107 @@ export function PricingToolbar(props: PricingToolbarProps) {
   )
 
   return (
-    <div className='rounded-xl border p-3'>
-      <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={() => setMobileFiltersOpen(true)}
-            className='gap-1.5 xl:hidden'
-          >
-            <Filter className='size-4' />
-            {t('Filter')}
-            {props.activeFilterCount > 0 && (
-              <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
-                {props.activeFilterCount}
-              </Badge>
-            )}
-          </Button>
+    <div className={pricingLayout.toolbar}>
+      <div className='flex items-center gap-2'>
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          onClick={() => setMobileFiltersOpen(true)}
+          className='gap-1.5 xl:hidden'
+        >
+          <Filter className='size-4' />
+          {t('Filter')}
+          {props.activeFilterCount > 0 && (
+            <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
+              {props.activeFilterCount}
+            </Badge>
+          )}
+        </Button>
 
-          <div className='text-muted-foreground flex items-baseline gap-1 text-sm'>
-            <span className='text-foreground font-semibold tabular-nums'>
-              {props.filteredCount.toLocaleString()}
+        <div className='text-muted-foreground flex items-center gap-2 px-2 text-[11px] font-semibold tracking-wider uppercase'>
+          <span className='text-primary text-base font-bold tabular-nums'>
+            {props.filteredCount.toLocaleString()}
+          </span>
+          <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
+          {props.hasActiveFilters && props.totalCount && (
+            <span className='text-muted-foreground/60 text-xs'>
+              / {props.totalCount.toLocaleString()}
             </span>
-            <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
-            {props.hasActiveFilters && props.totalCount && (
-              <span className='text-muted-foreground/60 text-xs'>
-                / {props.totalCount.toLocaleString()}
-              </span>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        <div className='flex flex-wrap items-center gap-2'>
-          <div className='hidden items-center gap-2 sm:flex'>
-            <SegmentedControl
-              options={[
-                { value: 'standard', label: t('Standard') },
-                { value: 'recharge', label: t('Recharge') },
-              ]}
-              value={props.showRechargePrice ? 'recharge' : 'standard'}
-              onChange={handleRechargePriceChange}
-              ariaLabel={t('Price display mode')}
-            />
-            <SegmentedControl
-              options={[
-                { value: 'M', label: '/1M' },
-                { value: 'K', label: '/1K' },
-              ]}
-              value={props.tokenUnit}
-              onChange={handleTokenUnitChange}
-              ariaLabel={t('Token unit')}
-            />
-          </div>
+      <div className='flex flex-wrap items-center gap-2'>
+        <SegmentedControl
+          options={[
+            { value: 'standard', label: t('Standard') },
+            { value: 'recharge', label: t('Recharge') },
+          ]}
+          value={props.showRechargePrice ? 'recharge' : 'standard'}
+          onChange={handleRechargePriceChange}
+          ariaLabel={t('Price display mode')}
+        />
+        <SegmentedControl
+          options={[
+            { value: 'M', label: '/1M' },
+            { value: 'K', label: '/1K' },
+          ]}
+          value={props.tokenUnit}
+          onChange={handleTokenUnitChange}
+          ariaLabel={t('Token unit')}
+        />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='h-8 gap-1.5 px-3 text-xs'
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='h-8 gap-1.5 px-3 text-xs'
+              />
+            }
+          >
+            <ArrowUpDown className='size-3.5' />
+            <span>{sortLabels[props.sortBy as SortOption] || t('Sort')}</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end' className='w-44'>
+            {Object.entries(sortLabels).map(([value, label]) => (
+              <DropdownMenuItem
+                key={value}
+                onClick={() => props.onSortChange(value)}
+                className='gap-2'
+              >
+                <Check
+                  className={cn(
+                    'size-4 shrink-0',
+                    props.sortBy === value ? 'opacity-100' : 'opacity-0'
+                  )}
                 />
-              }
-            >
-              <ArrowUpDown className='size-3.5' />
-              <span>{sortLabels[props.sortBy as SortOption] || t('Sort')}</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-44'>
-              {Object.entries(sortLabels).map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => props.onSortChange(value)}
-                  className='gap-2'
-                >
-                  <Check
-                    className={cn(
-                      'size-4 shrink-0',
-                      props.sortBy === value ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-          <SegmentedControl
-            options={[
-              {
-                value: VIEW_MODES.CARD,
-                icon: Grid2X2,
-                tooltip: t('Card view'),
-              },
-              {
-                value: VIEW_MODES.TABLE,
-                icon: Table2,
-                tooltip: t('Table view'),
-              },
-            ]}
-            value={props.viewMode}
-            onChange={handleViewModeChange}
-            ariaLabel={t('View mode')}
-          />
-        </div>
+        <SegmentedControl
+          options={[
+            {
+              value: VIEW_MODES.CARD,
+              icon: Grid2X2,
+              tooltip: t('Card view'),
+            },
+            {
+              value: VIEW_MODES.TABLE,
+              icon: Table2,
+              tooltip: t('Table view'),
+            },
+          ]}
+          value={props.viewMode}
+          onChange={handleViewModeChange}
+          ariaLabel={t('View mode')}
+        />
       </div>
 
       <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
@@ -303,7 +300,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
               models={props.models}
               hasActiveFilters={props.hasActiveFilters}
               onClearFilters={props.onClearFilters}
-              className='border-0 bg-transparent p-0 shadow-none'
+              className='border-0 bg-transparent p-0 shadow-none backdrop-blur-none'
             />
           </div>
         </SheetContent>

@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
@@ -31,6 +31,7 @@ export type ModelPerfBadgeData = {
 
 export interface ModelPerfBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   perf: ModelPerfBadgeData | undefined
+  fallbackStatus?: ReactNode
 }
 
 function formatCompactNumber(value: number): string {
@@ -54,27 +55,34 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
   props: ModelPerfBadgeProps
 ) {
   const { t } = useTranslation()
-
-  if (!props.perf) {
-    return null
-  }
-
-  const { avg_latency_ms, avg_tps, success_rate } = props.perf
+  const perf = props.perf
+  const avgLatencyMs = perf?.avg_latency_ms ?? 0
+  const avgTps = perf?.avg_tps ?? 0
+  const successRate = perf?.success_rate
 
   const recentRates =
-    props.perf.recent_success_rates?.filter((rate) => Number.isFinite(rate)) ??
-    []
-  const statusRates =
-    recentRates.length > 0 ? recentRates.slice(-3) : [success_rate]
+    perf?.recent_success_rates?.filter((rate) => Number.isFinite(rate)) ?? []
+  let statusRates: number[] = []
+  if (recentRates.length > 0) {
+    statusRates = recentRates.slice(-3)
+  } else if (successRate != null) {
+    statusRates = [successRate]
+  }
   const statusBars = [
     ...Array(Math.max(0, 3 - statusRates.length)).fill(null),
     ...statusRates,
   ].slice(-3)
 
+  let statusTitle = t('Status short')
+  if (successRate != null) {
+    statusTitle = `${t('Success rate')}: ${successRate.toFixed(1)}%`
+  }
+
   return (
     <div
+      data-slot='model-perf-badge'
       className={cn(
-        'hidden w-[132px] grid-cols-[38px_48px_30px] gap-x-2 text-right tabular-nums min-[460px]:grid',
+        'grid w-[132px] grid-cols-[38px_48px_30px] gap-x-2 text-right tabular-nums',
         props.className
       )}
     >
@@ -82,43 +90,47 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         <div className='text-muted-foreground/55 text-[10px] leading-4'>
           {t('Latency short')}
         </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactLatency(avg_latency_ms)}
+        <div className='font-mono text-xs leading-4 whitespace-nowrap'>
+          {formatCompactLatency(avgLatencyMs)}
         </div>
       </div>
       <div title={t('Throughput')} className='min-w-0'>
         <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
           {t('Throughput short')}
         </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactThroughput(avg_tps)}
+        <div className='font-mono text-xs leading-4 whitespace-nowrap'>
+          {formatCompactThroughput(avgTps)}
         </div>
       </div>
-      <div
-        title={`${t('Success rate')}: ${success_rate.toFixed(1)}%`}
-        className='min-w-0'
-      >
+      <div title={statusTitle} className='min-w-0'>
         <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
           {t('Status short')}
         </div>
-        <div className='flex h-4 items-center justify-end gap-0.5'>
-          {statusBars.map((rate, index) => (
-            <span
-              key={`${index}-${rate ?? 'empty'}`}
-              className={cn(
-                'w-1 rounded-full',
-                index === 0 && 'h-2',
-                index === 1 && 'h-2.5',
-                index === 2 && 'h-3',
-                rate == null
-                  ? index === 0
-                    ? 'bg-muted-foreground/10'
-                    : 'bg-muted-foreground/15'
-                  : getSuccessRateDotClass(rate)
-              )}
-            />
-          ))}
-        </div>
+        {perf ? (
+          <div className='flex h-4 items-center justify-end gap-0.5'>
+            {(['recent', 'prior', 'latest'] as const).map((slot, index) => {
+              const rate = statusBars[index]
+              return (
+                <span
+                  key={`${slot}-${rate ?? 'empty'}`}
+                  className={cn(
+                    'w-1.5 rounded-full',
+                    slot === 'recent' && 'h-2',
+                    slot === 'prior' && 'h-2.5',
+                    slot === 'latest' && 'h-3',
+                    rate == null
+                      ? 'bg-muted-foreground/15'
+                      : getSuccessRateDotClass(rate)
+                  )}
+                />
+              )
+            })}
+          </div>
+        ) : (
+          <div className='text-muted-foreground/80 flex h-4 items-center justify-end font-mono text-xs leading-4'>
+            {props.fallbackStatus ?? '—'}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+import { pricingLayout } from '../lib/layout'
+
 export interface SearchBarProps {
   value: string
   onChange: (value: string) => void
@@ -50,20 +52,15 @@ export function SearchBar(props: SearchBarProps) {
   }, [])
 
   return (
-    <div className={cn('relative', props.className)}>
-      <Search className='text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2' />
+    <div className={cn('group relative', props.className)}>
+      <Search className='text-muted-foreground/60 group-focus-within:text-primary pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 transition-colors' />
       <input
         ref={inputRef}
         type='text'
         placeholder={props.placeholder || t('Search models...')}
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}
-        className={cn(
-          'border-border/60 bg-background placeholder:text-muted-foreground/50',
-          'hover:border-border',
-          'focus:border-primary/50 focus:ring-primary/20 focus:ring-2',
-          'h-10 w-full rounded-lg border pr-16 pl-10 text-sm transition-all outline-none'
-        )}
+        className={pricingLayout.searchInput}
         aria-label={t('Search models')}
       />
       <div className='absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-1'>
