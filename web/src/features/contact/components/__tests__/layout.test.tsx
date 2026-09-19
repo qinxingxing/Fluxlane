@@ -64,6 +64,7 @@ const { I18nextProvider, initReactI18next } = await import('react-i18next')
 const { QueryClient, QueryClientProvider } =
   await import('@tanstack/react-query')
 const { ContactPage } = await import('../contact-page')
+const { contactPageLayout } = await import('../../lib/layout')
 
 const i18n = createInstance()
 await i18n.use(initReactI18next).init({
@@ -162,6 +163,19 @@ after(() => {
 })
 
 describe('contact page layout', () => {
+  test('keeps the original purple field and 48px striped grid behind the page', async () => {
+    const host = await renderTree(<ContactPage />)
+    const page = host.querySelector('[data-contact-page]')
+    const stripes = host.querySelector('[data-contact-stripes]')
+
+    assert.ok(page)
+    assert.ok(stripes)
+    assert.equal(page.className, contactPageLayout.page)
+    assert.equal(page.classList.contains('bg-[#0c112e]'), true)
+    assert.equal(stripes.className, contactPageLayout.stripes)
+    assert.equal(stripes.classList.contains('bg-[size:48px_48px]'), true)
+  })
+
   test('centers the inquiry form under a centered hero instead of a two-column page grid', async () => {
     const host = await renderTree(<ContactPage />)
     const page = host.querySelector('[data-contact-page]')
@@ -174,9 +188,7 @@ describe('contact page layout', () => {
     assert.equal(hero.classList.contains('items-center'), true)
     assert.equal(hero.classList.contains('text-center'), true)
     assert.equal(hero.classList.contains('mx-auto'), true)
-    assert.equal(formPanel.classList.contains('mx-auto'), true)
-    assert.equal(formPanel.classList.contains('max-w-3xl'), true)
-    assert.equal(formPanel.classList.contains('w-full'), true)
+    assert.equal(formPanel.className, contactPageLayout.formPanel)
     assert.equal(formPanel.parentElement?.classList.contains('grid'), false)
     assert.equal(page.querySelector('[class*="md:grid-cols"]'), null)
   })
