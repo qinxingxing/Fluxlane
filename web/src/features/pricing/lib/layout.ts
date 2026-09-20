@@ -19,16 +19,16 @@ For commercial licensing, please contact support@quantumnous.com
 
 /** Stable layout contracts for the public model marketplace. */
 export const pricingLayout = {
-  pageShell: 'relative min-h-[calc(100svh-var(--app-header-height,3rem))]',
+  pageShell:
+    'relative min-h-[calc(100svh-var(--app-header-height,3rem))] bg-[#0c112e] text-[#dee0ff]',
   pageContainer:
     'relative mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8',
   pageGrid: 'grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]',
-  atmosphereFill:
-    'pointer-events-none absolute inset-0 bg-[color-mix(in_oklch,var(--primary)_10%,var(--background))] dark:bg-[#0c112e]',
+  atmosphereFill: 'pointer-events-none absolute inset-0 bg-[#0c112e]',
   atmosphereGlow:
     'pointer-events-none absolute inset-0 opacity-50 dark:opacity-40',
   atmosphereGrid:
-    'pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_oklch,var(--primary)_28%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--primary)_28%,transparent)_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-[0.35] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] dark:opacity-100',
+    'pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:40px_40px]',
   sidebar:
     'overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm',
   sidebarSticky:

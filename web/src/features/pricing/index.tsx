@@ -33,7 +33,11 @@ import {
   ModelCardGrid,
   ModelDetailsDrawer,
 } from './components'
-import { EXCLUDED_GROUPS, VIEW_MODES } from './constants'
+import {
+  EXCLUDED_GROUPS,
+  PRICING_ATMOSPHERE_GLOW_ENABLED,
+  VIEW_MODES,
+} from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
 import { pricingLayout } from './lib/layout'
@@ -46,18 +50,20 @@ function PricingAtmosphere() {
         data-slot='pricing-atmosphere-fill'
         className={pricingLayout.atmosphereFill}
       />
-      <div
-        aria-hidden
-        data-slot='pricing-atmosphere-glow'
-        className={pricingLayout.atmosphereGlow}
-        style={{
-          background: [
-            'radial-gradient(ellipse 70% 55% at 18% 12%, oklch(0.72 0.18 280 / 90%) 0%, transparent 72%)',
-            'radial-gradient(ellipse 55% 45% at 82% 8%, oklch(0.65 0.16 250 / 70%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 40% at 48% 42%, oklch(0.70 0.14 290 / 50%) 0%, transparent 72%)',
-          ].join(', '),
-        }}
-      />
+      {PRICING_ATMOSPHERE_GLOW_ENABLED ? (
+        <div
+          aria-hidden
+          data-slot='pricing-atmosphere-glow'
+          className={pricingLayout.atmosphereGlow}
+          style={{
+            background: [
+              'radial-gradient(ellipse 70% 55% at 18% 12%, oklch(0.72 0.18 280 / 90%) 0%, transparent 72%)',
+              'radial-gradient(ellipse 55% 45% at 82% 8%, oklch(0.65 0.16 250 / 70%) 0%, transparent 70%)',
+              'radial-gradient(ellipse 50% 40% at 48% 42%, oklch(0.70 0.14 290 / 50%) 0%, transparent 72%)',
+            ].join(', '),
+          }}
+        />
+      ) : null}
       <div
         aria-hidden
         data-slot='pricing-atmosphere-grid'

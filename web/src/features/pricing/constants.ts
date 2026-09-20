@@ -106,6 +106,26 @@ export const FILTER_SECTIONS = {
   TAG: 'tag',
 } as const
 
+/** Flip this back to true to restore the extra marketplace glow washes. */
+export const PRICING_ATMOSPHERE_GLOW_ENABLED = false
+
+/** Flip these back to true to restore the corresponding sidebar filters. */
+export const PRICING_SIDEBAR_FILTER_VISIBILITY = {
+  groups: false,
+  providers: true,
+  tags: false,
+  pricingType: false,
+  endpointType: false,
+} as const
+
+/** Flip these back to true to restore the corresponding catalog table columns. */
+export const PRICING_TABLE_COLUMN_VISIBILITY = {
+  quota_type: false,
+  tags: false,
+  supported_endpoint_types: false,
+  enable_groups: false,
+} as const
+
 /** Maximum number of tags to display in model row */
 export const MAX_TAGS_DISPLAY = 5
 

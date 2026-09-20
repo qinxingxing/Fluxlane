@@ -42,11 +42,11 @@ describe('pricing marketplace layout', () => {
     assert.ok(pricingLayout.searchInput.split(' ').includes('rounded-full'))
   })
 
-  test('keeps the original purple striped atmosphere behind the catalog', () => {
-    assert.ok(pricingLayout.atmosphereFill.includes('dark:bg-[#0c112e]'))
-    assert.ok(pricingLayout.atmosphereGrid.includes('bg-[size:2rem_2rem]'))
-    assert.ok(pricingLayout.atmosphereGrid.includes('linear-gradient(to_right'))
-    assert.ok(pricingLayout.atmosphereGrid.includes('rgba(255,255,255,0.05)'))
-    assert.ok(pricingLayout.atmosphereGlow.includes('inset-0'))
+  test('uses the homepage navy field and 40px stripe grid', () => {
+    assert.ok(pricingLayout.pageShell.includes('bg-[#0c112e]'))
+    assert.ok(pricingLayout.atmosphereFill.includes('bg-[#0c112e]'))
+    assert.equal(pricingLayout.atmosphereFill.includes('color-mix'), false)
+    assert.ok(pricingLayout.atmosphereGrid.includes('bg-[size:40px_40px]'))
+    assert.ok(pricingLayout.atmosphereGrid.includes('rgba(255,255,255,0.045)'))
   })
 })

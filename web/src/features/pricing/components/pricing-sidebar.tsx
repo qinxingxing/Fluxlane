@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils'
 import {
   ENDPOINT_TYPES,
   FILTER_ALL,
+  PRICING_SIDEBAR_FILTER_VISIBILITY,
   QUOTA_TYPES,
   getEndpointTypeLabels,
   getQuotaTypeLabels,
@@ -249,41 +250,51 @@ export function PricingSidebar(props: PricingSidebarProps) {
       </div>
 
       <div className='flex flex-col gap-6'>
-        <FilterSection
-          title={t('Groups')}
-          icon={<Users className='size-4' aria-hidden='true' />}
-          value={props.groupFilter}
-          options={groupOptions}
-          onChange={props.onGroupChange}
-        />
-        <FilterSection
-          title={t('Providers')}
-          icon={<Boxes className='size-4' aria-hidden='true' />}
-          value={props.vendorFilter}
-          options={vendorOptions}
-          onChange={props.onVendorChange}
-        />
-        <FilterSection
-          title={t('Model Tags')}
-          icon={<Tag className='size-4' aria-hidden='true' />}
-          value={props.tagFilter}
-          options={tagOptions}
-          onChange={props.onTagChange}
-        />
-        <FilterSection
-          title={t('Pricing Type')}
-          icon={<CreditCard className='size-4' aria-hidden='true' />}
-          value={props.quotaTypeFilter}
-          options={quotaOptions}
-          onChange={props.onQuotaTypeChange}
-        />
-        <FilterSection
-          title={t('Endpoint Type')}
-          icon={<Plug className='size-4' aria-hidden='true' />}
-          value={props.endpointTypeFilter}
-          options={endpointOptions}
-          onChange={props.onEndpointTypeChange}
-        />
+        {PRICING_SIDEBAR_FILTER_VISIBILITY.groups ? (
+          <FilterSection
+            title={t('Groups')}
+            icon={<Users className='size-4' aria-hidden='true' />}
+            value={props.groupFilter}
+            options={groupOptions}
+            onChange={props.onGroupChange}
+          />
+        ) : null}
+        {PRICING_SIDEBAR_FILTER_VISIBILITY.providers ? (
+          <FilterSection
+            title={t('Providers')}
+            icon={<Boxes className='size-4' aria-hidden='true' />}
+            value={props.vendorFilter}
+            options={vendorOptions}
+            onChange={props.onVendorChange}
+          />
+        ) : null}
+        {PRICING_SIDEBAR_FILTER_VISIBILITY.tags ? (
+          <FilterSection
+            title={t('Model Tags')}
+            icon={<Tag className='size-4' aria-hidden='true' />}
+            value={props.tagFilter}
+            options={tagOptions}
+            onChange={props.onTagChange}
+          />
+        ) : null}
+        {PRICING_SIDEBAR_FILTER_VISIBILITY.pricingType ? (
+          <FilterSection
+            title={t('Pricing Type')}
+            icon={<CreditCard className='size-4' aria-hidden='true' />}
+            value={props.quotaTypeFilter}
+            options={quotaOptions}
+            onChange={props.onQuotaTypeChange}
+          />
+        ) : null}
+        {PRICING_SIDEBAR_FILTER_VISIBILITY.endpointType ? (
+          <FilterSection
+            title={t('Endpoint Type')}
+            icon={<Plug className='size-4' aria-hidden='true' />}
+            value={props.endpointTypeFilter}
+            options={endpointOptions}
+            onChange={props.onEndpointTypeChange}
+          />
+        ) : null}
       </div>
     </aside>
   )

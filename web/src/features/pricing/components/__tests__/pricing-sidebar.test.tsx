@@ -117,7 +117,7 @@ describe('pricing sidebar chips', () => {
     domWindow.close()
   })
 
-  test('marks the selected group chip as pressed and reports a new group when another chip is clicked', async () => {
+  test('marks the selected provider chip as pressed and reports a new vendor when another chip is clicked', async () => {
     const container = document.createElement('div')
     document.body.append(container)
     const root = createRoot(container)
@@ -134,8 +134,8 @@ describe('pricing sidebar chips', () => {
             tagFilter='all'
             onQuotaTypeChange={() => {}}
             onEndpointTypeChange={() => {}}
-            onVendorChange={() => {}}
-            onGroupChange={(value) => selected.push(value)}
+            onVendorChange={(value) => selected.push(value)}
+            onGroupChange={() => {}}
             onTagChange={() => {}}
             vendors={[{ id: 1, name: 'Moonshot' }]}
             groups={['default', 'vip']}
@@ -154,22 +154,29 @@ describe('pricing sidebar chips', () => {
         '[data-slot="filter-chip"]'
       ),
     ]
-    const allChip = chips.find((chip) => chip.textContent?.startsWith('All'))
-    const defaultChip = chips.find((chip) =>
-      chip.textContent?.includes('default')
+    const allChip = chips.find((chip) =>
+      chip.textContent?.includes('All Providers')
+    )
+    const moonshotChip = chips.find((chip) =>
+      chip.textContent?.includes('Moonshot')
     )
 
     assert.ok(allChip)
-    assert.ok(defaultChip)
+    assert.ok(moonshotChip)
     assert.equal(allChip?.getAttribute('aria-pressed'), 'true')
-    assert.equal(defaultChip?.getAttribute('aria-pressed'), 'false')
+    assert.equal(moonshotChip?.getAttribute('aria-pressed'), 'false')
     assert.ok(allChip?.className.includes('rounded-full'))
+    assert.equal(container.textContent?.includes('Providers'), true)
+    assert.equal(container.textContent?.includes('Groups'), false)
+    assert.equal(container.textContent?.includes('Model Tags'), false)
+    assert.equal(container.textContent?.includes('Pricing Type'), false)
+    assert.equal(container.textContent?.includes('Endpoint Type'), false)
 
     await act(async () => {
-      defaultChip?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      moonshotChip?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    assert.deepEqual(selected, ['default'])
+    assert.deepEqual(selected, ['Moonshot'])
 
     root.unmount()
     container.remove()

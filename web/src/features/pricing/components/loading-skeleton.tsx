@@ -18,7 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { VIEW_MODES, type ViewMode } from '../constants'
+import {
+  PRICING_SIDEBAR_FILTER_VISIBILITY,
+  VIEW_MODES,
+  type ViewMode,
+} from '../constants'
 import { pricingLayout } from '../lib/layout'
 
 export interface LoadingSkeletonProps {
@@ -51,8 +55,17 @@ export function SidebarSkeleton() {
         <Skeleton className='h-7 w-16' />
       </div>
       <div className='flex flex-col gap-6'>
-        {['groups', 'providers', 'tags', 'pricing', 'endpoints'].map(
-          (section) => (
+        {(
+          [
+            ['groups', PRICING_SIDEBAR_FILTER_VISIBILITY.groups],
+            ['providers', PRICING_SIDEBAR_FILTER_VISIBILITY.providers],
+            ['tags', PRICING_SIDEBAR_FILTER_VISIBILITY.tags],
+            ['pricing', PRICING_SIDEBAR_FILTER_VISIBILITY.pricingType],
+            ['endpoints', PRICING_SIDEBAR_FILTER_VISIBILITY.endpointType],
+          ] as const
+        )
+          .filter(([, visible]) => visible)
+          .map(([section]) => (
             <div key={section} className='flex flex-col gap-3'>
               <Skeleton className='h-3 w-24' />
               <div className='flex flex-wrap gap-2'>
@@ -65,8 +78,7 @@ export function SidebarSkeleton() {
                 ))}
               </div>
             </div>
-          )
-        )}
+          ))}
       </div>
     </aside>
   )
@@ -121,11 +133,9 @@ function FilterBarSkeleton() {
 function TableContentSkeleton() {
   const columns = [
     { id: 'name', width: 200 },
-    { id: 'input', width: 100 },
-    { id: 'output', width: 100 },
-    { id: 'cache', width: 100 },
-    { id: 'group', width: 80 },
-    { id: 'type', width: 100 },
+    { id: 'price', width: 180 },
+    { id: 'cache', width: 110 },
+    { id: 'vendor', width: 130 },
   ]
   const rows = [
     'row-1',

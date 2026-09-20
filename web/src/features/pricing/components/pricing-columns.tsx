@@ -28,7 +28,10 @@ import { GroupBadge } from '@/components/group-badge'
 import { StatusBadge } from '@/components/status-badge'
 import { getLobeIcon } from '@/lib/lobe-icon'
 
-import { DEFAULT_TOKEN_UNIT } from '../constants'
+import {
+  DEFAULT_TOKEN_UNIT,
+  PRICING_TABLE_COLUMN_VISIBILITY,
+} from '../constants'
 import {
   getDynamicDisplayGroupRatio,
   getDynamicPricingSummary,
@@ -69,7 +72,7 @@ export function usePricingColumns(
 
   const tokenUnitLabel = tokenUnit === 'K' ? '1K' : '1M'
 
-  return [
+  const columns: ColumnDef<PricingModel>[] = [
     // Model column
     {
       accessorKey: 'model_name',
@@ -410,4 +413,17 @@ export function usePricingColumns(
       enableSorting: false,
     },
   ]
+
+  return columns.filter((column) => {
+    const key =
+      'accessorKey' in column && typeof column.accessorKey === 'string'
+        ? column.accessorKey
+        : column.id
+    if (!key || !(key in PRICING_TABLE_COLUMN_VISIBILITY)) {
+      return true
+    }
+    return PRICING_TABLE_COLUMN_VISIBILITY[
+      key as keyof typeof PRICING_TABLE_COLUMN_VISIBILITY
+    ]
+  })
 }
