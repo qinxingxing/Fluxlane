@@ -869,7 +869,8 @@ function validateOutput(renderedRoutes: string[]): void {
     ) {
       fail('/pricing: prerender must include the marketplace heading')
     }
-    // Footer destinations required on every public page.
+    // Footer destinations required on every public page. Privacy Policy is
+    // published; User Agreement stays out of chrome until terms text is in Git.
     const footerLinks: [string, string][] = [
       ['pricing link', 'href="/pricing"'],
       ['docs link', 'https://doc.fluxlane.ai'],
@@ -877,7 +878,6 @@ function validateOutput(renderedRoutes: string[]): void {
       ['contact link', 'href="/contact"'],
       ['contact new window', 'target="_blank"'],
       ['privacy link', 'href="/privacy-policy"'],
-      ['terms link', 'href="/user-agreement"'],
       ['console link', 'https://console.fluxlane.ai'],
     ]
     for (const [label, needle] of footerLinks) {
