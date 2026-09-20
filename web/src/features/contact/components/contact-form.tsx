@@ -25,7 +25,6 @@ import {
   Lock,
   Mail,
   Phone,
-  Send,
   Zap,
 } from 'lucide-react'
 import {
@@ -162,27 +161,10 @@ export function ContactForm() {
         aria-hidden
         className='pointer-events-none absolute -bottom-24 -left-24 hidden size-80 rounded-full bg-cyan-400/10 blur-3xl sm:block'
       />
-      <div className='relative flex flex-col gap-2 border-b border-white/10 pb-6'>
-        <div className='flex items-center justify-between gap-3'>
-          <div className='flex items-center gap-2 font-mono text-[11px] font-semibold tracking-[0.16em] text-violet-300 uppercase'>
-            <Send aria-hidden className='size-4' />
-            <span>{t('Inquiry dispatch')}</span>
-          </div>
-          <span className='bg-muted/50 rounded px-2.5 py-0.5 font-mono text-[11px] tracking-[0.12em] text-cyan-300 uppercase'>
-            {t('Secure encrypted')}
-          </span>
-        </div>
-        <p className='text-muted-foreground text-sm leading-relaxed'>
-          {t(
-            'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.'
-          )}
-        </p>
-      </div>
-
       {submitted ? (
         <div
           role='status'
-          className='bg-muted/40 relative mt-8 flex flex-col items-center gap-4 rounded-lg px-6 py-10 text-center'
+          className='bg-muted/40 relative flex flex-col items-center gap-4 rounded-lg px-6 py-10 text-center'
         >
           <CircleCheck aria-hidden className='size-8 text-cyan-300' />
           <div className='space-y-2'>
@@ -209,7 +191,7 @@ export function ContactForm() {
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             noValidate
-            className='relative mt-8 flex flex-col gap-6'
+            className='relative flex flex-col gap-6'
           >
             <div
               data-contact-field-row

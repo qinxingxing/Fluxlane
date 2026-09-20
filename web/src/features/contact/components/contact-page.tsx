@@ -38,21 +38,8 @@ export function ContactPage() {
           data-contact-hero
           className='mx-auto flex max-w-4xl flex-col items-center text-center'
         >
-          <div className='mb-6 inline-flex items-center gap-2 rounded-full bg-white/5 px-3.5 py-1.5 shadow-sm backdrop-blur-md'>
-            <span className='relative flex size-2'>
-              <span className='absolute inline-flex size-full animate-ping rounded-full bg-cyan-400 opacity-70' />
-              <span className='relative inline-flex size-2 rounded-full bg-cyan-400' />
-            </span>
-            <span className='font-mono text-[11px] font-semibold tracking-[0.16em] text-cyan-300 uppercase'>
-              {t('Contact & Partnership')}
-            </span>
-          </div>
           <h1 className='mb-6 text-[clamp(1.75rem,4.5vw,3rem)] leading-[1.15] font-bold tracking-tight'>
             {t('Get in touch with the Fluxlane team')}
-            <br className='hidden sm:block' />
-            <span className='bg-gradient-to-r from-cyan-300 via-violet-300 to-purple-300 bg-clip-text text-transparent'>
-              {t('Build highly available AI infrastructure together')}
-            </span>
           </h1>
           <p className='max-w-2xl text-base leading-relaxed text-[#ccc3d7]'>
             {t(

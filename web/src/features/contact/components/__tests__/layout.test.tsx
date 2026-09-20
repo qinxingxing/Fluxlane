@@ -74,24 +74,17 @@ await i18n.use(initReactI18next).init({
       translation: {
         'Acme Robotics, Inc.': 'Acme Robotics, Inc.',
         'A number we can reach you on': 'A number we can reach you on',
-        'Build highly available AI infrastructure together':
-          'Build highly available AI infrastructure together',
         'Claude, GPT-4o, DeepSeek-V3': 'Claude, GPT-4o, DeepSeek-V3',
         'Company name': 'Company name',
-        'Contact & Partnership': 'Contact & Partnership',
         'Describe your workload, concurrency, or latency needs':
           'Describe your workload, concurrency, or latency needs',
         'Get in touch with the Fluxlane team':
           'Get in touch with the Fluxlane team',
-        'Inquiry dispatch': 'Inquiry dispatch',
         'Monthly budget': 'Monthly budget',
         'Phone / WeChat': 'Phone / WeChat',
         'Privacy Policy': 'Privacy Policy',
         'Requested models': 'Requested models',
         'Requirements (optional)': 'Requirements (optional)',
-        'Secure encrypted': 'Secure encrypted',
-        'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.':
-          'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.',
         'Submit inquiry': 'Submit inquiry',
         'We protect your business information. We do not retain request logs or share company details with third parties.':
           'We protect your business information. We do not retain request logs or share company details with third parties.',
@@ -189,8 +182,28 @@ describe('contact page layout', () => {
     assert.equal(hero.classList.contains('text-center'), true)
     assert.equal(hero.classList.contains('mx-auto'), true)
     assert.equal(formPanel.className, contactPageLayout.formPanel)
+    assert.equal(formPanel.classList.contains('-mt-5'), true)
     assert.equal(formPanel.parentElement?.classList.contains('grid'), false)
     assert.equal(page.querySelector('[class*="md:grid-cols"]'), null)
+    assert.equal(
+      hero.querySelector('h1')?.textContent,
+      'Get in touch with the Fluxlane team'
+    )
+    assert.equal(host.textContent?.includes('Contact & Partnership'), false)
+    assert.equal(
+      host.textContent?.includes(
+        'Build highly available AI infrastructure together'
+      ),
+      false
+    )
+    assert.equal(host.textContent?.includes('Inquiry dispatch'), false)
+    assert.equal(host.textContent?.includes('Secure encrypted'), false)
+    assert.equal(
+      host.textContent?.includes(
+        'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.'
+      ),
+      false
+    )
   })
 
   test('keeps company/email and phone/model fields in two-column rows and budget options in four columns', async () => {
