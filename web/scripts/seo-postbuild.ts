@@ -383,6 +383,16 @@ const DEFAULT_STATUS_BODY = {
 
 const EMPTY_DOCUMENT_BODY = { success: true, data: '' }
 
+const EMPTY_PRICING_BODY = {
+  success: true,
+  data: [],
+  vendors: [],
+  group_ratio: {},
+  usable_group: {},
+  supported_endpoint: {},
+  auto_groups: [],
+}
+
 function localMockBody(url: string): unknown {
   if (url === '/api/status') return DEFAULT_STATUS_BODY
   if (url === '/api/setup') return { success: true, data: { status: true } }
@@ -391,6 +401,7 @@ function localMockBody(url: string): unknown {
   if (url === '/api/privacy-policy') return EMPTY_DOCUMENT_BODY
   if (url === '/api/user-agreement') return EMPTY_DOCUMENT_BODY
   if (url === '/api/notice') return EMPTY_DOCUMENT_BODY
+  if (url === '/api/pricing') return EMPTY_PRICING_BODY
   return { success: false, message: 'prerender-mock' }
 }
 
@@ -850,6 +861,13 @@ function validateOutput(renderedRoutes: string[]): void {
       if (!html.includes('联系销售')) {
         fail('home: missing contact-sales CTA')
       }
+    }
+    if (
+      route === '/pricing' &&
+      !html.includes('模型广场') &&
+      !html.includes('Model Square')
+    ) {
+      fail('/pricing: prerender must include the marketplace heading')
     }
     // Footer destinations required on every public page.
     const footerLinks: [string, string][] = [
