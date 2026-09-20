@@ -29,33 +29,23 @@ export function LoadingSkeleton(props: LoadingSkeletonProps) {
   const viewMode = props.viewMode ?? VIEW_MODES.TABLE
 
   return (
-    <div className='flex flex-col gap-6'>
-      <div className='mx-auto flex w-full max-w-3xl flex-col items-center gap-3 pt-5 text-center sm:pt-10'>
-        <Skeleton className='h-10 w-48 sm:h-12' />
-        <Skeleton className='h-4 w-64' />
-        <Skeleton className='h-4 w-80' />
-        <Skeleton className='mt-2 h-10 w-full max-w-2xl rounded-full' />
-      </div>
-      <div className={pricingLayout.pageGrid}>
-        <div className='hidden xl:block'>
-          <SidebarSkeleton />
-        </div>
-        <div className='flex min-w-0 flex-col gap-4'>
-          <FilterBarSkeleton />
-          {viewMode === VIEW_MODES.TABLE ? (
-            <TableContentSkeleton />
-          ) : (
-            <CardContentSkeleton />
-          )}
-        </div>
-      </div>
+    <div className='flex min-w-0 flex-col gap-4'>
+      <FilterBarSkeleton />
+      {viewMode === VIEW_MODES.TABLE ? (
+        <TableContentSkeleton />
+      ) : (
+        <CardContentSkeleton />
+      )}
     </div>
   )
 }
 
-function SidebarSkeleton() {
+export function SidebarSkeleton() {
   return (
-    <div className={pricingLayout.sidebar}>
+    <aside
+      data-slot='pricing-sidebar-skeleton'
+      className={`${pricingLayout.sidebar} ${pricingLayout.sidebarSticky}`}
+    >
       <div className='mb-4 flex items-center justify-between'>
         <Skeleton className='h-4 w-16' />
         <Skeleton className='h-7 w-16' />
@@ -78,7 +68,7 @@ function SidebarSkeleton() {
           )
         )}
       </div>
-    </div>
+    </aside>
   )
 }
 

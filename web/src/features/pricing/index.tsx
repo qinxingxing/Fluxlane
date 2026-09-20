@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 
 import {
   LoadingSkeleton,
+  SidebarSkeleton,
   EmptyState,
   PricingTable,
   PricingSidebar,
@@ -202,23 +203,27 @@ export function Pricing() {
       <div className={pricingLayout.pageShell}>
         <PricingAtmosphere />
         <PageTransition className={cn('relative', pricingLayout.pageContainer)}>
-          {isLoading ? (
-            <LoadingSkeleton viewMode={viewMode} />
-          ) : (
-            <div className={pricingLayout.pageGrid}>
+          <div className={pricingLayout.pageGrid}>
+            {isLoading ? (
+              <SidebarSkeleton />
+            ) : (
               <PricingSidebar
                 {...sidebarProps}
                 className={pricingLayout.sidebarSticky}
               />
+            )}
 
-              <div className='min-w-0'>
-                <PricingHero
-                  modelCount={models?.length || 0}
-                  searchInput={searchInput}
-                  onSearchChange={setSearchInput}
-                  onSearchClear={clearSearch}
-                />
+            <div className='min-w-0'>
+              <PricingHero
+                modelCount={models?.length || 0}
+                searchInput={searchInput}
+                onSearchChange={setSearchInput}
+                onSearchClear={clearSearch}
+              />
 
+              {isLoading ? (
+                <LoadingSkeleton viewMode={viewMode} />
+              ) : (
                 <div className='flex flex-col gap-4'>
                   <PricingToolbar
                     filteredCount={filteredModels.length}
@@ -253,9 +258,9 @@ export function Pricing() {
 
                   {renderPricingContent()}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           {selectedModel && (
             <ModelDetailsDrawer
