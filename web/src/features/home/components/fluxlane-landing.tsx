@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { PublicButton } from '@/components/layout/components/public-button'
 import { trackEvent } from '@/lib/analytics'
 import { publicSiteHref } from '@/lib/domain-routing'
 
@@ -95,17 +95,18 @@ export function FluxlaneLanding({ isAuthenticated }: FluxlaneLandingProps) {
             等大模型。无需管理基础设施，按需付费，毫秒级响应。
           </p>
           <div className='relative mt-9 flex flex-wrap justify-center gap-3'>
-            <Button
-              className='h-12 bg-gradient-to-r from-violet-600 to-purple-500 px-7 text-white shadow-[0_0_24px_rgba(109,40,217,0.35)] hover:from-violet-500 hover:to-purple-400'
+            <PublicButton
+              size='lg'
+              className='group'
               render={<Link to={isAuthenticated ? '/dashboard' : '/sign-up'} />}
               onClick={() => trackEvent('click_get_started')}
             >
-              {isAuthenticated ? '进入控制台' : '立即开始'}
-              <ArrowRight className='ml-1 size-4' />
-            </Button>
-            <Button
+              {isAuthenticated ? t('Go to Dashboard') : t('Get Started')}
+              <ArrowRight className='size-4 transition-transform group-hover:translate-x-0.5' />
+            </PublicButton>
+            <PublicButton
               variant='outline'
-              className='h-12 border-cyan-300/50 bg-transparent px-7 text-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-200'
+              size='lg'
               render={
                 <a
                   href={contactUrl}
@@ -114,9 +115,9 @@ export function FluxlaneLanding({ isAuthenticated }: FluxlaneLandingProps) {
                 />
               }
             >
-              <Mail className='mr-1 size-4' />
+              <Mail className='size-4' />
               {t('Talk to sales')}
-            </Button>
+            </PublicButton>
           </div>
 
           <div className='relative mt-16 w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[#070b28]/90 text-left shadow-[0_0_40px_rgba(0,210,253,0.10)]'>

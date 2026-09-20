@@ -27,6 +27,14 @@ export const STATIC_I18N_KEYS = [
   'Docs',
   'About',
 
+  // Public footer columns (titles/links are translated at render time)
+  'Product',
+  'Unified API gateway',
+  'footer.columns.docs.title',
+  'footer.columns.docs.links.quickStart',
+  'footer.columns.docs.links.apiDocs',
+  'footer.columns.about.title',
+
   // Sidebar views (drill-in workspaces)
   'System Settings',
   'Back to Dashboard',

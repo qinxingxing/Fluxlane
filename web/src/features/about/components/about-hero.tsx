@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { PublicButton } from '@/components/layout/components/public-button'
 import { useStatus } from '@/hooks/use-status'
 import { publicDocsLink } from '@/lib/fluxlane-brand'
 import { cn } from '@/lib/utils'
@@ -52,23 +52,23 @@ export function AboutHero() {
           )}
         </p>
         <div className='flex w-full flex-col justify-center gap-4 pt-4 sm:w-auto sm:flex-row md:justify-start'>
-          <Button
+          <PublicButton
             data-about-cta-primary
-            className='h-auto rounded-xl border-t border-white/20 bg-gradient-to-r from-violet-600 to-purple-500 px-8 py-3 text-white shadow-[0_0_20px_rgba(211,187,255,0.3)] hover:from-violet-500 hover:to-purple-400 hover:text-white'
+            size='lg'
             render={<Link to='/sign-up' />}
           >
             {t('Create account')}
-          </Button>
-          <Button
+          </PublicButton>
+          <PublicButton
             data-about-cta-docs
             variant='outline'
-            className='h-auto rounded-xl border-cyan-300 bg-transparent px-8 py-3 text-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-200'
+            size='lg'
             render={
               <a href={docsUrl} target='_blank' rel='noopener noreferrer' />
             }
           >
             {t('View document')}
-          </Button>
+          </PublicButton>
         </div>
       </div>
       <AboutGatewayVisual />

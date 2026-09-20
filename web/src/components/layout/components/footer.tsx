@@ -33,9 +33,16 @@ import {
 } from '@/lib/fluxlane-brand'
 import { cn } from '@/lib/utils'
 
+import {
+  publicFooterClassName,
+  publicFooterLinkClassName,
+} from '../lib/public-chrome'
+
 interface FooterLink {
   text: string
   href: string
+  badge?: string
+  track?: 'docs' | 'console'
 }
 
 interface FooterColumnProps {
@@ -50,74 +57,33 @@ interface FooterProps {
   className?: string
 }
 
-// Standard link row shown on Fluxlane public pages so crawlers and visitors
-// always find the main public destinations, independent of admin footer HTML.
-function FluxlaneFooterNav() {
-  const { t } = useTranslation()
-  const links: {
-    key: string
-    label: string
-    href: string
-    newWindow?: boolean
-  }[] = [
-    { key: 'pricing', label: t('Pricing'), href: publicSiteHref('/pricing') },
-    {
-      key: 'docs',
-      label: t('Documentation'),
-      href: FLUXLANE_DOCS_URL,
-    },
-    { key: 'about', label: t('About'), href: publicSiteHref('/about') },
-    {
-      key: 'contact',
-      label: t('Contact'),
-      href: publicSiteHref('/contact'),
-      newWindow: true,
-    },
-    {
-      key: 'privacy',
-      label: t('Privacy Policy'),
-      href: publicSiteHref('/privacy-policy'),
-    },
-    {
-      key: 'terms',
-      label: t('User Agreement'),
-      href: publicSiteHref('/user-agreement'),
-    },
-    {
-      key: 'console',
-      label: t('Console'),
-      href: consoleSiteHref('/dashboard'),
-    },
-  ]
-  return (
-    <nav
-      aria-label='Footer'
-      className='flex flex-wrap items-center gap-x-4 gap-y-1'
-    >
-      {links.map((link) => (
-        <a
-          key={link.key}
-          href={link.href}
-          className='hover:text-foreground text-sm transition-colors duration-200'
-          {...(link.newWindow
-            ? { target: '_blank', rel: 'noopener noreferrer' }
-            : {})}
-          onClick={() => {
-            if (link.key === 'docs') trackEvent('click_documentation')
-            if (link.key === 'console') trackEvent('click_console')
-          }}
-        >
-          {link.label}
-        </a>
-      ))}
-    </nav>
-  )
-}
+const ACCESS_VENTURES_URL = 'https://www.accesstechnologyventures.com'
 
 function FooterLinkItem(props: { link: FooterLink }) {
   const { t } = useTranslation()
   const isExternal = props.link.href.startsWith('http')
   const label = t(props.link.text)
+
+  const content = (
+    <>
+      {label}
+      {props.link.badge ? (
+        <span className='rounded bg-purple-500/20 px-1 text-[9px] text-purple-300'>
+          {props.link.badge}
+        </span>
+      ) : null}
+    </>
+  )
+
+  const className = cn(
+    publicFooterLinkClassName,
+    'flex items-center justify-between gap-2'
+  )
+
+  const onClick = () => {
+    if (props.link.track === 'docs') trackEvent('click_documentation')
+    if (props.link.track === 'console') trackEvent('click_console')
+  }
 
   if (isExternal) {
     return (
@@ -125,26 +91,21 @@ function FooterLinkItem(props: { link: FooterLink }) {
         href={props.link.href}
         target='_blank'
         rel='noopener noreferrer'
-        className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
+        className={className}
+        onClick={onClick}
       >
-        {label}
+        {content}
       </a>
     )
   }
 
   return (
-    <Link
-      to={props.link.href}
-      className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
-    >
-      {label}
+    <Link to={props.link.href} className={className} onClick={onClick}>
+      {content}
     </Link>
   )
 }
 
-// Renders User Agreement / Privacy Policy links inline with the parent's
-// copyright row when either is configured in System Settings → Site. Emits
-// fragmented siblings so the parent flex container's gap controls spacing.
 function LegalLinks(props: { leadingSeparator?: boolean }) {
   const { t } = useTranslation()
   const { status } = useStatus()
@@ -171,14 +132,11 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
       {items.map((item, index) => (
         <Fragment key={item.key}>
           {(props.leadingSeparator || index > 0) && (
-            <span aria-hidden='true' className='text-muted-foreground/30'>
+            <span aria-hidden='true' className='text-slate-600'>
               ·
             </span>
           )}
-          <a
-            href={item.href}
-            className='hover:text-foreground transition-colors duration-200'
-          >
+          <a href={item.href} className={publicFooterLinkClassName}>
             {item.label}
           </a>
         </Fragment>
@@ -187,15 +145,13 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
   )
 }
 
-// inline=true returns just the inner span for composition in a parent flex
-// row. inline=false wraps in a centered/right-aligned div (default).
 function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
   const content = (
-    <span className='text-muted-foreground/45'>
+    <span className='text-slate-500'>
       &copy; {props.currentYear}{' '}
       <a
         href={FLUXLANE_SITE_URL}
-        className='text-foreground/70 hover:text-foreground font-medium transition-colors'
+        className='font-medium text-slate-300 transition-colors hover:text-white'
       >
         {DEFAULT_SYSTEM_NAME}
       </a>
@@ -204,96 +160,103 @@ function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
   if (props.inline) {
     return content
   }
-  return (
-    <div className='text-muted-foreground/45 text-center text-xs sm:text-right'>
-      {content}
-    </div>
-  )
+  return <div className='text-center text-xs sm:text-right'>{content}</div>
 }
 
 export function Footer(props: FooterProps) {
   const { t } = useTranslation()
-  const { systemName, footerHtml, demoSiteEnabled } = useSystemConfig()
+  const { status } = useStatus()
+  const { systemName, footerHtml } = useSystemConfig()
 
   const displayName = publicBrandName(systemName || props.name)
-  const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
+  const showPrivacy = isPrivacyPolicyEnabled(status)
 
-  const fallbackColumns = useMemo<FooterColumnProps[]>(
-    () => [
+  const fallbackColumns = useMemo<FooterColumnProps[]>(() => {
+    const companyLinks: FooterLink[] = [
       {
-        title: t('footer.columns.about.title'),
+        text: 'About',
+        href: publicSiteHref('/about'),
+      },
+      {
+        text: 'Contact',
+        href: publicSiteHref('/contact'),
+      },
+    ]
+    if (showPrivacy) {
+      companyLinks.push({
+        text: 'Privacy Policy',
+        href: publicSiteHref('/privacy-policy'),
+      })
+    }
+    if (status?.user_agreement_enabled) {
+      companyLinks.push({
+        text: 'User Agreement',
+        href: publicSiteHref('/user-agreement'),
+      })
+    }
+
+    return [
+      {
+        title: 'Product',
         links: [
           {
-            text: t('footer.columns.about.links.aboutProject'),
-            href: `${FLUXLANE_SITE_URL}/about`,
+            text: 'Model Square',
+            href: publicSiteHref('/pricing'),
           },
           {
-            text: t('footer.columns.about.links.contact'),
-            href: publicSiteHref('/contact'),
-          },
-          {
-            text: t('footer.columns.about.links.features'),
+            text: 'Unified API gateway',
             href: FLUXLANE_DOCS_URL,
+            track: 'docs',
+          },
+          {
+            text: 'Pricing',
+            href: publicSiteHref('/pricing'),
+          },
+          {
+            text: 'Console',
+            href: consoleSiteHref('/dashboard'),
+            track: 'console',
           },
         ],
       },
       {
-        title: t('footer.columns.docs.title'),
+        title: 'footer.columns.docs.title',
         links: [
           {
-            text: t('footer.columns.docs.links.quickStart'),
+            text: 'footer.columns.docs.links.quickStart',
             href: FLUXLANE_DOCS_URL,
+            track: 'docs',
           },
           {
-            text: t('footer.columns.docs.links.installation'),
+            text: 'footer.columns.docs.links.apiDocs',
             href: FLUXLANE_DOCS_URL,
-          },
-          {
-            text: t('footer.columns.docs.links.apiDocs'),
-            href: FLUXLANE_DOCS_URL,
+            track: 'docs',
           },
         ],
       },
       {
-        title: t('footer.columns.related.title'),
-        links: [
-          {
-            text: t('footer.columns.related.links.oneApi'),
-            href: 'https://github.com/songquanpeng/one-api',
-          },
-          {
-            text: t('footer.columns.related.links.midjourney'),
-            href: 'https://github.com/novicezk/midjourney-proxy',
-          },
-          {
-            text: t('footer.columns.related.links.newApiKeyTool'),
-            href: FLUXLANE_SITE_URL,
-          },
-        ],
+        title: 'footer.columns.about.title',
+        links: companyLinks,
       },
-    ],
-    [t]
-  )
+    ]
+  }, [showPrivacy, status?.user_agreement_enabled])
 
   const displayColumns = props.columns ?? fallbackColumns
 
   if (footerHtml) {
     return (
       <footer
-        className={cn(
-          'relative z-10 border-t border-white/10 bg-[#0c112e] text-white [&_a]:!text-white [&_p]:!text-white/70 [&_span]:!text-white/70',
-          props.className
-        )}
+        data-public-footer
+        className={cn(publicFooterClassName, props.className)}
       >
-        <div className='mx-auto w-full max-w-6xl px-6 py-5'>
-          <div className='bg-muted/20 border-border/50 flex flex-col items-center justify-between gap-4 rounded-2xl border px-4 py-4 backdrop-blur-sm sm:flex-row sm:px-5'>
+        <div className='mx-auto w-full max-w-7xl px-8 py-8'>
+          <div className='flex flex-col items-center justify-between gap-6 border border-white/10 bg-white/[0.03] px-5 py-5 md:flex-row'>
             <div
-              className='custom-footer text-muted-foreground min-w-0 text-center text-sm sm:text-left'
+              className='custom-footer min-w-0 text-center text-sm text-slate-400 sm:text-left'
               dangerouslySetInnerHTML={{ __html: footerHtml }}
             />
-            <FluxlaneFooterNav />
-            <div className='border-border/60 text-muted-foreground/45 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t pt-4 text-xs sm:w-auto sm:justify-end sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5'>
+            <div className='flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs'>
               <LegalLinks />
               <ProjectAttribution currentYear={currentYear} inline />
             </div>
@@ -305,16 +268,13 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
-      className={cn(
-        'relative z-10 border-t border-white/10 bg-[#0c112e] text-white [&_a]:!text-white [&_p]:!text-white/70 [&_span]:!text-white/70',
-        props.className
-      )}
+      data-public-footer
+      className={cn(publicFooterClassName, props.className)}
     >
-      <div className='mx-auto max-w-6xl px-6 py-12 md:py-16'>
-        <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
-          {/* Brand column */}
-          <div className='shrink-0'>
-            <Link to='/' className='group flex items-center gap-2.5'>
+      <div className='mx-auto max-w-7xl px-8 py-16'>
+        <div className='grid grid-cols-2 gap-10 md:grid-cols-3 lg:grid-cols-5'>
+          <div className='col-span-2 space-y-4 pr-6 md:col-span-3 lg:col-span-2'>
+            <Link to='/' className='flex items-center gap-2.5'>
               <img
                 src={BRAND_WORDMARK}
                 alt={displayName}
@@ -323,39 +283,42 @@ export function Footer(props: FooterProps) {
                 className='h-[22px] w-auto'
               />
             </Link>
-            <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
-              {t('Powerful API Management Platform')}
+            <p className='max-w-sm text-xs leading-relaxed text-slate-400'>
+              {t(
+                'A unified, highly available AI API gateway for developers and companies.'
+              )}
             </p>
-            <div className='mt-4'>
-              <FluxlaneFooterNav />
-            </div>
+            <a
+              href={ACCESS_VENTURES_URL}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] text-slate-300 transition-colors hover:border-purple-400/40 hover:text-white'
+            >
+              <span className='font-mono text-purple-400'>
+                {t('Backed by')}
+              </span>
+              <span>Access Technology Ventures</span>
+            </a>
           </div>
 
-          {/* Links columns */}
-          {(isDemoSiteMode || props.columns) && (
-            <div className='grid grid-cols-3 gap-8 md:gap-16'>
-              {displayColumns.map((column) => (
-                <div key={column.title}>
-                  <p className='text-muted-foreground/50 mb-3 text-xs font-medium tracking-wider uppercase'>
-                    {t(column.title)}
-                  </p>
-                  <ul className='space-y-2.5'>
-                    {column.links.map((link) => (
-                      <li key={`${link.href}:${link.text}`}>
-                        <FooterLinkItem link={link} />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+          {displayColumns.map((column) => (
+            <div key={column.title} className='space-y-3'>
+              <h2 className='font-mono text-xs font-semibold tracking-wider text-slate-200 uppercase'>
+                {t(column.title)}
+              </h2>
+              <ul className='space-y-2.5 text-xs'>
+                {column.links.map((link) => (
+                  <li key={`${link.href}:${link.text}`}>
+                    <FooterLinkItem link={link} />
+                  </li>
+                ))}
+              </ul>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Copyright + optional legal links inline on the left, project
-            attribution on the right; wraps on narrow screens. */}
-        <div className='border-border/30 mt-12 flex flex-col items-center justify-between gap-x-3 gap-y-2 border-t pt-6 sm:flex-row'>
-          <div className='text-muted-foreground/40 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:justify-start'>
+        <div className='mt-12 flex flex-col items-center justify-between gap-x-3 gap-y-3 border-t border-white/5 pt-6 sm:flex-row'>
+          <div className='flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-start'>
             <span>
               &copy; {currentYear} {displayName}.{' '}
               {props.copyright ?? t('footer.defaultCopyright')}

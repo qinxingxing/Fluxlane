@@ -37,8 +37,8 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { PublicButton } from '@/components/layout/components/public-button'
 import { Turnstile } from '@/components/turnstile'
-import { Button } from '@/components/ui/button'
 import { Field, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field'
 import {
   Form,
@@ -177,14 +177,14 @@ export function ContactForm() {
               )}
             </p>
           </div>
-          <Button
+          <PublicButton
             type='button'
             variant='outline'
             className='mt-2'
             onClick={() => setSubmitted(false)}
           >
             {t('Submit another inquiry')}
-          </Button>
+          </PublicButton>
         </div>
       ) : (
         <Form {...form}>
@@ -403,10 +403,11 @@ export function ContactForm() {
               </p>
             </div>
 
-            <Button
+            <PublicButton
               type='submit'
+              size='lg'
               disabled={isSubmitting}
-              className='h-auto w-full rounded-xl bg-gradient-to-r from-violet-700 via-purple-600 to-violet-700 py-4 text-base font-semibold text-white shadow-lg shadow-violet-700/30 hover:from-violet-600 hover:via-purple-500 hover:to-violet-600 hover:text-white'
+              className='w-full'
             >
               {isSubmitting ? (
                 <>
@@ -419,7 +420,7 @@ export function ContactForm() {
                   <Zap aria-hidden className='size-4' />
                 </>
               )}
-            </Button>
+            </PublicButton>
           </form>
         </Form>
       )}
