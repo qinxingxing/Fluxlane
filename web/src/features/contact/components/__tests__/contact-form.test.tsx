@@ -80,7 +80,6 @@ await i18n.use(initReactI18next).init({
         'Company name': 'Company name',
         'Describe your workload, concurrency, or latency needs':
           'Describe your workload, concurrency, or latency needs',
-        'Inquiry dispatch': 'Inquiry dispatch',
         'Inquiry submitted.': 'Inquiry submitted.',
         'Monthly budget': 'Monthly budget',
         'Phone / WeChat': 'Phone / WeChat',
@@ -93,9 +92,6 @@ await i18n.use(initReactI18next).init({
         'Privacy Policy': 'Privacy Policy',
         'Requested models': 'Requested models',
         'Requirements (optional)': 'Requirements (optional)',
-        'Secure encrypted': 'Secure encrypted',
-        'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.':
-          'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.',
         Submitting: 'Submitting',
         'Submit another inquiry': 'Submit another inquiry',
         'Submit inquiry': 'Submit inquiry',
@@ -226,6 +222,21 @@ after(() => {
 })
 
 describe('contact form submit', () => {
+  test('starts on the fields without the dispatch intro or divider', async () => {
+    const host = await renderTree(<ContactForm />)
+
+    assert.equal(host.textContent?.includes('Inquiry dispatch'), false)
+    assert.equal(host.textContent?.includes('Secure encrypted'), false)
+    assert.equal(
+      host.textContent?.includes(
+        'Share a few details about your business. A solutions architect will follow up within 24 hours with a tailored onboarding review.'
+      ),
+      false
+    )
+    assert.equal(host.querySelector('.border-b'), null)
+    assert.ok(host.querySelector('form'))
+  })
+
   test('shows the success state after a valid inquiry is accepted', async () => {
     const payloads: unknown[] = []
     apiClient.post = async (url, data) => {

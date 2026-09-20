@@ -20,5 +20,5 @@ export const contactPageLayout = {
   page: 'relative min-h-screen overflow-hidden bg-[#0c112e] pt-16 text-[#dee0ff]',
   stripes:
     'pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:48px_48px]',
-  formPanel: 'mx-auto w-full max-w-3xl',
+  formPanel: 'mx-auto -mt-5 w-full max-w-3xl',
 }
