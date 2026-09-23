@@ -40,6 +40,7 @@ import {
 } from '../constants'
 import type { User } from '../types'
 import { DataTableRowActions } from './data-table-row-actions'
+import { UserEmailCell } from './user-email-cell'
 import { UserQuotaCell } from './user-quota-cell'
 
 export function useUsersColumns(): ColumnDef<User>[] {
@@ -120,6 +121,14 @@ export function useUsersColumns(): ColumnDef<User>[] {
       enableHiding: false,
       size: 220,
       meta: { mobileTitle: true },
+    },
+    {
+      accessorKey: 'email',
+      header: t('Email'),
+      cell: ({ row }) => <UserEmailCell email={row.original.email} />,
+      enableSorting: false,
+      size: 240,
+      meta: { mobileOrder: 15 },
     },
     {
       accessorKey: 'status',
