@@ -170,7 +170,12 @@ describe('registration page', () => {
     assert.ok(layout)
     assert.equal(layout?.classList.contains('lg:grid-cols-12'), true)
     assert.ok(page)
-    assert.ok(host.querySelector('img[alt="Logo"]'))
+    assert.equal(
+      host
+        .querySelector('img[src="/logo-full.png"]')
+        ?.className.includes('h-8'),
+      true
+    )
     assert.equal(
       host.textContent?.includes(
         'Start your high-availability AI infrastructure journey'
@@ -263,7 +268,12 @@ describe('sign-in page', () => {
 
     assert.ok(layout)
     assert.ok(page)
-    assert.ok(host.querySelector('img[alt="Logo"]'))
+    assert.equal(
+      host
+        .querySelector('img[src="/logo-full.png"]')
+        ?.className.includes('h-8'),
+      true
+    )
     assert.equal(host.textContent?.includes('Sign in'), true)
     assert.equal(host.textContent?.includes('Sign up'), true)
     assert.ok(username)

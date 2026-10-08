@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { BRAND_WORDMARK } from '@/lib/constants'
 
 type RegisterPageProps = {
   form: ReactNode
@@ -57,7 +58,7 @@ export function RegisterPage(props: RegisterPageProps) {
       ),
     },
   ]
-  const { systemName, logo, loading } = useSystemConfig()
+  const { systemName, loading } = useSystemConfig()
   const headerAction =
     props.headerAction === undefined
       ? { to: '/sign-in' as const, label: t('Sign in') }
@@ -72,19 +73,18 @@ export function RegisterPage(props: RegisterPageProps) {
         />
         <header className='sticky top-0 z-50 border-b border-violet-500/25 bg-[#0c112e]/85 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)] backdrop-blur-xl'>
           <div className='mx-auto flex h-16 max-w-7xl items-center justify-between px-6'>
-            <Link to='/' className='flex items-center gap-3'>
+            <Link to='/' aria-label={systemName} className='flex items-center'>
               {loading ? (
-                <Skeleton className='size-8 rounded-lg' />
+                <Skeleton className='h-8 w-40 rounded-md' />
               ) : (
                 <img
-                  src={logo}
-                  alt={t('Logo')}
-                  className='size-8 rounded-lg object-cover shadow-lg shadow-violet-600/30'
+                  src={BRAND_WORDMARK}
+                  alt={systemName}
+                  width={317}
+                  height={32}
+                  className='h-8 w-auto'
                 />
               )}
-              <span className='text-lg font-bold tracking-tight text-white'>
-                {loading ? <Skeleton className='h-5 w-24' /> : systemName}
-              </span>
             </Link>
             {headerAction ? (
               <Link
