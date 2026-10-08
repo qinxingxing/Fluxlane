@@ -576,6 +576,9 @@ export const STATIC_I18N_KEYS = [
   'Stability first',
   'Protect every request with ongoing load tests, capacity safeguards, monitoring alerts, and failure drills, building enterprise-grade high availability.',
 
+  // Registration validation messages passed through the form error translator
+  'Please enter the verification code',
+
   // Misc
   'Cancel',
   'Status',

@@ -205,6 +205,16 @@ export async function register(payload: RegisterPayload): Promise<ApiResponse> {
   return res.data
 }
 
+export async function sendPhoneVerification(
+  phone: string,
+  turnstile?: string
+): Promise<ApiResponse> {
+  const res = await api.get('/api/verification/phone', {
+    params: { phone, turnstile },
+  })
+  return res.data
+}
+
 // Send email verification code
 export async function sendEmailVerification(
   email: string,

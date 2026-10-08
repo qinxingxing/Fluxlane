@@ -67,26 +67,14 @@ func performRegister(t *testing.T, body string) *httptest.ResponseRecorder {
 	return recorder
 }
 
-func TestRegisterRequiresEmailAndVerificationCodeWhenSettingIsOff(t *testing.T) {
-	setupRegisterTestDB(t)
-
-	recorder := performRegister(t, `{
-		"username":"newuser",
-		"password":"password12"
-	}`)
-
-	assert.Equal(t, http.StatusOK, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), `"success":false`)
-	assert.Contains(t, recorder.Body.String(), "user.email_verification_required")
-}
-
-func TestRegisterRejectsEmailWithoutVerificationCode(t *testing.T) {
+func TestRegisterRequiresEmailAndVerificationCode(t *testing.T) {
 	setupRegisterTestDB(t)
 
 	recorder := performRegister(t, `{
 		"username":"newuser",
 		"password":"password12",
-		"email":"newuser@example.com"
+		"email":"newuser@example.com",
+		"phone":"+8613800138000"
 	}`)
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
@@ -94,24 +82,89 @@ func TestRegisterRejectsEmailWithoutVerificationCode(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "user.email_verification_required")
 }
 
-func TestRegisterStoresVerifiedEmail(t *testing.T) {
+func TestRegisterRejectsPhoneVerificationCodeForEmail(t *testing.T) {
 	setupRegisterTestDB(t)
-	email := "verified@example.com"
+	require.NoError(t, common.RegisterVerificationCodeWithKey("+8613800138000", "654321", common.PhoneVerificationPurpose))
+
+	recorder := performRegister(t, `{
+		"username":"newuser",
+		"password":"password12",
+		"email":"newuser@example.com",
+		"phone":"+8613800138000",
+		"verification_code":"654321"
+	}`)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), `"success":false`)
+	assert.Contains(t, recorder.Body.String(), "user.verification_code_error")
+}
+
+func TestRegisterStoresEmailAndUnverifiedPhone(t *testing.T) {
+	setupRegisterTestDB(t)
+	phone := "+8613800138000"
 	code := "654321"
-	require.NoError(t, common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose))
+	require.NoError(t, common.RegisterVerificationCodeWithKey("verified@example.com", code, common.EmailVerificationPurpose))
 
 	recorder := performRegister(t, `{
 		"username":"verified",
 		"password":"password12",
 		"email":"verified@example.com",
+		"phone":"+86 138-0013-8000",
 		"verification_code":"654321"
 	}`)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Contains(t, recorder.Body.String(), `"success":true`)
 
-	user, err := model.GetUniqueUserByEmail(email)
+	user, err := model.GetUniqueUserByEmail("verified@example.com")
 	require.NoError(t, err)
 	assert.Equal(t, "verified", user.Username)
-	assert.Equal(t, email, user.Email)
+	assert.Equal(t, "verified@example.com", user.Email)
+	assert.Equal(t, phone, user.Phone)
+}
+
+func TestRegisterAllowsAMissingPhone(t *testing.T) {
+	setupRegisterTestDB(t)
+	require.NoError(t, common.RegisterVerificationCodeWithKey("nophone@example.com", "654321", common.EmailVerificationPurpose))
+
+	recorder := performRegister(t, `{
+		"username":"nophone",
+		"password":"password12",
+		"email":"nophone@example.com",
+		"verification_code":"654321"
+	}`)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Contains(t, recorder.Body.String(), `"success":true`)
+
+	user, err := model.GetUniqueUserByEmail("nophone@example.com")
+	require.NoError(t, err)
+	assert.Equal(t, "", user.Phone)
+}
+
+func TestRegisterRejectsAPhoneThatIsAlreadyUsed(t *testing.T) {
+	setupRegisterTestDB(t)
+	existing := model.User{
+		Username:    "existing",
+		Password:    "password12",
+		DisplayName: "existing",
+		Email:       "existing@example.com",
+		Phone:       "+8613800138000",
+		Role:        common.RoleCommonUser,
+		Status:      common.UserStatusEnabled,
+	}
+	require.NoError(t, existing.Insert(0))
+	require.NoError(t, common.RegisterVerificationCodeWithKey("second@example.com", "654321", common.EmailVerificationPurpose))
+
+	recorder := performRegister(t, `{
+		"username":"second",
+		"password":"password12",
+		"email":"second@example.com",
+		"phone":"+8613800138000",
+		"verification_code":"654321"
+	}`)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), `"success":false`)
+	assert.Contains(t, recorder.Body.String(), "user.phone_already_taken")
 }

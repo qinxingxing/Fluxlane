@@ -347,6 +347,12 @@ export type OperationsSettings = {
   SMTPStartTLSEnabled: boolean
   SMTPInsecureSkipVerify: boolean
   SMTPForceAuthLogin: boolean
+  SMSTencentSecretId: string
+  SMSTencentSecretKey: string
+  SMSTencentSdkAppId: string
+  SMSTencentSignName: string
+  SMSTencentTemplateId: string
+  SMSTencentRegion: string
   WorkerUrl: string
   WorkerValidKey: string
   WorkerAllowHttpImageRequestEnabled: boolean

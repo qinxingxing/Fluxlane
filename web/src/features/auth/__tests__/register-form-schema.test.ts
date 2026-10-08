@@ -21,34 +21,59 @@ import { describe, test } from 'node:test'
 
 import { registerFormSchema } from '../constants'
 
+const validRegistration = {
+  username: 'newuser',
+  email: 'newuser@example.com',
+  countryCode: '+86',
+  phone: '13800138000',
+  verificationCode: '123456',
+  password: 'password12',
+  confirmPassword: 'password12',
+}
+
 describe('registerFormSchema', () => {
   test('rejects a missing email address', () => {
     const result = registerFormSchema.safeParse({
-      username: 'newuser',
+      ...validRegistration,
       email: '',
-      password: 'password12',
-      confirmPassword: 'password12',
     })
     assert.equal(result.success, false)
   })
 
   test('rejects an invalid email address', () => {
     const result = registerFormSchema.safeParse({
-      username: 'newuser',
+      ...validRegistration,
       email: 'not-an-email',
-      password: 'password12',
-      confirmPassword: 'password12',
     })
     assert.equal(result.success, false)
   })
 
-  test('accepts username, email, and matching passwords', () => {
+  test('rejects a filled phone number that does not match the country code', () => {
     const result = registerFormSchema.safeParse({
-      username: 'newuser',
-      email: 'newuser@example.com',
-      password: 'password12',
-      confirmPassword: 'password12',
+      ...validRegistration,
+      phone: '12345',
     })
+    assert.equal(result.success, false)
+  })
+
+  test('accepts a blank phone number when the email code is present', () => {
+    const result = registerFormSchema.safeParse({
+      ...validRegistration,
+      phone: '',
+    })
+    assert.equal(result.success, true)
+  })
+
+  test('rejects a missing email verification code', () => {
+    const result = registerFormSchema.safeParse({
+      ...validRegistration,
+      verificationCode: '',
+    })
+    assert.equal(result.success, false)
+  })
+
+  test('accepts username, email, optional phone, email code, and matching passwords', () => {
+    const result = registerFormSchema.safeParse(validRegistration)
     assert.equal(result.success, true)
   })
 })

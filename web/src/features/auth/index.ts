@@ -103,6 +103,7 @@ export { useTurnstile } from './hooks/use-turnstile'
 export { useOAuthLogin } from './hooks/use-oauth-login'
 export { useAuthRedirect } from './hooks/use-auth-redirect'
 export { useEmailVerification } from './hooks/use-email-verification'
+export { usePhoneVerification } from './hooks/use-phone-verification'
 
 // ============================================================================
 // Components

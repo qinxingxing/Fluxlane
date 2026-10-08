@@ -52,7 +52,7 @@ const { act } = await import('react')
 const { createRoot } = await import('react-dom/client')
 const { createInstance } = await import('i18next')
 const { I18nextProvider, initReactI18next } = await import('react-i18next')
-const { UserEmailCell } = await import('../user-email-cell')
+const { UserTextCell } = await import('../user-email-cell')
 const { useUsersColumns } = await import('../users-columns')
 
 const i18n = createInstance()
@@ -62,9 +62,8 @@ await i18n.use(initReactI18next).init({
     en: {
       translation: {
         Email: 'Email',
+        'Mobile number': 'Mobile number',
         'Not set': 'Not set',
-        Verified: 'Verified',
-        Unverified: 'Unverified',
       },
     },
   },
@@ -88,10 +87,10 @@ async function render(node: ReactNode) {
   return container
 }
 
-function EmailHarness(props: { email?: string }) {
+function EmailHarness(props: { value?: string }) {
   return (
     <I18nextProvider i18n={i18n}>
-      <UserEmailCell email={props.email} />
+      <UserTextCell value={props.value} />
     </I18nextProvider>
   )
 }
@@ -101,11 +100,23 @@ function EmailColumnProbe() {
   const emailColumn = columns.find(
     (column) => 'accessorKey' in column && column.accessorKey === 'email'
   )
-  const header =
+  const phoneColumn = columns.find(
+    (column) => 'accessorKey' in column && column.accessorKey === 'phone'
+  )
+  const emailHeader =
     typeof emailColumn?.header === 'string' ? emailColumn.header : ''
+  const phoneHeader =
+    typeof phoneColumn?.header === 'string' ? phoneColumn.header : ''
 
   return (
-    <div data-email-column={emailColumn ? 'present' : 'missing'}>{header}</div>
+    <div>
+      <div data-email-column={emailColumn ? 'present' : 'missing'}>
+        {emailHeader}
+      </div>
+      <div data-phone-column={phoneColumn ? 'present' : 'missing'}>
+        {phoneHeader}
+      </div>
+    </div>
   )
 }
 
@@ -131,29 +142,30 @@ describe('user list email column', () => {
     domWindow.close()
   })
 
-  test('shows the address and a verified badge when the account has an email', async () => {
-    const container = await render(<EmailHarness email='ada@example.com' />)
-    const badge = container.querySelector('[data-slot="status-badge"]')
+  test('shows the address without a verification badge', async () => {
+    const container = await render(<EmailHarness value='ada@example.com' />)
 
     assert.equal(container.textContent?.includes('ada@example.com'), true)
     assert.equal(container.textContent?.includes('Not set'), false)
-    assert.equal(badge?.textContent, 'Verified')
+    assert.equal(container.querySelector('[data-slot="status-badge"]'), null)
   })
 
-  test('shows not set and an unverified badge when the account has no email', async () => {
-    const container = await render(<EmailHarness email='   ' />)
-    const badge = container.querySelector('[data-slot="status-badge"]')
+  test('shows not set without a verification badge when the value is blank', async () => {
+    const container = await render(<EmailHarness value='   ' />)
 
-    assert.equal(container.textContent?.includes('ada@example.com'), false)
     assert.equal(container.textContent?.includes('Not set'), true)
-    assert.equal(badge?.textContent, 'Unverified')
+    assert.equal(container.querySelector('[data-slot="status-badge"]'), null)
   })
 
-  test('includes an Email column in the user list', async () => {
+  test('includes email and mobile number columns without a verification status', async () => {
     const container = await render(<ColumnHarness />)
-    const marker = container.querySelector('[data-email-column]')
+    const emailMarker = container.querySelector('[data-email-column]')
+    const phoneMarker = container.querySelector('[data-phone-column]')
 
-    assert.equal(marker?.getAttribute('data-email-column'), 'present')
-    assert.equal(marker?.textContent, 'Email')
+    assert.equal(emailMarker?.getAttribute('data-email-column'), 'present')
+    assert.equal(emailMarker?.textContent, 'Email')
+    assert.equal(phoneMarker?.getAttribute('data-phone-column'), 'present')
+    assert.equal(phoneMarker?.textContent, 'Mobile number')
+    assert.equal(container.querySelector('[data-slot="status-badge"]'), null)
   })
 })

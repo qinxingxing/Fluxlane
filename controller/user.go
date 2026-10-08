@@ -220,6 +220,12 @@ func Register(c *gin.Context) {
 	}
 	user.Username = strings.TrimSpace(user.Username)
 	user.Email = model.NormalizeEmail(user.Email)
+	phone, phoneErr := model.NormalizePhone(user.Phone)
+	if phoneErr != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	user.Phone = phone
 	if user.Username == "" {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
@@ -228,8 +234,16 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
 		return
 	}
-	if err := common.Validate.Var(user.Email, "required,email"); err != nil || user.VerificationCode == "" {
+	if err := common.Validate.Var(user.Email, "required,email"); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	if user.VerificationCode == "" {
 		common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
+		return
+	}
+	if phone != "" && model.IsPhoneAlreadyTaken(phone) {
+		common.ApiErrorI18n(c, i18n.MsgUserPhoneAlreadyTaken)
 		return
 	}
 	valid, verifyErr := common.VerifyCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose)
@@ -270,10 +284,15 @@ func Register(c *gin.Context) {
 		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
 		Email:       user.Email,
+		Phone:       phone,
 	}
 	if err := cleanUser.Insert(inviterId); err != nil {
 		if errors.Is(err, model.ErrEmailAlreadyTaken) {
 			common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
+			return
+		}
+		if errors.Is(err, model.ErrPhoneAlreadyTaken) {
+			common.ApiErrorI18n(c, i18n.MsgUserPhoneAlreadyTaken)
 			return
 		}
 		common.ApiError(c, err)

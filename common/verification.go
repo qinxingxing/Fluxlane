@@ -20,6 +20,7 @@ type verificationValue struct {
 
 const (
 	EmailVerificationPurpose = "v"
+	PhoneVerificationPurpose = "p"
 	PasswordResetPurpose     = "r"
 
 	verificationRedisPrefix = "verification:"

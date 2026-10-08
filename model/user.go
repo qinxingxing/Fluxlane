@@ -85,6 +85,7 @@ type User struct {
 	Role             int                        `json:"role" gorm:"type:int;default:1"`   // admin, common
 	Status           int                        `json:"status" gorm:"type:int;default:1"` // enabled, disabled
 	Email            string                     `json:"email" gorm:"index" validate:"max=50"`
+	Phone            string                     `json:"phone" gorm:"type:varchar(20);index" validate:"max=20"`
 	GitHubId         string                     `json:"github_id" gorm:"column:github_id;index"`
 	DiscordId        string                     `json:"discord_id" gorm:"column:discord_id;index"`
 	OidcId           string                     `json:"oidc_id" gorm:"column:oidc_id;index"`
@@ -417,8 +418,8 @@ func SearchUsers(keyword string, group string, role *int, status *int, startIdx 
 	query := tx.Unscoped().Model(&User{})
 
 	// 构建搜索条件
-	likeCondition := "username LIKE ? OR email LIKE ? OR display_name LIKE ?"
-	likeArgs := []interface{}{"%" + keyword + "%", "%" + keyword + "%", "%" + keyword + "%"}
+	likeCondition := "username LIKE ? OR email LIKE ? OR display_name LIKE ? OR phone LIKE ?"
+	likeArgs := []interface{}{"%" + keyword + "%", "%" + keyword + "%", "%" + keyword + "%", "%" + keyword + "%"}
 
 	// 尝试将关键字转换为整数ID
 	keywordInt, err := strconv.Atoi(keyword)
@@ -562,10 +563,17 @@ func (user *User) prepareForInsert(tx *gorm.DB) error {
 	if err := ensureEmailAvailableWithTx(tx, user.Email, 0); err != nil {
 		return err
 	}
+	normalizedPhone, err := NormalizePhone(user.Phone)
+	if err != nil {
+		return err
+	}
+	user.Phone = normalizedPhone
+	if err := ensurePhoneAvailableWithTx(tx, user.Phone, 0); err != nil {
+		return err
+	}
 	if user.Password == "" {
 		return nil
 	}
-	var err error
 	user.Password, err = common.Password2Hash(user.Password)
 	return err
 }
@@ -611,20 +619,22 @@ func ensureEmailAvailableWithTx(tx *gorm.DB, email string, excludeUserID int) er
 func (user *User) Insert(inviterId int) error {
 	if err := DB.Transaction(func(tx *gorm.DB) error {
 		return withNormalizedEmailLock(tx, user.Email, func(tx *gorm.DB) error {
-			if err := user.prepareForInsert(tx); err != nil {
-				return err
-			}
-			user.Quota = common.QuotaForNewUser
-			user.AffCode = common.GetRandomString(4)
+			return withNormalizedPhoneLock(tx, user.Phone, func(tx *gorm.DB) error {
+				if err := user.prepareForInsert(tx); err != nil {
+					return err
+				}
+				user.Quota = common.QuotaForNewUser
+				user.AffCode = common.GetRandomString(4)
 
-			// 初始化用户设置，包括默认的边栏配置
-			if user.Setting == "" {
-				defaultSetting := dto.UserSetting{}
-				// 这里暂时不设置SidebarModules，因为需要在用户创建后根据角色设置
-				user.SetSetting(defaultSetting)
-			}
+				// 初始化用户设置，包括默认的边栏配置
+				if user.Setting == "" {
+					defaultSetting := dto.UserSetting{}
+					// 这里暂时不设置SidebarModules，因为需要在用户创建后根据角色设置
+					user.SetSetting(defaultSetting)
+				}
 
-			return tx.Create(user).Error
+				return tx.Create(user).Error
+			})
 		})
 	}); err != nil {
 		return err
@@ -675,19 +685,21 @@ func (user *User) FinishInsert(inviterId int) {
 // Post-creation tasks (sidebar config, logs, inviter rewards) are handled after the transaction commits.
 func (user *User) InsertWithTx(tx *gorm.DB, inviterId int) error {
 	return withNormalizedEmailLock(tx, user.Email, func(tx *gorm.DB) error {
-		if err := user.prepareForInsert(tx); err != nil {
-			return err
-		}
-		user.Quota = common.QuotaForNewUser
-		user.AffCode = common.GetRandomString(4)
+		return withNormalizedPhoneLock(tx, user.Phone, func(tx *gorm.DB) error {
+			if err := user.prepareForInsert(tx); err != nil {
+				return err
+			}
+			user.Quota = common.QuotaForNewUser
+			user.AffCode = common.GetRandomString(4)
 
-		// 初始化用户设置
-		if user.Setting == "" {
-			defaultSetting := dto.UserSetting{}
-			user.SetSetting(defaultSetting)
-		}
+			// 初始化用户设置
+			if user.Setting == "" {
+				defaultSetting := dto.UserSetting{}
+				user.SetSetting(defaultSetting)
+			}
 
-		return tx.Create(user).Error
+			return tx.Create(user).Error
+		})
 	})
 }
 

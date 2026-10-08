@@ -70,3 +70,55 @@ func EmailVerificationRateLimit() gin.HandlerFunc {
 		}
 	}
 }
+
+const (
+	PhoneVerificationRateLimitMark = "PV"
+	PhoneVerificationMaxRequests   = 2
+	PhoneVerificationDuration      = 60
+)
+
+func PhoneVerificationRateLimit() gin.HandlerFunc {
+	inMemoryRateLimiter.Init(common.RateLimitKeyExpirationDuration)
+	return func(c *gin.Context) {
+		if common.RedisEnabled {
+			allowed, _, ttlSeconds, err := redisFixedWindowTake(
+				c.Request.Context(),
+				redisIPRateLimitKey(PhoneVerificationRateLimitMark, c.ClientIP()),
+				PhoneVerificationMaxRequests,
+				PhoneVerificationDuration,
+			)
+			if err != nil {
+				allowPhoneVerificationFromMemory(c)
+				return
+			}
+			if allowed {
+				c.Next()
+				return
+			}
+			waitSeconds := int64(PhoneVerificationDuration)
+			if ttlSeconds > 0 {
+				waitSeconds = ttlSeconds
+			}
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("发送过于频繁，请等待 %d 秒后再试", waitSeconds),
+			})
+			c.Abort()
+			return
+		}
+		allowPhoneVerificationFromMemory(c)
+	}
+}
+
+func allowPhoneVerificationFromMemory(c *gin.Context) {
+	key := PhoneVerificationRateLimitMark + ":" + c.ClientIP()
+	if !inMemoryRateLimiter.Request(key, PhoneVerificationMaxRequests, PhoneVerificationDuration) {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"success": false,
+			"message": "发送过于频繁，请稍后再试",
+		})
+		c.Abort()
+		return
+	}
+	c.Next()
+}

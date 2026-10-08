@@ -40,7 +40,7 @@ import {
 } from '../constants'
 import type { User } from '../types'
 import { DataTableRowActions } from './data-table-row-actions'
-import { UserEmailCell } from './user-email-cell'
+import { UserTextCell } from './user-email-cell'
 import { UserQuotaCell } from './user-quota-cell'
 
 export function useUsersColumns(): ColumnDef<User>[] {
@@ -125,10 +125,18 @@ export function useUsersColumns(): ColumnDef<User>[] {
     {
       accessorKey: 'email',
       header: t('Email'),
-      cell: ({ row }) => <UserEmailCell email={row.original.email} />,
+      cell: ({ row }) => <UserTextCell value={row.original.email} />,
       enableSorting: false,
       size: 240,
       meta: { mobileOrder: 15 },
+    },
+    {
+      accessorKey: 'phone',
+      header: t('Mobile number'),
+      cell: ({ row }) => <UserTextCell value={row.original.phone} />,
+      enableSorting: false,
+      size: 180,
+      meta: { mobileOrder: 16 },
     },
     {
       accessorKey: 'status',

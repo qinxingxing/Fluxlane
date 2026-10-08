@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
 
+import { isRegistrationPhone } from './lib/registration-phone'
+
 // ============================================================================
 // Form Schemas
 // ============================================================================
@@ -36,6 +38,12 @@ export const registerFormSchema = z
       .min(1, 'Please enter your email')
       .email({ message: 'Please enter a valid email address' })
       .max(50, 'Please enter a valid email address'),
+    countryCode: z.enum(['+86', '+1', '+852', '+65']),
+    phone: z.string().trim(),
+    verificationCode: z
+      .string()
+      .trim()
+      .min(1, 'Please enter the verification code'),
     password: z
       .string()
       .min(1, 'Please enter your password')
@@ -47,6 +55,15 @@ export const registerFormSchema = z
     message: "Passwords don't match.",
     path: ['confirmPassword'],
   })
+  .refine(
+    (data) =>
+      data.phone.length === 0 ||
+      isRegistrationPhone(data.countryCode, data.phone),
+    {
+      message: 'Please enter a valid phone number',
+      path: ['phone'],
+    }
+  )
 
 export const forgotPasswordFormSchema = z.object({
   email: z.string().email({
@@ -74,6 +91,7 @@ export const OTP_REGEX = /^\d{6}$/
 // ============================================================================
 
 export const EMAIL_VERIFICATION_COUNTDOWN = 30 // seconds
+export const PHONE_VERIFICATION_COUNTDOWN = 60 // seconds
 export const PASSWORD_RESET_COUNTDOWN = 30 // seconds
 
 // ============================================================================

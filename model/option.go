@@ -66,6 +66,12 @@ func InitOptionMap() {
 	common.OptionMap["SMTPStartTLSEnabled"] = strconv.FormatBool(common.SMTPStartTLSEnabled)
 	common.OptionMap["SMTPInsecureSkipVerify"] = strconv.FormatBool(common.SMTPInsecureSkipVerify)
 	common.OptionMap["SMTPForceAuthLogin"] = strconv.FormatBool(common.SMTPForceAuthLogin)
+	common.OptionMap["SMSTencentSecretId"] = common.SMSTencentSecretId
+	common.OptionMap["SMSTencentSecretKey"] = common.SMSTencentSecretKey
+	common.OptionMap["SMSTencentSdkAppId"] = common.SMSTencentSdkAppId
+	common.OptionMap["SMSTencentSignName"] = common.SMSTencentSignName
+	common.OptionMap["SMSTencentTemplateId"] = common.SMSTencentTemplateId
+	common.OptionMap["SMSTencentRegion"] = common.SMSTencentRegion
 	common.OptionMap["Notice"] = ""
 	common.OptionMap["About"] = ""
 	common.OptionMap["HomePageContent"] = ""
@@ -406,6 +412,18 @@ func updateOptionMap(key string, value string) (err error) {
 		common.SMTPFrom = value
 	case "SMTPToken":
 		common.SMTPToken = value
+	case "SMSTencentSecretId":
+		common.SMSTencentSecretId = value
+	case "SMSTencentSecretKey":
+		common.SMSTencentSecretKey = value
+	case "SMSTencentSdkAppId":
+		common.SMSTencentSdkAppId = value
+	case "SMSTencentSignName":
+		common.SMSTencentSignName = value
+	case "SMSTencentTemplateId":
+		common.SMSTencentTemplateId = value
+	case "SMSTencentRegion":
+		common.SMSTencentRegion = value
 	case "ServerAddress":
 		system_setting.ServerAddress = value
 	case "FrontendBaseURL":

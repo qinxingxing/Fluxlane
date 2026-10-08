@@ -16,21 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useTranslation } from 'react-i18next'
 
-import { LongText } from '@/components/long-text'
+export type PasswordStrength = 'empty' | 'weak' | 'fair' | 'strong'
 
-type UserTextCellProps = {
-  value?: string
-}
-
-export function UserTextCell(props: UserTextCellProps) {
-  const { t } = useTranslation()
-  const value = props.value?.trim() ?? ''
-
-  if (!value) {
-    return <span className='text-muted-foreground text-sm'>{t('Not set')}</span>
-  }
-
-  return <LongText className='max-w-[220px] text-sm'>{value}</LongText>
+export function evaluatePasswordStrength(value: string): PasswordStrength {
+  if (!value) return 'empty'
+  let score = 0
+  if (value.length >= 8) score += 1
+  if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score += 1
+  if (/[0-9]/.test(value) && /[^A-Za-z0-9]/.test(value)) score += 1
+  if (score <= 1 || value.length < 8) return 'weak'
+  if (score === 2) return 'fair'
+  return 'strong'
 }

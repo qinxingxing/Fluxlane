@@ -19,7 +19,15 @@ For commercial licensing, please contact support@quantumnous.com
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
 import axios from 'axios'
-import { Loader2, LogIn, KeyRound } from 'lucide-react'
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  Lock,
+  User,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -27,7 +35,6 @@ import { toast } from 'sonner'
 import type { z } from 'zod'
 
 import { Dialog } from '@/components/dialog'
-import { PasswordInput } from '@/components/password-input'
 import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,6 +48,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { login, wechatLoginByCode } from '@/features/auth/api'
+import {
+  authCardClassName,
+  authFieldClassName,
+  authLabelClassName,
+  authSubmitClassName,
+} from '@/features/auth/components/auth-visual'
 import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { loginFormSchema } from '@/features/auth/constants'
@@ -63,10 +76,12 @@ import { useAuthStore } from '@/stores/auth-store'
 export function UserAuthForm({
   className,
   redirectTo,
+  showSignUp = false,
   ...props
-}: AuthFormProps) {
+}: AuthFormProps & { showSignUp?: boolean }) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
   const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [passkeySupported, setPasskeySupported] = useState(false)
@@ -104,16 +119,6 @@ export function UserAuthForm({
     !passkeySupported ||
     (requiresLegalConsent && !agreedToLegal)
   const hasWeChatLogin = Boolean(status?.wechat_login)
-  const hasOAuthLogin = Boolean(
-    status?.github_oauth ||
-    status?.discord_oauth ||
-    status?.oidc_enabled ||
-    status?.linuxdo_oauth ||
-    status?.telegram_oauth ||
-    (status?.custom_oauth_providers?.length ?? 0) > 0
-  )
-  const hasAlternativeLogin =
-    passkeyLoginEnabled || hasWeChatLogin || hasOAuthLogin
 
   useEffect(() => {
     if (requiresLegalConsent) {
@@ -314,7 +319,7 @@ export function UserAuthForm({
             variant='outline'
             disabled={passkeyButtonDisabled}
             onClick={handlePasskeyLogin}
-            className='h-11 w-full justify-center gap-2 rounded-lg'
+            className='h-12 w-full justify-center gap-2 rounded-lg border-white/15 bg-white/5 text-white hover:bg-white/10'
           >
             {isPasskeyLoading ? (
               <Loader2 className='h-4 w-4 animate-spin' />
@@ -324,7 +329,7 @@ export function UserAuthForm({
             {t('Sign in with Passkey')}
           </Button>
           {!passkeySupported && (
-            <p className='text-muted-foreground text-xs'>
+            <p className='text-xs text-slate-400'>
               {t('Passkey is not supported on this device.')}
             </p>
           )}
@@ -346,73 +351,106 @@ export function UserAuthForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        className={cn(authCardClassName, className)}
         {...props}
       >
-        {hasAlternativeLogin && alternativeLoginMethods}
+        <div className='flex flex-col gap-4 pb-2 sm:flex-row sm:items-center sm:justify-between'>
+          <h2 className='text-2xl font-semibold text-white'>{t('Sign in')}</h2>
+          {showSignUp ? (
+            <p className='text-sm text-slate-400 sm:text-right'>
+              {t("Don't have an account?")}{' '}
+              <Link
+                to='/sign-up'
+                className='font-semibold text-violet-300 hover:text-violet-200'
+              >
+                {t('Sign up')}
+              </Link>
+            </p>
+          ) : null}
+        </div>
 
         {passwordLoginEnabled && (
           <>
-            {/* Username Field */}
             <FormField
               control={form.control}
               name='username'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Username or Email')}</FormLabel>
+                  <FormLabel className={authLabelClassName}>
+                    {t('Username or Email')}
+                  </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t('Enter your username or email')}
-                      {...field}
-                    />
+                    <div className='relative'>
+                      <User
+                        className='pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-500'
+                        aria-hidden='true'
+                      />
+                      <Input
+                        placeholder={t('Enter your username or email')}
+                        autoComplete='username'
+                        className={authFieldClassName}
+                        {...field}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Password Field */}
             <FormField
               control={form.control}
               name='password'
               render={({ field }) => (
-                <FormItem className='relative'>
-                  <FormLabel>{t('Password')}</FormLabel>
+                <FormItem>
+                  <div className='flex items-center justify-between gap-3'>
+                    <FormLabel className={authLabelClassName}>
+                      {t('Password')}
+                    </FormLabel>
+                    <Link
+                      to='/forgot-password'
+                      className='text-xs font-medium text-violet-300 hover:text-violet-200'
+                    >
+                      {t('Forgot password?')}
+                    </Link>
+                  </div>
                   <FormControl>
-                    <PasswordInput
-                      placeholder={t('Enter password')}
-                      {...field}
-                    />
+                    <div className='relative'>
+                      <Lock
+                        className='pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-500'
+                        aria-hidden='true'
+                      />
+                      <Input
+                        placeholder={t('Enter password')}
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete='current-password'
+                        className={cn(authFieldClassName, 'pr-11')}
+                        {...field}
+                      />
+                      <button
+                        type='button'
+                        className='absolute top-1/2 right-3 -translate-y-1/2 text-slate-500 hover:text-white'
+                        onClick={() => setShowPassword((current) => !current)}
+                        aria-label={t('Toggle password visibility')}
+                      >
+                        {showPassword ? (
+                          <EyeOff className='size-4' aria-hidden='true' />
+                        ) : (
+                          <Eye className='size-4' aria-hidden='true' />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
-                  <Link
-                    to='/forgot-password'
-                    className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-sm font-medium hover:opacity-75'
-                  >
-                    {t('Forgot password?')}
-                  </Link>
                 </FormItem>
               )}
             />
 
-            {/* Submit Button */}
-            <Button
-              type='submit'
-              className='mt-2 w-full justify-center gap-2'
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-            >
-              {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
-              {t('Sign in')}
-            </Button>
-
-            {/* Turnstile */}
             {isTurnstileEnabled && (
-              <div className='mt-2'>
-                <Turnstile
-                  siteKey={turnstileSiteKey}
-                  onVerify={setTurnstileToken}
-                />
-              </div>
+              <Turnstile
+                siteKey={turnstileSiteKey}
+                onVerify={setTurnstileToken}
+              />
             )}
           </>
         )}
@@ -421,10 +459,22 @@ export function UserAuthForm({
           status={status}
           checked={agreedToLegal}
           onCheckedChange={setAgreedToLegal}
-          className='mt-1'
+          className='border-white/10 bg-white/5'
         />
 
-        {!hasAlternativeLogin && alternativeLoginMethods}
+        {passwordLoginEnabled && (
+          <Button
+            type='submit'
+            className={authSubmitClassName}
+            disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+          >
+            {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+            <span>{t('Sign in')}</span>
+            <ArrowRight className='size-5' aria-hidden='true' />
+          </Button>
+        )}
+
+        {alternativeLoginMethods}
       </form>
 
       {hasWeChatLogin && (
