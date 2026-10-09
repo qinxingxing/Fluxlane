@@ -23,6 +23,7 @@ import type { PricingModel } from '../../types'
 import {
   formatDiscountFold,
   formatDualPriceDiscount,
+  getChannelOffer,
   getFableDualPriceOffers,
 } from '../dual-price'
 
@@ -96,6 +97,34 @@ describe('fable dual price offers', () => {
         fableModel({ billing_mode: undefined, billing_expr: undefined })
       ),
       null
+    )
+  })
+
+  test('puts official and special prices on the groups a model is sold on', () => {
+    const both = fableModel({
+      enable_groups: ['官方', 'Claude/OpenAI特价'],
+    })
+    assert.equal(getChannelOffer(both, 'list')?.ratio, 1)
+    assert.equal(getChannelOffer(both, 'special')?.ratio, 0.6)
+    assert.equal(
+      getChannelOffer(
+        fableModel({
+          model_name: 'claude-sonnet-5',
+          enable_groups: ['Claude/OpenAI特价'],
+        }),
+        'list'
+      ),
+      null
+    )
+    assert.equal(
+      getChannelOffer(
+        fableModel({
+          model_name: 'claude-sonnet-5',
+          enable_groups: ['Claude/OpenAI特价'],
+        }),
+        'special'
+      )?.ratio,
+      0.6
     )
   })
 

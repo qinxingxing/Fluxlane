@@ -92,3 +92,23 @@ export function formatDiscountFold(ratio: number): string | null {
 export function formatDualPriceDiscount(ratio: number): string {
   return formatDiscountFold(ratio) ?? '6折'
 }
+
+export type ChannelKey = 'list' | 'special'
+
+/** The official or special group this model is actually sold on. */
+export function getChannelOffer(
+  model: PricingModel,
+  channel: ChannelKey
+): { group: string; ratio: number } | null {
+  const entries = ratioEntries(model)
+  if (channel === 'list') {
+    const official = entries.find(
+      ([name]) => name === OFFICIAL_GROUP || name.includes(OFFICIAL_GROUP)
+    )
+    return official ? { group: official[0], ratio: official[1] } : null
+  }
+  const special = entries.find(
+    ([name, ratio]) => name.includes(SPECIAL_GROUP_MARK) && ratio < 1
+  )
+  return special ? { group: special[0], ratio: special[1] } : null
+}

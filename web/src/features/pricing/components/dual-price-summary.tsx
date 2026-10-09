@@ -78,15 +78,15 @@ export function DualPriceSummary(props: {
           <div key={row.offer.key} className='min-w-0'>
             <div className='text-muted-foreground text-[10px] font-semibold tracking-wider uppercase'>
               {t(row.offer.labelKey)}
-              {row.offer.key === 'special' ? (
-                <span className='text-primary ml-1 normal-case'>
-                  {formatDualPriceDiscount(row.offer.ratio)}
-                </span>
-              ) : null}
             </div>
             <PriceSlash
               entries={row.entries}
               emphasize={row.offer.key === 'special'}
+              fold={
+                row.offer.key === 'special'
+                  ? formatDualPriceDiscount(row.offer.ratio)
+                  : null
+              }
             />
           </div>
         ))}
@@ -111,6 +111,11 @@ export function DualPriceSummary(props: {
                   </div>
                   <div className='text-foreground mt-1 font-mono text-base font-semibold tabular-nums'>
                     {entry.formatted}
+                    {row.offer.key === 'special' ? (
+                      <span className='text-primary ml-1.5 text-xs font-semibold'>
+                        {formatDualPriceDiscount(row.offer.ratio)}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -138,11 +143,6 @@ export function DualPriceSummary(props: {
               )}
             >
               {t(row.offer.labelKey)}
-              {isSpecial ? (
-                <span className='bg-primary/10 ml-1.5 rounded px-1.5 py-0.5'>
-                  {formatDualPriceDiscount(row.offer.ratio)}
-                </span>
-              ) : null}
             </span>
             {row.entries.map((entry) => (
               <span
@@ -152,6 +152,11 @@ export function DualPriceSummary(props: {
                 {t(entry.shortLabel)}{' '}
                 <strong className='text-foreground font-semibold'>
                   {entry.formatted}
+                  {isSpecial ? (
+                    <span className='text-primary ml-1 text-[11px]'>
+                      {formatDualPriceDiscount(row.offer.ratio)}
+                    </span>
+                  ) : null}
                 </strong>
               </span>
             ))}
@@ -173,11 +178,6 @@ function OfferLabel(props: { offer: DualPriceOffer }) {
       )}
     >
       {t(props.offer.labelKey)}
-      {isSpecial ? (
-        <span className='bg-primary/10 ml-1.5 rounded px-1.5 py-0.5 normal-case'>
-          {formatDualPriceDiscount(props.offer.ratio)}
-        </span>
-      ) : null}
     </span>
   )
 }
@@ -185,6 +185,7 @@ function OfferLabel(props: { offer: DualPriceOffer }) {
 function PriceSlash(props: {
   entries: DynamicPriceEntry[]
   emphasize: boolean
+  fold: string | null
 }) {
   return (
     <span className='font-mono text-sm tabular-nums'>
@@ -199,6 +200,11 @@ function PriceSlash(props: {
             }
           >
             {stripTrailingZeros(entry.formatted)}
+            {props.fold ? (
+              <span className='text-primary ml-1 text-[11px] font-semibold'>
+                {props.fold}
+              </span>
+            ) : null}
           </span>
         </span>
       ))}

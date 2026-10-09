@@ -210,16 +210,28 @@ describe('model marketplace card', () => {
 
     const prices = container.querySelector('[data-slot="dual-price"]')
     assert.ok(prices)
-    const text = prices?.textContent ?? ''
-    assert.match(text, /List price/)
-    assert.match(text, /Special price/)
-    assert.match(text, /6折/)
-    assert.equal(text.includes('0.6'), false)
-    assert.equal(text.includes('%'), false)
-    assert.ok(text.includes('Input $10'))
-    assert.ok(text.includes('Output $50'))
-    assert.ok(text.includes('Input $6'))
-    assert.ok(text.includes('Output $30'))
+    const list = container.querySelector('[data-price-tier="list"]')
+    const special = container.querySelector('[data-price-tier="special"]')
+    assert.match(list?.textContent ?? '', /List price/)
+    assert.match(list?.textContent ?? '', /Input \$10/)
+    assert.match(list?.textContent ?? '', /Output \$50/)
+    assert.equal((list?.textContent ?? '').includes('6折'), false)
+    const specialText = special?.textContent ?? ''
+    assert.match(specialText, /Special price/)
+    assert.match(specialText, /Input \$6\s*6折/)
+    assert.match(specialText, /Output \$30\s*6折/)
+    assert.equal(specialText.includes('Special price6折'), false)
+    assert.equal(specialText.includes('0.6'), false)
+    assert.equal(specialText.includes('%'), false)
+    const note = container.querySelector('[data-slot="channel-note"]')
+    assert.match(
+      note?.getAttribute('aria-label') ?? '',
+      /price is higher, but service is stable/
+    )
+    assert.match(
+      note?.getAttribute('aria-label') ?? '',
+      /stability is not guaranteed/
+    )
     const cardText = container.textContent ?? ''
     assert.ok(cardText.includes('官方'))
     assert.ok(cardText.includes('Claude/OpenAI特价'))

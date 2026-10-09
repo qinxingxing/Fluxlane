@@ -35,6 +35,7 @@ import { pricingLayout } from '../lib/layout'
 import { isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
+import { ChannelNote } from './channel-price-cell'
 import { DualPriceSummary } from './dual-price-summary'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
@@ -264,14 +265,17 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       </div>
 
       {dualPriceOffers ? (
-        <DualPriceSummary
-          model={props.model}
-          tokenUnit={tokenUnit}
-          priceRate={priceRate}
-          usdExchangeRate={usdExchangeRate}
-          showRechargePrice={showRechargePrice}
-          layout='card'
-        />
+        <div className='flex items-start gap-2'>
+          <DualPriceSummary
+            model={props.model}
+            tokenUnit={tokenUnit}
+            priceRate={priceRate}
+            usdExchangeRate={usdExchangeRate}
+            showRechargePrice={showRechargePrice}
+            layout='card'
+          />
+          <ChannelNote />
+        </div>
       ) : null}
 
       <p className='text-muted-foreground mb-8 line-clamp-2 min-h-[2.5rem] flex-1 text-sm leading-relaxed'>
