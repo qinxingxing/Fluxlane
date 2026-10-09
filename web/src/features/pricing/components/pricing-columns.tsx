@@ -119,7 +119,7 @@ export function usePricingColumns(
     {
       id: 'cache_compare',
       header: () => (
-        <ChannelColumnTitle title={t('Cache price comparison')} align='end' />
+        <ChannelColumnTitle title={t('Cache')} align='end' />
       ),
       cell: ({ row }) => (
         <CacheCompareCell model={row.original} {...priceOptions} />

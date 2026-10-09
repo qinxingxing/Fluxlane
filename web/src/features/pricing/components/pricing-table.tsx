@@ -31,6 +31,8 @@ import { DEFAULT_PRICING_PAGE_SIZE, DEFAULT_TOKEN_UNIT } from '../constants'
 import type { PricingModel, TokenUnit } from '../types'
 import { usePricingColumns } from './pricing-columns'
 
+const vendorColumnInsetClass = 'ps-[clamp(1.25rem,3vw,2.75rem)]'
+
 export interface PricingTableProps {
   models: PricingModel[]
   isLoading?: boolean
@@ -107,7 +109,7 @@ export function PricingTable(props: PricingTableProps) {
             return 'border-r border-[#232846]/40 text-right'
           }
           if (columnId === 'vendor_name') {
-            return 'border-r border-[#232846]/40'
+            return `border-r border-[#232846]/40 ${vendorColumnInsetClass}`
           }
           if (columnId === 'price_gap') {
             return 'border-r border-[#232846]/40 text-center'
@@ -122,6 +124,9 @@ export function PricingTable(props: PricingTableProps) {
             key={row.id}
             row={row}
             className='cursor-pointer border-[#232846]/40 font-mono transition-colors hover:bg-[#191d3b]/70'
+            getColumnClassName={(columnId) =>
+              columnId === 'vendor_name' ? vendorColumnInsetClass : undefined
+            }
             onClick={() => handleRowClick(row.original)}
           />
         )}

@@ -378,10 +378,16 @@ export function CacheCompareCell(props: {
   )
   const official = list?.cache ?? null
   const discounted = special?.cache ?? null
-  if (!official && !discounted) return <EmptyPrice />
+  if (!official && !discounted) {
+    return (
+      <div className='flex w-full justify-end'>
+        <EmptyPrice />
+      </div>
+    )
+  }
   if (official && discounted && official !== discounted) {
     return (
-      <div className='flex items-center justify-end gap-1.5 font-mono text-[#dee0ff]'>
+      <div className='flex w-full items-center justify-end gap-1.5 font-mono text-[#dee0ff]'>
         <span className='text-[13px]! text-[#ccc3d7]'>{official}</span>
         <ArrowRight className='size-3 text-[#958da1]' aria-hidden='true' />
         <span className='text-[13px]! font-medium'>{discounted}</span>
@@ -390,8 +396,8 @@ export function CacheCompareCell(props: {
   }
 
   return (
-    <span className='font-mono text-[#dee0ff]'>
-      {discounted ?? official}
-    </span>
+    <div className='flex w-full justify-end font-mono text-[#dee0ff]'>
+      <span className='text-[13px]! font-medium'>{discounted ?? official}</span>
+    </div>
   )
 }
