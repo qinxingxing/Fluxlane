@@ -60,6 +60,7 @@ import { cn } from '@/lib/utils'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
 import { usePricingData } from '../hooks/use-pricing-data'
+import { getFableDualPriceOffers } from '../lib/dual-price'
 import { getDynamicPricingSummary } from '../lib/dynamic-price'
 import { parseTags } from '../lib/filters'
 import { isTokenBasedModel } from '../lib/model-helpers'
@@ -70,6 +71,7 @@ import type {
   PricingModel,
   TokenUnit,
 } from '../types'
+import { DualPriceSummary } from './dual-price-summary'
 import { DynamicPricingBreakdown } from './dynamic-pricing-breakdown'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelDetailsApi } from './model-details-api'
@@ -631,6 +633,22 @@ function PriceSection(props: {
               </code>
             </div>
           </div>
+        </section>
+      )
+    }
+
+    if (getFableDualPriceOffers(props.model)) {
+      return (
+        <section>
+          <SectionTitle>{t('Base Price')}</SectionTitle>
+          <DualPriceSummary
+            model={props.model}
+            tokenUnit={props.tokenUnit}
+            priceRate={props.priceRate}
+            usdExchangeRate={props.usdExchangeRate}
+            showRechargePrice={props.showRechargePrice}
+            layout='detail'
+          />
         </section>
       )
     }

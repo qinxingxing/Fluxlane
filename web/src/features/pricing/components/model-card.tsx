@@ -23,8 +23,10 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getLobeIcon } from '@/lib/lobe-icon'
+import { cn } from '@/lib/utils'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
+import { getFableDualPriceOffers } from '../lib/dual-price'
 import {
   getDynamicDisplayGroupRatio,
   getDynamicPricingSummary,
@@ -33,6 +35,7 @@ import { pricingLayout } from '../lib/layout'
 import { isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
+import { DualPriceSummary } from './dual-price-summary'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
 
@@ -61,6 +64,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const modelIconKey = props.model.icon || props.model.vendor_icon
   const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 28) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
+  const dualPriceOffers = getFableDualPriceOffers(props.model)
   const isDynamicPricing =
     props.model.billing_mode === 'tiered_expr' &&
     Boolean(props.model.billing_expr)
@@ -78,7 +82,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       })
     : null
 
-  const primaryGroup = groups[0]
   const primaryEndpoint = endpoints[0]
   let fallbackStatus: ReactNode = tokenUnitLabel
   if (primaryEndpoint) {
@@ -209,7 +212,12 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         className='via-primary absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100'
       />
 
-      <div className='mb-6 flex items-start justify-between gap-3'>
+      <div
+        className={cn(
+          'flex items-start justify-between gap-3',
+          dualPriceOffers ? 'mb-3' : 'mb-6'
+        )}
+      >
         <div className='flex min-w-0 items-start gap-4'>
           <div className='bg-muted/40 border-border/60 flex size-12 shrink-0 items-center justify-center rounded-xl border'>
             {modelIcon || (
@@ -222,9 +230,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             <h3 className='text-foreground mb-1 truncate text-xl leading-tight font-semibold'>
               {props.model.model_name}
             </h3>
-            <div className='flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-sm'>
-              {priceSummary}
-            </div>
+            {!dualPriceOffers && (
+              <div className='flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-sm'>
+                {priceSummary}
+              </div>
+            )}
           </div>
         </div>
 
@@ -253,17 +263,31 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         </div>
       </div>
 
+      {dualPriceOffers ? (
+        <DualPriceSummary
+          model={props.model}
+          tokenUnit={tokenUnit}
+          priceRate={priceRate}
+          usdExchangeRate={usdExchangeRate}
+          showRechargePrice={showRechargePrice}
+          layout='card'
+        />
+      ) : null}
+
       <p className='text-muted-foreground mb-8 line-clamp-2 min-h-[2.5rem] flex-1 text-sm leading-relaxed'>
         {props.model.description || t('No description available.')}
       </p>
 
       <div className='border-border/60 flex items-end justify-between gap-3 border-t pt-4'>
         <div className='flex min-w-0 flex-wrap items-center gap-2'>
-          {primaryGroup && (
-            <span className='bg-muted text-muted-foreground rounded-md px-2 py-1 text-[11px] font-semibold tracking-wider uppercase'>
-              {primaryGroup}
+          {(dualPriceOffers ? groups : groups.slice(0, 1)).map((group) => (
+            <span
+              key={group}
+              className='bg-muted text-muted-foreground rounded-md px-2 py-1 text-[11px] font-semibold tracking-wider uppercase'
+            >
+              {group}
             </span>
-          )}
+          ))}
           <ModelBillingModeBadge
             model={props.model}
             className='border-primary/20 bg-primary/10 rounded-md border px-2 py-1 text-[11px] tracking-wider uppercase'

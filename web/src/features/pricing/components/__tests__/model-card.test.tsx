@@ -76,6 +76,8 @@ await i18n.use(initReactI18next).init({
       translation: {
         Input: 'Input',
         Output: 'Output',
+        'List price': 'List price',
+        'Special price': 'Special price',
         Details: 'Details',
         Copy: 'Copy',
         'No description available.': 'No description available.',
@@ -176,6 +178,52 @@ describe('model marketplace card', () => {
       details?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     assert.equal(detailClicks, 1)
+
+    root.unmount()
+    container.remove()
+  })
+
+  test('shows list price and a 6折 special price on the claude-fable-5 card', async () => {
+    const container = document.createElement('div')
+    document.body.append(container)
+    const root = createRoot(container)
+    const fableModel = {
+      ...tokenModel,
+      model_name: 'claude-fable-5',
+      billing_mode: 'tiered_expr',
+      billing_expr:
+        'tier("standard", p * 10 + cr * 1 + cc * 12.5 + cc1h * 20 + c * 50)',
+      enable_groups: ['Claude/OpenAI特价', '官方'],
+      group_ratio: {
+        官方: 1,
+        'Claude/OpenAI特价': 0.6,
+      },
+    }
+
+    await act(async () => {
+      root.render(
+        <I18nextProvider i18n={i18n}>
+          <ModelCard model={fableModel} onClick={() => {}} />
+        </I18nextProvider>
+      )
+    })
+
+    const prices = container.querySelector('[data-slot="dual-price"]')
+    assert.ok(prices)
+    const text = prices?.textContent ?? ''
+    assert.match(text, /List price/)
+    assert.match(text, /Special price/)
+    assert.match(text, /6折/)
+    assert.equal(text.includes('0.6'), false)
+    assert.equal(text.includes('%'), false)
+    assert.ok(text.includes('Input $10'))
+    assert.ok(text.includes('Output $50'))
+    assert.ok(text.includes('Input $6'))
+    assert.ok(text.includes('Output $30'))
+    const cardText = container.textContent ?? ''
+    assert.ok(cardText.includes('官方'))
+    assert.ok(cardText.includes('Claude/OpenAI特价'))
+    assert.equal(container.querySelectorAll('[data-price-tier]').length, 2)
 
     root.unmount()
     container.remove()
