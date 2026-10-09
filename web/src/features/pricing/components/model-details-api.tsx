@@ -667,7 +667,15 @@ function ParamRangeCell(props: { param: SupportedParameter }) {
 
 function RateLimitsSection(props: { model: PricingModel }) {
   const { t } = useTranslation()
-  const limits = useMemo(() => buildRateLimits(props.model), [props.model])
+  const limits = useMemo(() => {
+    const seen = new Set<string>()
+    return buildRateLimits(props.model).filter((limit) => {
+      const key = `${limit.rpm}|${limit.tpm}|${limit.rpd}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [props.model])
 
   if (limits.length === 0) return null
 
@@ -678,16 +686,9 @@ function RateLimitsSection(props: { model: PricingModel }) {
         className={tableStyles.sectionContainer}
         headerRowClassName={tableStyles.mutedHeaderRow}
         data={limits}
-        getRowKey={(limit) => limit.group}
+        getRowKey={(limit) => `${limit.rpm}-${limit.tpm}-${limit.rpd}`}
         getRowClassName={() => 'hover:bg-muted/20'}
         columns={[
-          {
-            id: 'group',
-            header: t('Group'),
-            className: 'h-9',
-            cellClassName: 'py-2 font-mono',
-            cell: (limit) => limit.group,
-          },
           {
             id: 'rpm',
             header: 'RPM',
@@ -711,11 +712,6 @@ function RateLimitsSection(props: { model: PricingModel }) {
           },
         ]}
       />
-      <p className='text-muted-foreground mt-2 text-[11px] leading-relaxed'>
-        {t(
-          'RPM = requests per minute, TPM = tokens per minute, RPD = requests per day. Limits apply per token group.'
-        )}
-      </p>
     </section>
   )
 }
