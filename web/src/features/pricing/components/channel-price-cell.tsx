@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/tooltip'
 
 import {
-  formatDiscountFold,
+  formatDiscountOffPercent,
   getChannelOffer,
   type ChannelKey,
 } from '../lib/dual-price'
@@ -174,8 +174,18 @@ function quoteChannel(
   }
 }
 
-function EmptyPrice() {
-  return <span className='text-[#4a4455]'>—</span>
+function EmptyPrice(props: { centered?: boolean }) {
+  return (
+    <span
+      className={
+        props.centered
+          ? 'block text-center text-[#4a4455]'
+          : 'text-[#4a4455]'
+      }
+    >
+      —
+    </span>
+  )
 }
 
 function AmountLine(props: { amounts: TaggedAmount[] }) {
@@ -282,7 +292,7 @@ export function ChannelNote(props: { channel?: NoteChannel }) {
         >
           <Info className='size-3.5' aria-hidden='true' />
         </TooltipTrigger>
-        <TooltipContent className='max-w-56 flex-col items-start gap-1 text-left'>
+        <TooltipContent className='pricing-cjk max-w-56 flex-col items-start gap-1 text-left'>
           {channel !== 'special' ? (
             <p>
               <span className='font-semibold text-[#a2e7ff]'>
@@ -324,23 +334,15 @@ export function ChannelPriceCell(props: {
     props,
     t('Dynamic Pricing')
   )
-  if (!quote) return <EmptyPrice />
+  if (!quote) return <EmptyPrice centered />
   if (quote.fallback) {
     return <span className='text-xs text-[#958da1]'>{quote.fallback}</span>
   }
-  if (quote.amounts.length === 0) return <EmptyPrice />
-
-  const caption =
-    props.channel === 'list'
-      ? t('Standard official connection')
-      : t('Special concurrent route')
+  if (quote.amounts.length === 0) return <EmptyPrice centered />
 
   return (
     <div className='flex flex-col items-end'>
       <AmountLine amounts={quote.amounts} />
-      <span className='text-[11px]! font-medium tracking-wider text-[#958da1] uppercase'>
-        {caption}
-      </span>
     </div>
   )
 }
@@ -348,13 +350,13 @@ export function ChannelPriceCell(props: {
 export function ChannelDiscountBadge(props: { model: PricingModel }) {
   const list = getChannelOffer(props.model, 'list')
   const special = getChannelOffer(props.model, 'special')
-  const fold =
-    list && special ? formatDiscountFold(special.ratio) : null
-  if (!fold) return <EmptyPrice />
+  const discount =
+    list && special ? formatDiscountOffPercent(special.ratio) : null
+  if (!discount) return <EmptyPrice />
 
   return (
     <span className='inline-flex items-center rounded bg-[#232846] px-2 py-0.5 font-mono text-[12px]! font-semibold text-[#a2e7ff]'>
-      {fold}
+      {discount}
     </span>
   )
 }

@@ -20,6 +20,8 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { consoleSiteHref } from '@/lib/domain-routing'
+
 import { DEFAULT_TOKEN_UNIT } from '../constants'
 import type { PricingModel, TokenUnit } from '../types'
 import {
@@ -36,7 +38,6 @@ export interface PricingColumnsOptions {
   usdExchangeRate?: number
   showRechargePrice?: boolean
   selectedGroup?: string
-  onModelClick?: (modelName: string) => void
 }
 
 export function usePricingColumns(
@@ -58,16 +59,17 @@ export function usePricingColumns(
   const columns: ColumnDef<PricingModel>[] = [
     {
       accessorKey: 'model_name',
-      meta: { label: t('model_id') },
       header: () => <ChannelColumnTitle title={t('model_id')} />,
       cell: ({ row }) => <ModelIdCell name={row.original.model_name} />,
       minSize: 220,
+      enableSorting: false,
+      enableHiding: false,
     },
     {
       id: 'official_price',
       header: () => (
         <ChannelColumnTitle
-          title={`${t('Official channel')} (OFFICIAL)`}
+          title={t('Official channel')}
           unit={tokenUnitLabel}
           align='end'
           note='list'
@@ -87,7 +89,7 @@ export function usePricingColumns(
       id: 'special_price',
       header: () => (
         <ChannelColumnTitle
-          title={`${t('Special channel')} (SPECIAL)`}
+          title={t('Special channel')}
           unit={tokenUnitLabel}
           align='end'
           note='special'
@@ -105,7 +107,7 @@ export function usePricingColumns(
     },
     {
       id: 'price_gap',
-      header: () => <ChannelColumnTitle title={t('Price gap')} align='center' />,
+      header: () => <ChannelColumnTitle title={t('Discount')} align='center' />,
       cell: ({ row }) => (
         <div className='flex justify-center'>
           <ChannelDiscountBadge model={row.original} />
@@ -148,19 +150,16 @@ export function usePricingColumns(
           {t('Call and debug')}
         </span>
       ),
-      cell: ({ row }) => (
+      cell: () => (
         <div className='flex justify-end'>
-          <button
-            type='button'
+          <a
+            href={consoleSiteHref('/sign-up')}
             className='inline-flex items-center gap-1.5 rounded-lg bg-[#191d3b] px-3 py-1.5 font-mono text-[12px]! font-semibold tracking-wider text-[#dee0ff] shadow-sm transition-colors hover:bg-[#323756] hover:text-[#a2e7ff]'
-            onClick={(event) => {
-              event.stopPropagation()
-              options.onModelClick?.(row.original.model_name)
-            }}
+            onClick={(event) => event.stopPropagation()}
           >
             <Play className='size-3.5 text-[#a2e7ff]' aria-hidden='true' />
             {t('Run')}
-          </button>
+          </a>
         </div>
       ),
       size: 140,

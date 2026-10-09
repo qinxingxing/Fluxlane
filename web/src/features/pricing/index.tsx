@@ -87,18 +87,13 @@ export function Pricing() {
 
   const {
     searchInput,
-    sortBy,
     vendorFilter,
     groupFilter,
     tokenUnit,
     viewMode,
     showRechargePrice,
     setSearchInput,
-    setSortBy,
     setVendorFilter,
-    setTokenUnit,
-    setViewMode,
-    setShowRechargePrice,
     filteredModels,
     hasActiveFilters,
     clearFilters,
@@ -165,21 +160,13 @@ export function Pricing() {
   const toolbar = (
     <PricingToolbar
       filteredCount={filteredModels.length}
-      totalCount={models?.length}
-      sortBy={sortBy}
-      onSortChange={setSortBy}
       tokenUnit={tokenUnit}
-      onTokenUnitChange={setTokenUnit}
-      showRechargePrice={showRechargePrice}
-      onRechargePriceChange={setShowRechargePrice}
-      viewMode={viewMode}
-      onViewModeChange={setViewMode}
     />
   )
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className={pricingLayout.pageShell}>
+      <div className={cn(pricingLayout.pageShell, 'pricing-cjk')}>
         <PricingAtmosphere />
         <PageTransition className={cn('relative', pricingLayout.pageContainer)}>
           <div className={pricingLayout.pageGrid}>

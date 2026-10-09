@@ -221,9 +221,6 @@ function ChannelCard(props: {
   )
   const special = props.channel === 'special'
   const title = special ? t('Special channel') : t('Official channel')
-  const caption = special
-    ? t('Special concurrent route')
-    : t('Standard official connection')
   const priceDiscount = special ? discount : null
 
   return (
@@ -242,7 +239,6 @@ function ChannelCard(props: {
             </span>
             <ChannelNote channel={props.channel} />
           </div>
-          <span className='font-mono text-sm text-[#ccc3d7]'>{caption}</span>
         </div>
         {!special && offer ? (
           <span className='rounded-md bg-[#2e3351] px-2.5 py-1 font-mono text-[12px] font-semibold tracking-wider text-[#a2e7ff] uppercase'>

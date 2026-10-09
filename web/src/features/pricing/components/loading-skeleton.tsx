@@ -119,13 +119,7 @@ function CardContentSkeleton() {
 function FilterBarSkeleton() {
   return (
     <div className={pricingLayout.toolbar}>
-      <Skeleton className='h-5 w-20' />
-      <div className='flex flex-wrap items-center gap-2'>
-        <Skeleton className='h-8 w-28 rounded-lg' />
-        <Skeleton className='h-8 w-20 rounded-lg' />
-        <Skeleton className='h-8 w-24' />
-        <Skeleton className='h-8 w-16 rounded-lg' />
-      </div>
+      <Skeleton className='h-5 w-48' />
     </div>
   )
 }

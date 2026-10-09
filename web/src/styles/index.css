@@ -102,6 +102,19 @@ For commercial licensing, please contact support@quantumnous.com
     font-family: var(--font-body);
   }
 
+  /* Chinese copy on the model marketplace uses Microsoft YaHei.
+     Latin faces stay first so numbers and model ids keep their own font.
+     Tooltips portal outside the page, so they carry the same class. */
+  .pricing-cjk {
+    font-family: var(--font-body), 'Microsoft YaHei', '微软雅黑', sans-serif;
+  }
+
+  .pricing-cjk .font-mono {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Consolas, 'Microsoft YaHei',
+      '微软雅黑', monospace;
+  }
+
   /* Keep sticky headers stable while primitives lock body scrolling. */
   body[data-scroll-locked] {
     overflow: unset !important;

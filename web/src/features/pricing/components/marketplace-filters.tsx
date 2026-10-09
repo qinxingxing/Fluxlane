@@ -25,7 +25,7 @@ import { FILTER_ALL } from '../constants'
 import type { PricingModel, PricingVendor } from '../types'
 import { SearchBar } from './search-bar'
 
-const FREQUENT_QUERIES = ['claude', 'gpt-4o', 'deepseek']
+const FREQUENT_QUERIES = ['claude', 'deepseek']
 
 export function ProviderFilterBar(props: {
   vendors: PricingVendor[]

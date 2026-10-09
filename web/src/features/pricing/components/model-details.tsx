@@ -931,7 +931,7 @@ export function ModelDetailsDrawer(props: ModelDetailsDrawerProps) {
       <SheetContent
         side='right'
         className={sideDrawerContentClassName(
-          'border-violet-500/25 bg-[#0c112e]/80 text-slate-100 shadow-2xl backdrop-blur-xl sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl'
+          'pricing-cjk border-violet-500/25 bg-[#0c112e]/80 text-slate-100 shadow-2xl backdrop-blur-xl sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl'
         )}
       >
         <SheetHeader className='sr-only'>
