@@ -32,6 +32,7 @@ import {
   DEFAULT_TOKEN_UNIT,
   PRICING_TABLE_COLUMN_VISIBILITY,
 } from '../constants'
+import { getFableDualPriceOffers } from '../lib/dual-price'
 import {
   getDynamicDisplayGroupRatio,
   getDynamicPricingSummary,
@@ -44,6 +45,7 @@ import {
   stripTrailingZeros,
 } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
+import { DualPriceSummary } from './dual-price-summary'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 
 // ----------------------------------------------------------------------------
@@ -142,6 +144,19 @@ export function usePricingColumns(
                   {dynamicSummary.rawExpression}
                 </code>
               </div>
+            )
+          }
+
+          if (getFableDualPriceOffers(model)) {
+            return (
+              <DualPriceSummary
+                model={model}
+                tokenUnit={tokenUnit}
+                priceRate={priceRate}
+                usdExchangeRate={usdExchangeRate}
+                showRechargePrice={showRechargePrice}
+                layout='table'
+              />
             )
           }
 
@@ -263,6 +278,20 @@ export function usePricingColumns(
               <span className='text-muted-foreground/50 text-xs'>
                 {t('Special billing expression')}
               </span>
+            )
+          }
+
+          if (getFableDualPriceOffers(model)) {
+            return (
+              <DualPriceSummary
+                model={model}
+                tokenUnit={tokenUnit}
+                priceRate={priceRate}
+                usdExchangeRate={usdExchangeRate}
+                showRechargePrice={showRechargePrice}
+                layout='table'
+                fields='cache'
+              />
             )
           }
 

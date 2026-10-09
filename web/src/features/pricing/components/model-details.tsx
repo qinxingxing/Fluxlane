@@ -63,6 +63,10 @@ import { cn } from '@/lib/utils'
 import { DEFAULT_TOKEN_UNIT } from '../constants'
 import { usePricingData } from '../hooks/use-pricing-data'
 import {
+  formatDiscountFold,
+  getFableDualPriceOffers,
+} from '../lib/dual-price'
+import {
   getDynamicPriceEntries,
   getDynamicPricingSummary,
   getDynamicPricingTiers,
@@ -77,6 +81,7 @@ import type {
   PricingModel,
   TokenUnit,
 } from '../types'
+import { DualPriceSummary } from './dual-price-summary'
 import { DynamicPricingBreakdown } from './dynamic-pricing-breakdown'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelDetailsApi } from './model-details-api'
@@ -651,6 +656,22 @@ function PriceSection(props: {
       )
     }
 
+    if (getFableDualPriceOffers(props.model)) {
+      return (
+        <section>
+          <SectionTitle>{t('Base Price')}</SectionTitle>
+          <DualPriceSummary
+            model={props.model}
+            tokenUnit={props.tokenUnit}
+            priceRate={props.priceRate}
+            usdExchangeRate={props.usdExchangeRate}
+            showRechargePrice={props.showRechargePrice}
+            layout='detail'
+          />
+        </section>
+      )
+    }
+
     return (
       <section>
         <SectionTitle>{t('Base Price')}</SectionTitle>
@@ -972,6 +993,7 @@ function GroupPricingSection(props: {
         <div className='space-y-3'>
           {availableGroups.map((group) => {
             const ratio = props.groupRatio[group] || 1
+            const discountFold = formatDiscountFold(ratio)
             const formattedPricesByTier =
               formattedPricesByGroup.get(group) ??
               new Map<DynamicPricingTier, Map<string, string>>()
@@ -980,9 +1002,11 @@ function GroupPricingSection(props: {
               <div key={group} className='overflow-hidden rounded-lg border'>
                 <div className='bg-muted/20 flex items-center justify-between gap-3 border-b px-3 py-2'>
                   <GroupBadge group={group} size='sm' />
-                  <span className='text-muted-foreground font-mono text-xs'>
-                    {ratio}x
-                  </span>
+                  {discountFold ? (
+                    <span className='text-primary text-xs font-semibold'>
+                      {discountFold}
+                    </span>
+                  ) : null}
                 </div>
                 <StaticDataTable
                   className='rounded-none border-0'
@@ -1064,10 +1088,11 @@ function GroupPricingSection(props: {
           },
           {
             id: 'ratio',
-            header: t('Ratio'),
+            header: t('Discount'),
             className: thClass,
-            cellClassName: 'text-muted-foreground py-2.5 font-mono',
-            cell: (group) => `${props.groupRatio[group] || 1}x`,
+            cellClassName: 'text-primary py-2.5 text-xs font-semibold',
+            cell: (group) =>
+              formatDiscountFold(props.groupRatio[group] || 1) ?? '—',
           },
           ...(isTokenBased
             ? [
