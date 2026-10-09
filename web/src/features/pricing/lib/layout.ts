@@ -22,8 +22,8 @@ export const pricingLayout = {
   pageShell:
     'relative min-h-[calc(100svh-var(--app-header-height,3rem))] bg-[#0c112e] text-[#dee0ff]',
   pageContainer:
-    'relative mx-auto w-full max-w-7xl px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8',
-  pageGrid: 'grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]',
+    'relative mx-auto w-full max-w-[1280px] px-4 pt-16 pb-8 sm:px-10 sm:pt-20 sm:pb-10',
+  pageGrid: 'flex flex-col gap-6',
   atmosphereFill: 'pointer-events-none absolute inset-0 bg-[#0c112e]',
   atmosphereGlow:
     'pointer-events-none absolute inset-0 opacity-50 dark:opacity-40',
@@ -39,9 +39,9 @@ export const pricingLayout = {
   filterChipInactive:
     'border-border/60 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground',
   toolbar:
-    'flex flex-col gap-4 rounded-xl border border-border/60 bg-card/50 p-3 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between',
+    'flex flex-col gap-3 bg-[#141936] px-4 py-2 font-mono text-sm text-[#958da1] sm:flex-row sm:items-center sm:justify-between',
   cardGrid: 'grid grid-cols-1 gap-6 lg:grid-cols-2',
   card: 'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_color-mix(in_oklch,var(--primary)_15%,transparent)]',
   searchInput:
-    'border-border/60 bg-card placeholder:text-muted-foreground/50 hover:border-border focus:border-primary/50 focus:ring-primary/20 h-10 w-full rounded-full border pr-16 pl-10 text-sm transition-all outline-none focus:ring-2',
+    'h-10 w-full rounded-lg border border-[#4a4455]/40 bg-[#141936] pr-28 pl-10 font-mono text-sm text-[#dee0ff] transition-all outline-none placeholder:text-[#958da1]/70 hover:border-[#958da1] focus:border-[#d3bbff]/80 focus:ring-1 focus:ring-[#d3bbff]/30',
 } as const

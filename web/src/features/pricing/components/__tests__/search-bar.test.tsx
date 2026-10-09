@@ -93,7 +93,7 @@ describe('marketplace search bar', () => {
     domWindow.close()
   })
 
-  test('keeps a pill-shaped field and clears the query from the clear button', async () => {
+  test('keeps the command field and clears the query from the clear button', async () => {
     const container = document.createElement('div')
     document.body.append(container)
     const root = createRoot(container)
@@ -104,7 +104,7 @@ describe('marketplace search bar', () => {
 
     const input = container.querySelector('input')
     assert.ok(input)
-    assert.ok(input?.className.includes('rounded-full'))
+    assert.ok(input?.className.includes('rounded-lg'))
     assert.equal(input?.value, 'kimi')
 
     const clear = container.querySelector('button[aria-label="Clear search"]')

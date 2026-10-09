@@ -24,20 +24,18 @@ import { cn } from '@/lib/utils'
 
 import {
   LoadingSkeleton,
-  SidebarSkeleton,
   EmptyState,
   PricingTable,
-  PricingSidebar,
   PricingToolbar,
   PricingHero,
   ModelCardGrid,
   ModelDetailsDrawer,
 } from './components'
 import {
-  EXCLUDED_GROUPS,
-  PRICING_ATMOSPHERE_GLOW_ENABLED,
-  VIEW_MODES,
-} from './constants'
+  MarketplaceCommandBar,
+  ProviderFilterBar,
+} from './components/marketplace-filters'
+import { PRICING_ATMOSPHERE_GLOW_ENABLED, VIEW_MODES } from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
 import { pricingLayout } from './lib/layout'
@@ -81,8 +79,6 @@ export function Pricing() {
   const {
     models,
     vendors,
-    groupRatio,
-    usableGroup,
     endpointMap,
     isLoading,
     priceRate,
@@ -94,26 +90,17 @@ export function Pricing() {
     sortBy,
     vendorFilter,
     groupFilter,
-    quotaTypeFilter,
-    endpointTypeFilter,
-    tagFilter,
     tokenUnit,
     viewMode,
     showRechargePrice,
     setSearchInput,
     setSortBy,
     setVendorFilter,
-    setGroupFilter,
-    setQuotaTypeFilter,
-    setEndpointTypeFilter,
-    setTagFilter,
     setTokenUnit,
     setViewMode,
     setShowRechargePrice,
     filteredModels,
     hasActiveFilters,
-    activeFilterCount,
-    availableTags,
     clearFilters,
     clearSearch,
   } = useFilters(models || [])
@@ -130,14 +117,6 @@ export function Pricing() {
           ) || null
         : null,
     [models, selectedModelName]
-  )
-
-  const availableGroups = useMemo(
-    () =>
-      Object.keys(usableGroup || {}).filter(
-        (g) => !EXCLUDED_GROUPS.includes(g)
-      ),
-    [usableGroup]
   )
 
   const handleClearAll = useCallback(() => {
@@ -183,25 +162,20 @@ export function Pricing() {
     )
   }
 
-  const sidebarProps = {
-    quotaTypeFilter,
-    endpointTypeFilter,
-    vendorFilter,
-    groupFilter,
-    tagFilter,
-    onQuotaTypeChange: setQuotaTypeFilter,
-    onEndpointTypeChange: setEndpointTypeFilter,
-    onVendorChange: setVendorFilter,
-    onGroupChange: setGroupFilter,
-    onTagChange: setTagFilter,
-    vendors: vendors || [],
-    groups: availableGroups,
-    groupRatios: groupRatio,
-    tags: availableTags,
-    models: models || [],
-    hasActiveFilters,
-    onClearFilters: clearFilters,
-  }
+  const toolbar = (
+    <PricingToolbar
+      filteredCount={filteredModels.length}
+      totalCount={models?.length}
+      sortBy={sortBy}
+      onSortChange={setSortBy}
+      tokenUnit={tokenUnit}
+      onTokenUnitChange={setTokenUnit}
+      showRechargePrice={showRechargePrice}
+      onRechargePriceChange={setShowRechargePrice}
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+    />
+  )
 
   return (
     <PublicLayout showMainContainer={false}>
@@ -209,62 +183,36 @@ export function Pricing() {
         <PricingAtmosphere />
         <PageTransition className={cn('relative', pricingLayout.pageContainer)}>
           <div className={pricingLayout.pageGrid}>
+            <PricingHero modelCount={models?.length || 0} />
             {isLoading ? (
-              <SidebarSkeleton />
+              <LoadingSkeleton viewMode={viewMode} />
             ) : (
-              <PricingSidebar
-                {...sidebarProps}
-                className={pricingLayout.sidebarSticky}
-              />
+              <div className='flex flex-col gap-4'>
+                <ProviderFilterBar
+                  vendors={vendors || []}
+                  models={models || []}
+                  vendorFilter={vendorFilter}
+                  onVendorChange={setVendorFilter}
+                />
+                <MarketplaceCommandBar
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  onClear={clearSearch}
+                />
+                {viewMode === VIEW_MODES.TABLE &&
+                filteredModels.length > 0 ? (
+                  <div className='overflow-hidden rounded-xl bg-[#070b28] shadow-xl'>
+                    {toolbar}
+                    {renderPricingContent()}
+                  </div>
+                ) : (
+                  <div className='flex flex-col gap-4'>
+                    {toolbar}
+                    {renderPricingContent()}
+                  </div>
+                )}
+              </div>
             )}
-
-            <div className='min-w-0'>
-              <PricingHero
-                modelCount={models?.length || 0}
-                searchInput={searchInput}
-                onSearchChange={setSearchInput}
-                onSearchClear={clearSearch}
-              />
-
-              {isLoading ? (
-                <LoadingSkeleton viewMode={viewMode} />
-              ) : (
-                <div className='flex flex-col gap-4'>
-                  <PricingToolbar
-                    filteredCount={filteredModels.length}
-                    totalCount={models?.length}
-                    sortBy={sortBy}
-                    onSortChange={setSortBy}
-                    tokenUnit={tokenUnit}
-                    onTokenUnitChange={setTokenUnit}
-                    showRechargePrice={showRechargePrice}
-                    onRechargePriceChange={setShowRechargePrice}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    quotaTypeFilter={quotaTypeFilter}
-                    endpointTypeFilter={endpointTypeFilter}
-                    vendorFilter={vendorFilter}
-                    groupFilter={groupFilter}
-                    tagFilter={tagFilter}
-                    onQuotaTypeChange={setQuotaTypeFilter}
-                    onEndpointTypeChange={setEndpointTypeFilter}
-                    onVendorChange={setVendorFilter}
-                    onGroupChange={setGroupFilter}
-                    onTagChange={setTagFilter}
-                    vendors={vendors || []}
-                    groups={availableGroups}
-                    groupRatios={groupRatio}
-                    tags={availableTags}
-                    models={models || []}
-                    hasActiveFilters={hasActiveFilters}
-                    activeFilterCount={activeFilterCount}
-                    onClearFilters={clearFilters}
-                  />
-
-                  {renderPricingContent()}
-                </div>
-              )}
-            </div>
           </div>
 
           {selectedModel && (

@@ -22,6 +22,7 @@ import { describe, test } from 'node:test'
 import type { PricingModel } from '../../types'
 import {
   formatDiscountFold,
+  formatDiscountOffPercent,
   formatDualPriceDiscount,
   getChannelOffer,
   getFableDualPriceOffers,
@@ -132,5 +133,11 @@ describe('fable dual price offers', () => {
     assert.equal(formatDualPriceDiscount(0.6), '6折')
     assert.equal(formatDiscountFold(0.6), '6折')
     assert.equal(formatDiscountFold(1), null)
+  })
+
+  test('writes the backend group ratio as a percent off the list price', () => {
+    assert.equal(formatDiscountOffPercent(0.6), '-40%')
+    assert.equal(formatDiscountOffPercent(0.7), '-30%')
+    assert.equal(formatDiscountOffPercent(1), null)
   })
 })

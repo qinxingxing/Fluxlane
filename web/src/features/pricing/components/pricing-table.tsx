@@ -66,6 +66,7 @@ export function PricingTable(props: PricingTableProps) {
     usdExchangeRate,
     showRechargePrice,
     selectedGroup,
+    onModelClick,
   })
 
   const { table } = useDataTable({
@@ -96,14 +97,32 @@ export function PricingTable(props: PricingTableProps) {
         emptyDescription={t('No models match your current filters.')}
         skeletonKeyPrefix='pricing-skeleton'
         applyHeaderSize
-        getColumnClassName={(_columnId, kind) =>
-          kind === 'header' ? 'text-muted-foreground font-medium' : undefined
-        }
+        containerClassName='rounded-none border-0 bg-transparent shadow-none'
+        tableHeaderClassName='bg-[#191d3b] font-mono text-[12px] font-semibold tracking-wider text-[#958da1] uppercase'
+        tableHeaderRowClassName='border-b border-[#232846]'
+        getColumnClassName={(columnId) => {
+          if (columnId === 'official_price') {
+            return 'border-r border-[#232846]/40 bg-[#141936]/20 text-right'
+          }
+          if (columnId === 'special_price' || columnId === 'cache_compare') {
+            return 'border-r border-[#232846]/40 text-right'
+          }
+          if (columnId === 'vendor_name') {
+            return 'border-r border-[#232846]/40'
+          }
+          if (columnId === 'price_gap') {
+            return 'border-r border-[#232846]/40 text-center'
+          }
+          if (columnId === 'model_name') {
+            return 'border-r border-[#232846]/40'
+          }
+          return undefined
+        }}
         renderRow={(row: Row<PricingModel>) => (
           <DataTableRow
             key={row.id}
             row={row}
-            className='hover:bg-muted/30 cursor-pointer transition-colors'
+            className='cursor-pointer border-[#232846]/40 font-mono transition-colors hover:bg-[#191d3b]/70'
             onClick={() => handleRowClick(row.original)}
           />
         )}

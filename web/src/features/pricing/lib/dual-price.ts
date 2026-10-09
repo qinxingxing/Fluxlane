@@ -93,6 +93,20 @@ export function formatDualPriceDiscount(ratio: number): string {
   return formatDiscountFold(ratio) ?? '6折'
 }
 
+/** A 0.6 group ratio is 40% off the list price, written as -40%. */
+export function formatDiscountOffPercent(ratio: number): string | null {
+  if (!(ratio > 0) || ratio >= 1) return null
+  const percent = Math.round((1 - ratio) * 100)
+  if (!Number.isFinite(percent) || percent <= 0 || percent >= 100) return null
+  return `-${percent}%`
+}
+
+export function modelHasChannelRates(model: PricingModel): boolean {
+  return Boolean(
+    getChannelOffer(model, 'list') || getChannelOffer(model, 'special')
+  )
+}
+
 export type ChannelKey = 'list' | 'special'
 
 /** The official or special group this model is actually sold on. */

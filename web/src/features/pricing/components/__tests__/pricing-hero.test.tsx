@@ -61,16 +61,9 @@ await i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
-        'Model Square': 'Model Square',
+        'Model prices': 'Model prices',
         'This site currently has {{count}} models enabled':
           'This site currently has {{count}} models enabled',
-        'Explore curated AI models, compare prices and capabilities, and pick the right model for each scenario.':
-          'Explore curated AI models, compare prices and capabilities, and pick the right model for each scenario.',
-        'Search model names, providers, endpoints, or tags...':
-          'Search model names, providers, endpoints, or tags...',
-        'Search models': 'Search models',
-        'Search models...': 'Search models...',
-        'Clear search': 'Clear search',
       },
     },
   },
@@ -94,27 +87,18 @@ describe('pricing marketplace hero', () => {
     await act(async () => {
       root.render(
         <I18nextProvider i18n={i18n}>
-          <PricingHero
-            modelCount={2}
-            searchInput=''
-            onSearchChange={() => {}}
-            onSearchClear={() => {}}
-          />
+          <PricingHero modelCount={2} />
         </I18nextProvider>
       )
     })
 
     const hero = container.querySelector('[data-slot="pricing-hero"]')
     assert.ok(hero)
-    assert.equal(hero?.querySelector('h1')?.textContent, 'Model Square')
+    assert.equal(hero?.querySelector('h1')?.textContent, 'Model prices')
     assert.match(hero?.textContent ?? '', /This site currently has/)
     assert.equal(
       hero?.querySelector('[data-slot="model-count"]')?.textContent,
       '2'
-    )
-    assert.equal(
-      hero?.querySelector('input')?.getAttribute('placeholder'),
-      'Search model names, providers, endpoints, or tags...'
     )
 
     root.unmount()

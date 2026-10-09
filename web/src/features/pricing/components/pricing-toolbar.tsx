@@ -16,16 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ArrowUpDown, Check, Filter, Grid2X2, Table2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { ArrowUpDown, Check, Grid2X2, Table2 } from 'lucide-react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  sideDrawerContentClassName,
-  sideDrawerFormClassName,
-  sideDrawerHeaderClassName,
-} from '@/components/drawer-layout'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -33,13 +27,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
 import {
   Tooltip,
   TooltipContent,
@@ -54,8 +41,7 @@ import {
   type ViewMode,
 } from '../constants'
 import { pricingLayout } from '../lib/layout'
-import type { PricingModel, PricingVendor, TokenUnit } from '../types'
-import { PricingSidebar } from './pricing-sidebar'
+import type { TokenUnit } from '../types'
 
 type SegmentOption = {
   value: string
@@ -75,24 +61,6 @@ export interface PricingToolbarProps {
   onRechargePriceChange: (value: boolean) => void
   viewMode: ViewMode
   onViewModeChange: (value: ViewMode) => void
-  quotaTypeFilter: string
-  endpointTypeFilter: string
-  vendorFilter: string
-  groupFilter: string
-  tagFilter: string
-  onQuotaTypeChange: (value: string) => void
-  onEndpointTypeChange: (value: string) => void
-  onVendorChange: (value: string) => void
-  onGroupChange: (value: string) => void
-  onTagChange: (value: string) => void
-  vendors: PricingVendor[]
-  groups: string[]
-  groupRatios?: Record<string, number>
-  tags: string[]
-  models: PricingModel[]
-  hasActiveFilters: boolean
-  activeFilterCount: number
-  onClearFilters: () => void
 }
 
 function SegmentedControl(props: {
@@ -105,7 +73,7 @@ function SegmentedControl(props: {
     <div
       role='group'
       aria-label={props.ariaLabel}
-      className='bg-muted/60 inline-flex h-8 items-center rounded-lg border p-0.5'
+      className='inline-flex h-8 items-center rounded-lg bg-[#070b28] p-0.5'
     >
       {props.options.map((option) => {
         const Icon = option.icon
@@ -120,8 +88,8 @@ function SegmentedControl(props: {
               'inline-flex h-full items-center justify-center rounded-md text-xs font-medium transition-all',
               Icon && !option.label ? 'w-7' : 'gap-1.5 px-3',
               isActive
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-[#232846] text-[#a2e7ff]'
+                : 'text-[#958da1] hover:text-[#dee0ff]'
             )}
           >
             {Icon && <Icon className='size-3.5' />}
@@ -148,8 +116,8 @@ function SegmentedControl(props: {
 
 export function PricingToolbar(props: PricingToolbarProps) {
   const { t } = useTranslation()
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const sortLabels = getSortLabels(t)
+  const tokenUnitLabel = props.tokenUnit === 'K' ? '1K' : '1M'
 
   const handleTokenUnitChange = useCallback(
     (value: string) => props.onTokenUnitChange(value as TokenUnit),
@@ -168,34 +136,16 @@ export function PricingToolbar(props: PricingToolbarProps) {
 
   return (
     <div className={pricingLayout.toolbar}>
-      <div className='flex items-center gap-2'>
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={() => setMobileFiltersOpen(true)}
-          className='gap-1.5 xl:hidden'
-        >
-          <Filter className='size-4' />
-          {t('Filter')}
-          {props.activeFilterCount > 0 && (
-            <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
-              {props.activeFilterCount}
-            </Badge>
-          )}
-        </Button>
-
-        <div className='text-muted-foreground flex items-center gap-2 px-2 text-[11px] font-semibold tracking-wider uppercase'>
-          <span className='text-primary text-base font-bold tabular-nums'>
-            {props.filteredCount.toLocaleString()}
+      <div className='flex items-center gap-4'>
+        <span>
+          {t('CURRENCY')}:{' '}
+          <span className='text-[#dee0ff]'>
+            {t('USD / {{unit}} tokens', { unit: tokenUnitLabel })}
           </span>
-          <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
-          {props.hasActiveFilters && props.totalCount && (
-            <span className='text-muted-foreground/60 text-xs'>
-              / {props.totalCount.toLocaleString()}
-            </span>
-          )}
-        </div>
+        </span>
+        <span className='text-[#dee0ff] tabular-nums'>
+          {props.filteredCount.toLocaleString()}
+        </span>
       </div>
 
       <div className='flex flex-wrap items-center gap-2'>
@@ -225,7 +175,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-8 gap-1.5 px-3 text-xs'
+                className='h-8 gap-1.5 border-[#4a4455]/40 bg-[#070b28] px-3 text-xs text-[#ccc3d7]'
               />
             }
           >
@@ -269,42 +219,6 @@ export function PricingToolbar(props: PricingToolbarProps) {
           ariaLabel={t('View mode')}
         />
       </div>
-
-      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-        <SheetContent
-          side='right'
-          className={sideDrawerContentClassName('sm:max-w-md')}
-        >
-          <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle>{t('Filter')}</SheetTitle>
-            <SheetDescription>
-              {t('Filter models by provider, group, type, endpoint, and tags.')}
-            </SheetDescription>
-          </SheetHeader>
-          <div className={sideDrawerFormClassName('gap-0')}>
-            <PricingSidebar
-              quotaTypeFilter={props.quotaTypeFilter}
-              endpointTypeFilter={props.endpointTypeFilter}
-              vendorFilter={props.vendorFilter}
-              groupFilter={props.groupFilter}
-              tagFilter={props.tagFilter}
-              onQuotaTypeChange={props.onQuotaTypeChange}
-              onEndpointTypeChange={props.onEndpointTypeChange}
-              onVendorChange={props.onVendorChange}
-              onGroupChange={props.onGroupChange}
-              onTagChange={props.onTagChange}
-              vendors={props.vendors}
-              groups={props.groups}
-              groupRatios={props.groupRatios}
-              tags={props.tags}
-              models={props.models}
-              hasActiveFilters={props.hasActiveFilters}
-              onClearFilters={props.onClearFilters}
-              className='border-0 bg-transparent p-0 shadow-none backdrop-blur-none'
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

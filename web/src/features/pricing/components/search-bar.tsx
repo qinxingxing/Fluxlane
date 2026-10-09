@@ -39,9 +39,20 @@ export function SearchBar(props: SearchBarProps) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target
+      const typing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
         inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+      if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        inputRef.current?.focus()
+        inputRef.current?.select()
       }
       if (e.key === 'Escape' && document.activeElement === inputRef.current) {
         inputRef.current?.blur()
@@ -53,7 +64,7 @@ export function SearchBar(props: SearchBarProps) {
 
   return (
     <div className={cn('group relative', props.className)}>
-      <Search className='text-muted-foreground/60 group-focus-within:text-primary pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 transition-colors' />
+      <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#958da1] transition-colors group-focus-within:text-[#a2e7ff]' />
       <input
         ref={inputRef}
         type='text'
@@ -69,15 +80,23 @@ export function SearchBar(props: SearchBarProps) {
             variant='ghost'
             size='icon'
             onClick={props.onClear}
-            className='text-muted-foreground/60 hover:text-foreground size-7'
+            className='size-7 text-[#958da1] hover:text-[#dee0ff]'
             aria-label={t('Clear search')}
           >
             <X className='size-4' />
           </Button>
         ) : (
-          <kbd className='bg-muted text-muted-foreground pointer-events-none hidden rounded border px-1.5 py-0.5 font-mono text-[10px] sm:inline-block'>
-            ⌘K
-          </kbd>
+          <span className='pointer-events-none flex items-center gap-1.5'>
+            <kbd className='rounded border border-[#4a4455]/50 bg-[#191d3b] px-1.5 py-0.5 font-mono text-[11px] leading-none text-[#958da1]'>
+              /
+            </kbd>
+            <span className='hidden text-[11px] text-[#4a4455] md:inline'>
+              {t('or')}
+            </span>
+            <kbd className='hidden rounded border border-[#4a4455]/50 bg-[#191d3b] px-1.5 py-0.5 font-mono text-[11px] leading-none text-[#958da1] md:inline'>
+              ⌘K
+            </kbd>
+          </span>
         )}
       </div>
     </div>

@@ -22,11 +22,12 @@ import { describe, test } from 'node:test'
 import { pricingLayout } from '../layout'
 
 describe('pricing marketplace layout', () => {
-  test('keeps the filter rail at 260px beside the catalog on extra-large screens', () => {
+  test('stacks the catalog in one column under the provider filter', () => {
     const classes = pricingLayout.pageGrid.split(' ')
 
-    assert.ok(classes.includes('grid'))
-    assert.ok(classes.includes('xl:grid-cols-[260px_minmax(0,1fr)]'))
+    assert.ok(classes.includes('flex'))
+    assert.ok(classes.includes('flex-col'))
+    assert.equal(classes.includes('xl:grid-cols-[260px_minmax(0,1fr)]'), false)
   })
 
   test('renders marketplace cards in a two-column grid from the large breakpoint', () => {
@@ -37,9 +38,12 @@ describe('pricing marketplace layout', () => {
     assert.equal(classes.includes('lg:grid-cols-3'), false)
   })
 
-  test('uses pill chips and a rounded search field', () => {
-    assert.ok(pricingLayout.filterChip.split(' ').includes('rounded-full'))
-    assert.ok(pricingLayout.searchInput.split(' ').includes('rounded-full'))
+  test('uses a rounded command search field', () => {
+    assert.ok(pricingLayout.searchInput.split(' ').includes('rounded-lg'))
+    assert.equal(
+      pricingLayout.searchInput.split(' ').includes('rounded-full'),
+      false
+    )
   })
 
   test('uses the homepage navy field and 40px stripe grid', () => {

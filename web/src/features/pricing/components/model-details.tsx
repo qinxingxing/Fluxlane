@@ -23,6 +23,7 @@ import {
   CalendarClock,
   Code2,
   FileText,
+  Gauge,
   HeartPulse,
   Info,
   Layers,
@@ -60,7 +61,7 @@ import { cn } from '@/lib/utils'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
 import { usePricingData } from '../hooks/use-pricing-data'
-import { getFableDualPriceOffers } from '../lib/dual-price'
+import { modelHasChannelRates } from '../lib/dual-price'
 import { getDynamicPricingSummary } from '../lib/dynamic-price'
 import { parseTags } from '../lib/filters'
 import { isTokenBasedModel } from '../lib/model-helpers'
@@ -71,7 +72,7 @@ import type {
   PricingModel,
   TokenUnit,
 } from '../types'
-import { DualPriceSummary } from './dual-price-summary'
+import { ChannelRateCards } from './channel-rate-cards'
 import { DynamicPricingBreakdown } from './dynamic-pricing-breakdown'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelDetailsApi } from './model-details-api'
@@ -152,20 +153,22 @@ function OverviewMetric(props: {
   const Icon = props.icon
 
   return (
-    <div className='flex min-w-0 items-center gap-2 px-3 py-2'>
-      <Icon className='text-muted-foreground/70 size-3.5 shrink-0' />
-      <div className='min-w-0 flex-1'>
-        <div className='text-muted-foreground truncate text-[10px] font-medium tracking-wider uppercase'>
+    <div className='flex items-center justify-between gap-3 rounded-xl bg-[#141936] p-4'>
+      <div className='min-w-0'>
+        <div className='mb-1 truncate font-mono text-[12px] font-semibold tracking-wider text-[#958da1] uppercase'>
           {props.label}
         </div>
         <div
           className={cn(
-            'text-foreground truncate font-mono text-sm font-semibold tabular-nums',
+            'truncate font-mono text-2xl font-bold text-[#dee0ff] tabular-nums',
             props.valueClassName
           )}
         >
           {props.value}
         </div>
+      </div>
+      <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#232846] text-[#a2e7ff]'>
+        <Icon className='size-5' />
       </div>
     </div>
   )
@@ -194,32 +197,31 @@ function OverviewSummaryGrid(props: { model: PricingModel }) {
     tpsValues.length > 0
       ? tpsValues.reduce((sum, value) => sum + value, 0) / tpsValues.length
       : 0
-  const latencyValues = groups
-    .map((group) => group.avg_latency_ms)
+  const ttftValues = groups
+    .map((group) => group.avg_ttft_ms)
     .filter((value) => value > 0)
-  const avgLatency =
-    latencyValues.length > 0
+  const avgTtft =
+    ttftValues.length > 0
       ? Math.round(
-          latencyValues.reduce((sum, value) => sum + value, 0) /
-            latencyValues.length
+          ttftValues.reduce((sum, value) => sum + value, 0) / ttftValues.length
         )
       : 0
 
   return (
-    <div className='bg-muted/20 grid overflow-hidden rounded-lg border sm:grid-cols-3 sm:divide-x'>
+    <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
       <OverviewMetric
-        icon={Timer}
-        label='TPS'
+        icon={Gauge}
+        label={t('Current throughput (TPS)')}
         value={formatThroughput(avgTps)}
       />
       <OverviewMetric
         icon={Timer}
-        label={t('Average latency')}
-        value={formatLatency(avgLatency)}
+        label={t('Average time to first byte (TTFT)')}
+        value={formatLatency(avgTtft)}
       />
       <OverviewMetric
         icon={HeartPulse}
-        label={t('Success rate')}
+        label={t('Gateway success rate')}
         value={formatUptimePct(successRate)}
         valueClassName={getSuccessRateTextClass(successRate)}
       />
@@ -515,37 +517,73 @@ function ModelHeader(props: { model: PricingModel }) {
   const { t } = useTranslation()
   const model = props.model
   const modelIconKey = model.icon || model.vendor_icon
-  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 20) : null
+  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 28) : null
   const description = model.description || model.vendor_description || null
+  const contextLength = model.context_length ?? 0
+  const contextLabel =
+    contextLength > 0 ? formatCatalogTokenCount(contextLength) : ''
+  const supportsVision =
+    model.capabilities?.includes('vision') ||
+    model.input_modalities?.includes('image')
 
   return (
-    <header className='pb-4'>
-      <div className='flex items-center gap-2.5'>
-        {modelIcon}
-        <h1 className='font-mono text-xl font-bold tracking-tight sm:text-2xl'>
-          {model.model_name}
-        </h1>
-        <CopyButton
-          value={model.model_name || ''}
-          className='size-6'
-          iconClassName='size-3'
-          tooltip={t('Copy model name')}
-          successTooltip={t('Copied!')}
-          aria-label={t('Copy model name')}
-        />
+    <header className='flex flex-col gap-4 border-b border-[#2e3351] pb-6'>
+      <div className='flex items-start gap-4'>
+        <div className='relative flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#232846] text-[#a2e7ff]'>
+          {modelIcon ?? <Sparkles className='size-7' aria-hidden='true' />}
+          <span className='absolute -right-1 -bottom-1 size-3.5 rounded-full bg-[#00d2fd] ring-2 ring-[#191d3b]' />
+        </div>
+        <div className='flex min-w-0 flex-col gap-1.5'>
+          <div className='flex flex-wrap items-center gap-3'>
+            <h1 className='text-[32px] leading-[1.2] font-semibold tracking-tight text-[#dee0ff]'>
+              {model.model_name}
+            </h1>
+            <CopyButton
+              value={model.model_name || ''}
+              className='size-7 text-[#ccc3d7] hover:text-[#a2e7ff]'
+              iconClassName='size-4'
+              tooltip={t('Copy model name')}
+              successTooltip={t('Copied!')}
+              aria-label={t('Copy model name')}
+            />
+            <ModelBillingModeBadge model={model} />
+            {model.vendor_name ? (
+              <span className='rounded-full bg-[#232846] px-2.5 py-0.5 font-mono text-sm text-[#ccc3d7]'>
+                {model.vendor_name}
+              </span>
+            ) : null}
+          </div>
+          <div className='flex flex-wrap items-center gap-3 font-mono text-sm text-[#ccc3d7]'>
+            {model.vendor_name ? (
+              <span>
+                {t('Provider')}:{' '}
+                <strong className='font-normal text-[#dee0ff]'>
+                  {model.vendor_name}
+                </strong>
+              </span>
+            ) : null}
+            {contextLabel ? (
+              <span>
+                {t('Context window')}:{' '}
+                <strong className='font-normal text-[#dee0ff]'>
+                  {contextLabel} Tokens
+                </strong>
+              </span>
+            ) : null}
+            {supportsVision ? (
+              <span>
+                {t('Vision')}:{' '}
+                <strong className='font-normal text-[#a2e7ff]'>
+                  {t('Supported')}
+                </strong>
+              </span>
+            ) : null}
+          </div>
+        </div>
       </div>
-      <div className='mt-1 flex flex-wrap items-center gap-1.5 text-xs'>
-        {model.vendor_name && (
-          <span className='text-muted-foreground'>{model.vendor_name}</span>
-        )}
-        <span className='text-muted-foreground/30'>·</span>
-        <ModelBillingModeBadge model={model} />
-      </div>
-      {description && (
-        <p className='text-muted-foreground mt-2 text-sm leading-relaxed'>
-          {description}
-        </p>
-      )}
+      {description ? (
+        <p className='text-sm leading-relaxed text-[#ccc3d7]'>{description}</p>
+      ) : null}
     </header>
   )
 }
@@ -612,6 +650,18 @@ function PriceSection(props: {
     },
   ]
 
+  if (modelHasChannelRates(props.model)) {
+    return (
+      <ChannelRateCards
+        model={props.model}
+        tokenUnit={props.tokenUnit}
+        priceRate={props.priceRate}
+        usdExchangeRate={props.usdExchangeRate}
+        showRechargePrice={props.showRechargePrice}
+      />
+    )
+  }
+
   if (dynamicSummary) {
     if (dynamicSummary.isSpecialExpression) {
       return (
@@ -633,22 +683,6 @@ function PriceSection(props: {
               </code>
             </div>
           </div>
-        </section>
-      )
-    }
-
-    if (getFableDualPriceOffers(props.model)) {
-      return (
-        <section>
-          <SectionTitle>{t('Base Price')}</SectionTitle>
-          <DualPriceSummary
-            model={props.model}
-            tokenUnit={props.tokenUnit}
-            priceRate={props.priceRate}
-            usdExchangeRate={props.usdExchangeRate}
-            showRechargePrice={props.showRechargePrice}
-            layout='detail'
-          />
         </section>
       )
     }
@@ -792,8 +826,8 @@ const TAB_META: Record<
   { icon: React.ComponentType<{ className?: string }>; labelKey: string }
 > = {
   overview: { icon: Info, labelKey: 'Overview' },
-  performance: { icon: HeartPulse, labelKey: 'Performance' },
-  api: { icon: Code2, labelKey: 'API' },
+  performance: { icon: HeartPulse, labelKey: 'Performance benchmarks' },
+  api: { icon: Code2, labelKey: 'API calls' },
 }
 
 export interface ModelDetailsContentProps {
@@ -818,14 +852,14 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
       <ModelHeader model={props.model} />
 
       <Tabs defaultValue='overview' className='gap-4'>
-        <TabsList className='bg-muted/60 grid w-full grid-cols-3 gap-1 rounded-lg p-1 group-data-horizontal/tabs:h-auto'>
+        <TabsList className='grid w-full grid-cols-3 gap-1 self-start rounded-lg bg-[#070b28] p-1 group-data-horizontal/tabs:h-auto lg:w-auto'>
           {TAB_VALUES.map((value) => {
             const Icon = TAB_META[value].icon
             return (
               <TabsTrigger
                 key={value}
                 value={value}
-                className='h-8 min-w-0 gap-1.5 rounded-md px-3 text-xs sm:text-sm'
+                className='h-9 min-w-0 gap-2 rounded-lg px-4 font-mono text-sm text-[#ccc3d7] data-active:bg-[#232846] data-active:text-[#a2e7ff]'
               >
                 <Icon className='size-3.5' />
                 <span className='truncate'>{t(TAB_META[value].labelKey)}</span>
@@ -837,19 +871,29 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
         <TabsContent value='overview' className='space-y-6 outline-none'>
           <OverviewSummaryGrid model={props.model} />
 
-          <section className='space-y-5 rounded-xl border border-violet-400/25 bg-[#13193a]/55 p-4 shadow-sm backdrop-blur-md'>
-            <SectionTitle>{t('Pricing')}</SectionTitle>
-            <PriceSection
+          {modelHasChannelRates(props.model) ? (
+            <ChannelRateCards
               model={props.model}
               priceRate={props.priceRate}
               usdExchangeRate={props.usdExchangeRate}
               tokenUnit={props.tokenUnit}
               showRechargePrice={showRechargePrice}
             />
-            {isDynamic && (
-              <DynamicPricingBreakdown billingExpr={props.model.billing_expr} />
-            )}
-          </section>
+          ) : (
+            <section className='space-y-5 rounded-xl border border-violet-400/25 bg-[#13193a]/55 p-4 shadow-sm backdrop-blur-md'>
+              <SectionTitle>{t('Pricing')}</SectionTitle>
+              <PriceSection
+                model={props.model}
+                priceRate={props.priceRate}
+                usdExchangeRate={props.usdExchangeRate}
+                tokenUnit={props.tokenUnit}
+                showRechargePrice={showRechargePrice}
+              />
+            </section>
+          )}
+          {isDynamic && !modelHasChannelRates(props.model) ? (
+            <DynamicPricingBreakdown billingExpr={props.model.billing_expr} />
+          ) : null}
 
           <ModelBackendDetailsSection model={props.model} />
         </TabsContent>

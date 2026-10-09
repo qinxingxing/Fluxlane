@@ -18,15 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { SearchBar } from './search-bar'
-
 const COUNT_MARKER = '%%COUNT%%'
 
 export interface PricingHeroProps {
   modelCount: number
-  searchInput: string
-  onSearchChange: (value: string) => void
-  onSearchClear: () => void
 }
 
 function ModelCountLine(props: { count: number }) {
@@ -64,32 +59,13 @@ export function PricingHero(props: PricingHeroProps) {
   const { t } = useTranslation()
 
   return (
-    <header
-      data-slot='pricing-hero'
-      className='relative mx-auto mb-8 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'
-    >
-      <div
-        aria-hidden
-        className='bg-primary/20 pointer-events-none absolute top-1/2 left-1/2 -z-10 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[80px]'
-      />
-      <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.1] font-bold tracking-tight'>
-        {t('Model Square')}
+    <header data-slot='pricing-hero' className='flex flex-col gap-2'>
+      <h1 className='text-2xl font-semibold tracking-tight text-[#dee0ff] md:text-[32px] md:leading-[1.2]'>
+        {t('Model prices')}
       </h1>
-      <p className='text-muted-foreground mt-3 text-sm sm:mt-4 sm:text-base'>
+      <p className='text-sm text-[#958da1]'>
         <ModelCountLine count={props.modelCount} />
       </p>
-      <p className='text-muted-foreground/70 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-        {t(
-          'Explore curated AI models, compare prices and capabilities, and pick the right model for each scenario.'
-        )}
-      </p>
-      <SearchBar
-        value={props.searchInput}
-        onChange={props.onSearchChange}
-        onClear={props.onSearchClear}
-        placeholder={t('Search model names, providers, endpoints, or tags...')}
-        className='mx-auto mt-4 max-w-2xl sm:mt-6'
-      />
     </header>
   )
 }
