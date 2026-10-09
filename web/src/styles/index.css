@@ -30,6 +30,47 @@ For commercial licensing, please contact support@quantumnous.com
 @import './theme.css';
 @import './theme-presets.css';
 
+/* Marketplace Chinese uses Microsoft YaHei. The face only covers CJK and
+   fullwidth punctuation, so Latin, numbers, and model ids keep the page
+   font. It has to be first: the body stack (especially the serif axis)
+   already lists Noto Serif / Songti before a later YaHei would be reached,
+   and `.font-mono` replaces the inherited family entirely. */
+@font-face {
+  font-family: 'Fluxlane YaHei';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('Microsoft YaHei'),
+    local('微软雅黑');
+  unicode-range:
+    U+3000-303F, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+
+@font-face {
+  font-family: 'Fluxlane YaHei';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('Microsoft YaHei Bold'),
+    local('Microsoft YaHei'),
+    local('微软雅黑');
+  unicode-range:
+    U+3000-303F, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+
+.pricing-cjk {
+  font-family: 'Fluxlane YaHei', var(--font-body);
+}
+
+.pricing-cjk.font-mono,
+.pricing-cjk .font-mono,
+.pricing-cjk :where(code, kbd, pre, samp) {
+  font-family:
+    'Fluxlane YaHei', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 /* Shiki dual themes: token colors follow dark theme (pre background stays `bg-background` on the block) */
 @layer components {
   .shiki span {
@@ -100,19 +141,6 @@ For commercial licensing, please contact support@quantumnous.com
      * (defined in theme.css, swapped by `[data-theme-font='...']` blocks
      * in theme-presets.css). Defaults to the project's humanist sans. */
     font-family: var(--font-body);
-  }
-
-  /* Chinese copy on the model marketplace uses Microsoft YaHei.
-     Latin faces stay first so numbers and model ids keep their own font.
-     Tooltips portal outside the page, so they carry the same class. */
-  .pricing-cjk {
-    font-family: var(--font-body), 'Microsoft YaHei', '微软雅黑', sans-serif;
-  }
-
-  .pricing-cjk .font-mono {
-    font-family:
-      ui-monospace, SFMono-Regular, Menlo, Consolas, 'Microsoft YaHei',
-      '微软雅黑', monospace;
   }
 
   /* Keep sticky headers stable while primitives lock body scrolling. */
