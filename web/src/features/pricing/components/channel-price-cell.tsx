@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { ArrowRight, Check, Copy, Info } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -211,13 +211,47 @@ function AmountLine(props: { amounts: TaggedAmount[] }) {
 export function ModelIdCell(props: { name: string }) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [overflowing, setOverflowing] = useState(false)
+  const nameRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const element = nameRef.current
+    if (!element) return
+    const measure = () => {
+      setOverflowing(element.scrollWidth > element.clientWidth + 1)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [props.name])
 
   return (
-    <div className='flex items-center gap-2'>
-      <span className='font-mono font-semibold text-[#dee0ff]'>{props.name}</span>
+    <div className='flex min-w-0 items-center gap-2'>
+      <TooltipProvider>
+        <Tooltip open={overflowing && open} onOpenChange={setOpen}>
+          <TooltipTrigger
+            render={
+              <span
+                ref={nameRef}
+                className='block min-w-0 flex-1 truncate text-left font-mono font-semibold text-[#dee0ff]'
+              />
+            }
+          >
+            {props.name}
+          </TooltipTrigger>
+          <TooltipContent
+            side='top'
+            className='pricing-cjk max-w-md text-left font-mono break-all'
+          >
+            {props.name}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <button
         type='button'
-        className='rounded p-1 text-[#958da1] transition-colors hover:bg-[#191d3b] hover:text-[#dee0ff]'
+        className='shrink-0 rounded p-1 text-[#958da1] transition-colors hover:bg-[#191d3b] hover:text-[#dee0ff]'
         aria-label={t('Copy model name')}
         title={t('Copy model name')}
         onClick={(event) => {
