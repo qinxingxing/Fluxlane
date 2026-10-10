@@ -58,6 +58,9 @@ func isWaffoTopUpEnabled() bool {
 }
 
 func isWaffoWebhookConfigured() bool {
+	if strings.TrimSpace(setting.WaffoMerchantId) == "" {
+		return false
+	}
 	if setting.WaffoSandbox {
 		return strings.TrimSpace(setting.WaffoSandboxApiKey) != "" &&
 			strings.TrimSpace(setting.WaffoSandboxPrivateKey) != "" &&

@@ -21,83 +21,64 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// filterTopUpPayMethods keeps admin PayMethods as the wallet source of truth.
+// Stripe / Waffo / Waffo Pancake are shown only when listed and the gateway is ready.
+// Credentials alone must never re-inject a method the operator removed.
+func filterTopUpPayMethods(configured []map[string]string) ([]map[string]string, bool) {
+	payMethods := make([]map[string]string, 0, len(configured))
+	enableWaffo := false
+	for _, method := range configured {
+		methodType := method["type"]
+		switch methodType {
+		case "stripe":
+			if isStripeTopUpEnabled() {
+				payMethods = append(payMethods, method)
+			}
+		case model.PaymentMethodWaffoPancake:
+			if isWaffoPancakeTopUpEnabled() {
+				payMethods = append(payMethods, method)
+			}
+		case model.PaymentMethodWaffo:
+			if isWaffoTopUpEnabled() {
+				enableWaffo = true
+				payMethods = append(payMethods, method)
+			}
+		default:
+			if methodType != "" {
+				payMethods = append(payMethods, method)
+			}
+		}
+	}
+	return payMethods, enableWaffo
+}
+
 func GetTopUpInfo(c *gin.Context) {
 	complianceConfirmed := operation_setting.IsPaymentComplianceConfirmed()
 
-	// 获取支付方式
-	payMethods := operation_setting.PayMethods
+	configuredMethods := operation_setting.PayMethods
 	if !complianceConfirmed {
-		payMethods = []map[string]string{}
+		configuredMethods = []map[string]string{}
 	}
 
-	// 如果启用了 Stripe 支付，添加到支付方法列表
-	if isStripeTopUpEnabled() {
-		// 检查是否已经包含 Stripe
-		hasStripe := false
-		for _, method := range payMethods {
-			if method["type"] == "stripe" {
-				hasStripe = true
-				break
-			}
-		}
-
-		if !hasStripe {
-			stripeMethod := map[string]string{
-				"name":      "Stripe",
-				"type":      "stripe",
-				"color":     "#635BFF",
-				"min_topup": strconv.Itoa(setting.StripeMinTopUp),
-			}
-			payMethods = append(payMethods, stripeMethod)
+	payMethods, enableWaffo := filterTopUpPayMethods(configuredMethods)
+	enableWaffoPancake := false
+	for _, method := range payMethods {
+		if method["type"] == model.PaymentMethodWaffoPancake {
+			enableWaffoPancake = true
+			break
 		}
 	}
-
-	// Waffo Pancake is displayed above the standard Waffo gateway.
-	enableWaffoPancake := isWaffoPancakeTopUpEnabled()
-	if enableWaffoPancake {
-		hasWaffoPancake := false
-		for _, method := range payMethods {
-			if method["type"] == model.PaymentMethodWaffoPancake {
-				hasWaffoPancake = true
-				break
-			}
-		}
-
-		if !hasWaffoPancake {
-			payMethods = append(payMethods, map[string]string{
-				"name":      "Waffo Pancake",
-				"type":      model.PaymentMethodWaffoPancake,
-				"color":     "#F97316",
-				"min_topup": strconv.Itoa(setting.WaffoPancakeMinTopUp),
-			})
-		}
-	}
-
-	// 如果启用了 Waffo 支付，添加到支付方法列表
-	enableWaffo := isWaffoTopUpEnabled()
-	if enableWaffo {
-		hasWaffo := false
-		for _, method := range payMethods {
-			if method["type"] == model.PaymentMethodWaffo {
-				hasWaffo = true
-				break
-			}
-		}
-
-		if !hasWaffo {
-			waffoMethod := map[string]string{
-				"name":      "Waffo (Global Payment)",
-				"type":      model.PaymentMethodWaffo,
-				"color":     "#3B82F6",
-				"min_topup": strconv.Itoa(setting.WaffoMinTopUp),
-			}
-			payMethods = append(payMethods, waffoMethod)
+	enableStripe := false
+	for _, method := range payMethods {
+		if method["type"] == "stripe" {
+			enableStripe = true
+			break
 		}
 	}
 
 	data := gin.H{
 		"enable_online_topup":              isEpayTopUpEnabled(),
-		"enable_stripe_topup":              isStripeTopUpEnabled(),
+		"enable_stripe_topup":              enableStripe,
 		"enable_creem_topup":               isCreemTopUpEnabled(),
 		"enable_waffo_topup":               enableWaffo,
 		"enable_waffo_pancake_topup":       enableWaffoPancake,

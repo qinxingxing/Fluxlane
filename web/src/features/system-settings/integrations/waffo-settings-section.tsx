@@ -319,12 +319,19 @@ export function WaffoSettingsSection({
 
         <Separator />
 
-        <div className='flex items-center justify-between'>
-          <h4 className='font-medium'>{t('Payment Methods')}</h4>
-          <Button type='button' variant='outline' size='sm' onClick={openAdd}>
-            <Plus className='mr-1 h-3 w-3' />
-            {t('Add payment method')}
-          </Button>
+        <div className='space-y-1'>
+          <div className='flex items-center justify-between'>
+            <h4 className='font-medium'>{t('Payment Methods')}</h4>
+            <Button type='button' variant='outline' size='sm' onClick={openAdd}>
+              <Plus className='mr-1 h-3 w-3' />
+              {t('Add payment method')}
+            </Button>
+          </div>
+          <p className='text-muted-foreground text-xs'>
+            {t(
+              'These Card/Apple Pay options appear in the wallet only when Payment methods above includes type waffo and the Waffo gateway is enabled.'
+            )}
+          </p>
         </div>
 
         <StaticDataTable

@@ -71,6 +71,7 @@ func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	confirmPaymentComplianceForTest(t)
 	originalEnabled := setting.WaffoEnabled
 	originalSandbox := setting.WaffoSandbox
+	originalMerchantID := setting.WaffoMerchantId
 	originalAPIKey := setting.WaffoApiKey
 	originalPrivateKey := setting.WaffoPrivateKey
 	originalPublicCert := setting.WaffoPublicCert
@@ -80,6 +81,7 @@ func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	t.Cleanup(func() {
 		setting.WaffoEnabled = originalEnabled
 		setting.WaffoSandbox = originalSandbox
+		setting.WaffoMerchantId = originalMerchantID
 		setting.WaffoApiKey = originalAPIKey
 		setting.WaffoPrivateKey = originalPrivateKey
 		setting.WaffoPublicCert = originalPublicCert
@@ -90,6 +92,7 @@ func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 
 	setting.WaffoEnabled = true
 	setting.WaffoSandbox = false
+	setting.WaffoMerchantId = "merchant"
 	setting.WaffoApiKey = ""
 	setting.WaffoPrivateKey = "private"
 	setting.WaffoPublicCert = "public"
@@ -97,6 +100,10 @@ func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 
 	setting.WaffoApiKey = "api"
 	require.True(t, isWaffoWebhookEnabled())
+
+	setting.WaffoMerchantId = ""
+	require.False(t, isWaffoWebhookEnabled())
+	setting.WaffoMerchantId = "merchant"
 
 	setting.WaffoEnabled = false
 	require.False(t, isWaffoWebhookEnabled())

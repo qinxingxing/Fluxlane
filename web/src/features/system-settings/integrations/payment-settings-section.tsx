@@ -1002,7 +1002,7 @@ export function PaymentSettingsSection({
                       </FormControl>
                       <FormDescription>
                         {t(
-                          'Configured as PayMethods JSON. The type value decides which payment flow is used: stripe for Stripe, waffo_pancake for Waffo Pancake, and other values are sent to Epay as the type parameter.'
+                          'Configured as PayMethods JSON. Built-in types: stripe, waffo, waffo_pancake; other values go to Epay. Removing a type hides it in the wallet even if gateway credentials remain. For Waffo, also configure Card/Apple Pay under the Waffo section.'
                         )}
                       </FormDescription>
                       <FormMessage />
