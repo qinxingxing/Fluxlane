@@ -102,8 +102,9 @@ export const userAgreementSeo: PageSeo = {
   description:
     'Review the terms of service for using the Fluxlane unified AI API platform.',
   canonicalPath: '/user-agreement',
-  noindex: true,
-  jsonLd: [],
+  jsonLd: [
+    breadcrumbJsonLd([{ name: 'Terms of Service', path: '/user-agreement' }]),
+  ],
 }
 
 /** SEO for a `/pricing/<model-id>` detail page. */

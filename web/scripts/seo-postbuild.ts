@@ -94,8 +94,8 @@ function breadcrumb(items: BreadcrumbEntry[]): Record<string, unknown> {
  * - `/rankings` is intentionally absent: the module is disabled in the
  *   live admin configuration, and the build must not depend on live
  *   state. Its URL 404s on the public site until it is re-enabled.
- * - `/privacy-policy` prerenders the in-repo Fluxlane policy and is
- *   indexable. `/user-agreement` stays noindex until terms text lands in Git.
+ * - `/privacy-policy` and `/user-agreement` prerender the in-repo Fluxlane
+ *   policies and are indexable.
  * - `/privacy` is a 301 to `/privacy-policy` and is not prerendered.
  * - `/contact` prerenders the sales inquiry form shell; submission hits
  *   `/api/sales-inquiry` after hydration.
@@ -173,11 +173,12 @@ const ROUTES: Record<string, RouteSeo> = {
       'Review the terms of service for using the Fluxlane unified AI API platform.',
     canonicalPath: '/user-agreement',
     ogType: 'website',
-    noindex: true,
-    jsonLd: [],
+    jsonLd: [breadcrumb([{ name: 'Terms of Service', path: '/user-agreement' }])],
     lastmodSources: [
       'src/routes/user-agreement.tsx',
       'src/features/legal/user-agreement.tsx',
+      'src/features/legal/fluxlane-terms-page.tsx',
+      'src/features/legal/fluxlane-terms.ts',
     ],
   },
 }
@@ -791,12 +792,12 @@ function validateOutput(renderedRoutes: string[]): void {
   if (!locs.some((loc) => loc === `${PUBLIC_ORIGIN}/privacy-policy`)) {
     fail('published privacy policy must appear in the sitemap')
   }
+  if (!locs.some((loc) => loc === `${PUBLIC_ORIGIN}/user-agreement`)) {
+    fail('published terms of service must appear in the sitemap')
+  }
   for (const loc of locs) {
     if (!loc.startsWith('https://')) fail(`sitemap URL not https: ${loc}`)
     if (loc.includes('?')) fail(`sitemap URL must be canonical: ${loc}`)
-    if (loc.endsWith('/user-agreement')) {
-      fail('legal pages without published content must stay out of the sitemap')
-    }
     if (loc.endsWith('/privacy') && !loc.endsWith('/privacy-policy')) {
       fail('short privacy URL must not be in the sitemap; canonical is /privacy-policy')
     }
@@ -854,8 +855,11 @@ function validateOutput(renderedRoutes: string[]): void {
     if (!seo.noindex && html.includes('name="robots" content="noindex')) {
       fail(`${route}: published page must not be noindex`)
     }
-    if (route === '/privacy-policy' && !html.includes('FLUX LANE PTE. LTD.')) {
-      fail(`${route}: prerender must include the published privacy policy`)
+    if (
+      (route === '/privacy-policy' || route === '/user-agreement') &&
+      !html.includes('FLUX LANE PTE. LTD.')
+    ) {
+      fail(`${route}: prerender must include the published legal text`)
     }
     if (route === '/') {
       if (!html.includes('联系销售')) {
@@ -869,15 +873,16 @@ function validateOutput(renderedRoutes: string[]): void {
     ) {
       fail('/pricing: prerender must include the marketplace heading')
     }
-    // Footer destinations required on every public page. Privacy Policy is
-    // published; User Agreement stays out of chrome until terms text is in Git.
+    // Footer destinations required on every public page.
     const footerLinks: [string, string][] = [
       ['pricing link', 'href="/pricing"'],
       ['docs link', 'https://doc.fluxlane.ai'],
       ['about link', 'href="/about"'],
       ['contact link', 'href="/contact"'],
       ['contact new window', 'target="_blank"'],
+      ['terms link', 'href="/user-agreement"'],
       ['privacy link', 'href="/privacy-policy"'],
+      ['support email', 'mailto:support@fluxlane.ai'],
       ['console link', 'https://console.fluxlane.ai'],
     ]
     for (const [label, needle] of footerLinks) {

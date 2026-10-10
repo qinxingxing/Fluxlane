@@ -56,6 +56,11 @@ for (const key of domGlobals) {
   })
 }
 
+Object.defineProperty(globalThis, 'scrollTo', {
+  configurable: true,
+  value: () => undefined,
+})
+
 const { act } = await import('react')
 const { createRoot } = await import('react-dom/client')
 const { createInstance } = await import('i18next')
@@ -85,9 +90,11 @@ await i18n.use(initReactI18next).init({
         'Backed by': 'Backed by',
         Console: 'Console',
         Contact: 'Contact',
+        'Contact us': 'Contact us',
         'Model Square': 'Model Square',
         Pricing: 'Pricing',
         'Privacy Policy': 'Privacy Policy',
+        'Terms of Service': 'Terms of Service',
         Product: 'Product',
         'Unified API gateway': 'Unified API gateway',
         'User Agreement': 'User Agreement',
@@ -194,16 +201,23 @@ describe('public footer', () => {
     assert.equal(hrefs.has('https://www.accesstechnologyventures.com'), true)
     assert.equal(host.textContent?.includes('Unified API gateway'), true)
     assert.equal(host.textContent?.includes('Backed by'), true)
+    assert.equal(hrefs.has('mailto:support@fluxlane.ai'), true)
+    assert.equal(host.textContent?.includes('Contact us'), true)
+    assert.equal(host.textContent?.includes('support@fluxlane.ai'), true)
   })
 
-  test('keeps Privacy Policy in the footer and omits User Agreement until it is published', async () => {
-    const hrefs = hrefSet(await renderFooter())
-    assert.equal(hrefs.has('/privacy-policy'), true)
-    assert.equal(hrefs.has('/user-agreement'), false)
-  })
-
-  test('adds User Agreement only when the legal document is enabled', async () => {
-    const hrefs = hrefSet(await renderFooter({ user_agreement_enabled: true }))
-    assert.equal(hrefs.has('/user-agreement'), true)
+  test('places Terms of Service immediately before Privacy Policy', async () => {
+    const host = await renderFooter({ user_agreement_enabled: false })
+    const hrefs = [...host.querySelectorAll('a')].map((anchor) =>
+      anchor.getAttribute('href')
+    )
+    const termsIndexes = hrefs.flatMap((href, index) =>
+      href === '/user-agreement' ? [index] : []
+    )
+    assert.ok(termsIndexes.length >= 2)
+    for (const index of termsIndexes) {
+      assert.equal(hrefs[index + 1], '/privacy-policy')
+    }
+    assert.equal(host.textContent?.includes('Terms of Service'), true)
   })
 })

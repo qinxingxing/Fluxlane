@@ -15,7 +15,7 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 
 - **Model detail SEO: deferred.** `/pricing/<id>` uses a unified noindex SPA shell. Independent per-model titles, copy, and sitemap entries are not done.
 - Rankings as an indexable page. The public snapshot keeps rankings disabled; the URL 404s rather than redirecting home.
-- Real Terms, Refund Policy, Acceptable Use Policy, and remaining legal pages. Until those texts live in Git, those URLs stay `noindex` and omitted from the sitemap. The Privacy Policy is published in Git.
+- Refund Policy, Acceptable Use Policy, and any other legal page without text in Git stay `noindex` and out of the sitemap. The Privacy Policy and Terms of Service are published in Git.
 - Production CORS changes for `*.pages.dev`.
 
 ## Prerender data
@@ -26,7 +26,7 @@ Status: **IN PROGRESS**. Do not treat this as READY. Do not merge to `main` unti
 | `/contact` | In-repo sales inquiry form |
 | `/pricing` | Stable heading + intro; live price table after hydration |
 | `/privacy-policy` | In-repo Fluxlane privacy policy (indexable) |
-| `/user-agreement` | Empty/not-published state, `noindex` |
+| `/user-agreement` | In-repo Fluxlane terms of service (indexable) |
 | `/rankings` | Not prerendered; disabled → `notFound` |
 
 ## Acceptance (merge gate)
@@ -50,7 +50,7 @@ Done:
 
 - Public prerender does not contact `api.fluxlane.ai`
 - Same-commit consecutive public builds: prerendered HTML SHA256 match (frozen `Date.now` during SSR plus fixed Query dehydrate timestamps)
-- Legal URLs without published Git text are `noindex` and absent from `sitemap.xml`; `/privacy-policy` is in the sitemap
+- `/privacy-policy` and `/user-agreement` are in the sitemap. Legal URLs without published Git text stay `noindex` and out of `sitemap.xml`
 - Rankings is absent from the sitemap; disabled rankings uses `notFound` (not `/`)
 - Console build: `Disallow: /`, meta robots, `X-Robots-Tag`
 - React hydration **#418 = 0** on `/`, `/about`, `/pricing`, `/privacy-policy`, `/user-agreement` (JS enabled and disabled; H1/body persist)

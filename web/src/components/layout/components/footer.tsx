@@ -21,6 +21,7 @@ import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
+import { isUserAgreementEnabled } from '@/features/legal/fluxlane-terms'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { trackEvent } from '@/lib/analytics'
@@ -58,6 +59,26 @@ interface FooterProps {
 }
 
 const ACCESS_VENTURES_URL = 'https://www.accesstechnologyventures.com'
+const SUPPORT_EMAIL = 'support@fluxlane.ai'
+
+function SupportContact(props: { leadingSeparator?: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {props.leadingSeparator ? (
+        <span aria-hidden='true' className='text-slate-600'>
+          ·
+        </span>
+      ) : null}
+      <a
+        href={`mailto:${SUPPORT_EMAIL}`}
+        className={publicFooterLinkClassName}
+      >
+        {t('Contact us')} {SUPPORT_EMAIL}
+      </a>
+    </>
+  )
+}
 
 function FooterLinkItem(props: { link: FooterLink }) {
   const { t } = useTranslation()
@@ -110,10 +131,10 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
   const { t } = useTranslation()
   const { status } = useStatus()
   const items: { key: string; label: string; href: string }[] = []
-  if (status?.user_agreement_enabled) {
+  if (isUserAgreementEnabled(status)) {
     items.push({
       key: 'user-agreement',
-      label: t('User Agreement'),
+      label: t('Terms of Service'),
       href: publicSiteHref('/user-agreement'),
     })
   }
@@ -170,6 +191,7 @@ export function Footer(props: FooterProps) {
 
   const displayName = publicBrandName(systemName || props.name)
   const currentYear = new Date().getFullYear()
+  const showTerms = isUserAgreementEnabled(status)
   const showPrivacy = isPrivacyPolicyEnabled(status)
 
   const fallbackColumns = useMemo<FooterColumnProps[]>(() => {
@@ -183,16 +205,16 @@ export function Footer(props: FooterProps) {
         href: publicSiteHref('/contact'),
       },
     ]
+    if (showTerms) {
+      companyLinks.push({
+        text: 'Terms of Service',
+        href: publicSiteHref('/user-agreement'),
+      })
+    }
     if (showPrivacy) {
       companyLinks.push({
         text: 'Privacy Policy',
         href: publicSiteHref('/privacy-policy'),
-      })
-    }
-    if (status?.user_agreement_enabled) {
-      companyLinks.push({
-        text: 'User Agreement',
-        href: publicSiteHref('/user-agreement'),
       })
     }
 
@@ -240,7 +262,7 @@ export function Footer(props: FooterProps) {
         links: companyLinks,
       },
     ]
-  }, [showPrivacy, status?.user_agreement_enabled])
+  }, [showPrivacy, showTerms])
 
   const displayColumns = props.columns ?? fallbackColumns
 
@@ -258,6 +280,7 @@ export function Footer(props: FooterProps) {
             />
             <div className='flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs'>
               <LegalLinks />
+              <SupportContact leadingSeparator />
               <ProjectAttribution currentYear={currentYear} inline />
             </div>
           </div>
@@ -324,6 +347,7 @@ export function Footer(props: FooterProps) {
               {props.copyright ?? t('footer.defaultCopyright')}
             </span>
             <LegalLinks leadingSeparator />
+            <SupportContact leadingSeparator />
           </div>
           <ProjectAttribution currentYear={currentYear} />
         </div>

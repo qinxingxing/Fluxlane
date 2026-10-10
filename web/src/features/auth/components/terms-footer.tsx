@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
+import { isUserAgreementEnabled } from '@/features/legal/fluxlane-terms'
 import { publicSiteHref } from '@/lib/domain-routing'
 import { cn } from '@/lib/utils'
 
@@ -41,7 +42,7 @@ export function TermsFooter({
       ? 'By clicking sign in, you agree to our'
       : 'By creating an account, you agree to our'
 
-  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
+  const hasUserAgreement = isUserAgreementEnabled(status)
   const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
 
   if (!hasUserAgreement && !hasPrivacyPolicy) {
@@ -49,7 +50,7 @@ export function TermsFooter({
   }
 
   const agreementLink = {
-    label: 'User Agreement',
+    label: 'Terms of Service',
     href: publicSiteHref('/user-agreement'),
   }
   const privacyLink = {

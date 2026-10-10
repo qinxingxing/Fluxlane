@@ -73,6 +73,7 @@ import {
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
 import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
+import { isUserAgreementEnabled } from '@/features/legal/fluxlane-terms'
 import { useStatus } from '@/hooks/use-status'
 import { isAuthBundle } from '@/lib/api'
 import { getServerErrorMessageKey } from '@/lib/server-error-message'
@@ -143,7 +144,7 @@ export function SignUpForm({
   const passwordStrength = evaluatePasswordStrength(passwordValue)
   const passwordsMatch =
     confirmPasswordValue.length > 0 && passwordValue === confirmPasswordValue
-  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
+  const hasUserAgreement = isUserAgreementEnabled(status)
   const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
   const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
   const oauthRegisterEnabled =

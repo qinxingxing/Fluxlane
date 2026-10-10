@@ -62,6 +62,7 @@ import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { beginPasskeyLogin, finishPasskeyLogin } from '@/features/auth/passkey'
 import type { AuthFormProps } from '@/features/auth/types'
 import { isPrivacyPolicyEnabled } from '@/features/legal/fluxlane-privacy-policy'
+import { isUserAgreementEnabled } from '@/features/legal/fluxlane-terms'
 import { useStatus } from '@/hooks/use-status'
 import { isAuthBundle } from '@/lib/api'
 import {
@@ -111,7 +112,7 @@ export function UserAuthForm({
     (state) => state.auth.setPending2FAFlowToken
   )
 
-  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
+  const hasUserAgreement = isUserAgreementEnabled(status)
   const hasPrivacyPolicy = isPrivacyPolicyEnabled(status)
   const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
   const passkeyButtonDisabled =
