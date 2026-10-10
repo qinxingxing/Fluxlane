@@ -101,6 +101,24 @@ describe('fable dual price offers', () => {
     )
   })
 
+  test('keeps the special price when the group key is renamed to 特价', () => {
+    const renamed = fableModel({
+      enable_groups: ['官方', 'Claude/OpenAI特价'],
+      group_ratio: { 官方: 1, 特价: 0.6 },
+    })
+    assert.equal(getChannelOffer(renamed, 'list')?.group, '官方')
+    assert.equal(getChannelOffer(renamed, 'special')?.group, '特价')
+    assert.equal(getChannelOffer(renamed, 'special')?.ratio, 0.6)
+
+    const officialOnly = fableModel({
+      model_name: 'claude-haiku-5',
+      enable_groups: ['官方'],
+      group_ratio: { 官方: 1, 特价: 0.6 },
+    })
+    assert.equal(getChannelOffer(officialOnly, 'list')?.ratio, 1)
+    assert.equal(getChannelOffer(officialOnly, 'special'), null)
+  })
+
   test('puts official and special prices on the groups a model is sold on', () => {
     const both = fableModel({
       enable_groups: ['官方', 'Claude/OpenAI特价'],

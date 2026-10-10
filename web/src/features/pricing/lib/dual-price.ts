@@ -37,15 +37,32 @@ function readPositiveRatio(value: unknown): number | null {
     : null
 }
 
+function isSameChannelGroup(left: string, right: string): boolean {
+  if (left === right) return true
+  const leftSpecial = left.includes(SPECIAL_GROUP_MARK)
+  const rightSpecial = right.includes(SPECIAL_GROUP_MARK)
+  if (leftSpecial && rightSpecial) {
+    return left.includes(right) || right.includes(left)
+  }
+  const leftOfficial = left.includes(OFFICIAL_GROUP) && !leftSpecial
+  const rightOfficial = right.includes(OFFICIAL_GROUP) && !rightSpecial
+  if (leftOfficial && rightOfficial) {
+    return left.includes(right) || right.includes(left)
+  }
+  return false
+}
+
 function ratioEntries(model: PricingModel): Array<[string, number]> {
   const ratios = model.group_ratio ?? {}
-  const enabled = new Set(model.enable_groups ?? [])
+  const enabled = model.enable_groups ?? []
   const parsed = Object.entries(ratios).flatMap(([name, ratio]) => {
     const value = readPositiveRatio(ratio)
     return value == null ? [] : [[name, value] as [string, number]]
   })
-  if (enabled.size === 0) return parsed
-  const enabledEntries = parsed.filter(([name]) => enabled.has(name))
+  if (enabled.length === 0) return parsed
+  const enabledEntries = parsed.filter(([name]) =>
+    enabled.some((group) => isSameChannelGroup(name, group))
+  )
   return enabledEntries.length > 0 ? enabledEntries : parsed
 }
 
