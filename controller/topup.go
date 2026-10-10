@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,14 +22,29 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// reservedEpayPaymentMethods are gateway keys that must never be submitted to Epay.
+var reservedEpayPaymentMethods = map[string]struct{}{
+	"stripe":                       {},
+	model.PaymentMethodCreem:       {},
+	model.PaymentMethodWaffo:       {},
+	model.PaymentMethodWaffoPancake: {},
+}
+
+func isReservedEpayPaymentMethod(methodType string) bool {
+	_, ok := reservedEpayPaymentMethods[strings.TrimSpace(methodType)]
+	return ok
+}
+
 // filterTopUpPayMethods keeps admin PayMethods as the wallet source of truth.
-// Stripe / Waffo / Waffo Pancake are shown only when listed and the gateway is ready.
-// Credentials alone must never re-inject a method the operator removed.
+// Stripe / Waffo Pancake appear in pay_methods only when listed and ready.
+// Classic Waffo is gated by a PayMethods entry with type=waffo, but is NOT
+// returned in pay_methods — the wallet uses enable_waffo_topup + waffo_pay_methods
+// instead. Credentials alone must never re-inject a removed method.
 func filterTopUpPayMethods(configured []map[string]string) ([]map[string]string, bool) {
 	payMethods := make([]map[string]string, 0, len(configured))
 	enableWaffo := false
 	for _, method := range configured {
-		methodType := method["type"]
+		methodType := strings.TrimSpace(method["type"])
 		switch methodType {
 		case "stripe":
 			if isStripeTopUpEnabled() {
@@ -39,12 +55,13 @@ func filterTopUpPayMethods(configured []map[string]string) ([]map[string]string,
 				payMethods = append(payMethods, method)
 			}
 		case model.PaymentMethodWaffo:
+			// Enable the dedicated Waffo section only; never expose type=waffo to
+			// the Epay/pay_methods click path (that yields "支付方式不存在" / wrong gateway).
 			if isWaffoTopUpEnabled() {
 				enableWaffo = true
-				payMethods = append(payMethods, method)
 			}
 		default:
-			if methodType != "" {
+			if methodType != "" && !isReservedEpayPaymentMethod(methodType) {
 				payMethods = append(payMethods, method)
 			}
 		}
@@ -191,6 +208,10 @@ func RequestEpay(c *gin.Context) {
 		return
 	}
 
+	if isReservedEpayPaymentMethod(req.PaymentMethod) {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "该支付方式请使用对应网关入口，不能走易支付"})
+		return
+	}
 	if !operation_setting.ContainsPayMethod(req.PaymentMethod) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "支付方式不存在"})
 		return
