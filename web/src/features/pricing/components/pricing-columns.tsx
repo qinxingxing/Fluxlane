@@ -84,7 +84,7 @@ export function usePricingColumns(
           {...priceOptions}
         />
       ),
-      size: 220,
+      size: 176,
       enableSorting: false,
     },
     {
@@ -104,7 +104,7 @@ export function usePricingColumns(
           {...priceOptions}
         />
       ),
-      size: 220,
+      size: 176,
       enableSorting: false,
     },
     {
@@ -126,7 +126,7 @@ export function usePricingColumns(
       cell: ({ row }) => (
         <CacheCompareCell model={row.original} {...priceOptions} />
       ),
-      size: 160,
+      size: 128,
       enableSorting: false,
     },
     {

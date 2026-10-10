@@ -34,6 +34,8 @@ import { usePricingColumns } from './pricing-columns'
 const vendorColumnInsetClass = 'ps-[clamp(1.25rem,3vw,2.75rem)]'
 const modelIdColumnClass =
   'w-[clamp(11rem,30vw,20rem)] max-w-[clamp(11rem,30vw,20rem)] overflow-hidden'
+const priceColumnClass = 'w-44 max-w-44'
+const cacheColumnClass = 'w-32 max-w-32'
 
 export interface PricingTableProps {
   models: PricingModel[]
@@ -105,10 +107,13 @@ export function PricingTable(props: PricingTableProps) {
         tableHeaderRowClassName='border-b border-[#232846]'
         getColumnClassName={(columnId) => {
           if (columnId === 'official_price') {
-            return 'border-r border-[#232846]/40 bg-[#141936]/20 text-right'
+            return `border-r border-[#232846]/40 bg-[#141936]/20 text-right whitespace-normal ${priceColumnClass}`
           }
-          if (columnId === 'special_price' || columnId === 'cache_compare') {
-            return 'border-r border-[#232846]/40 text-right'
+          if (columnId === 'special_price') {
+            return `border-r border-[#232846]/40 text-right whitespace-normal ${priceColumnClass}`
+          }
+          if (columnId === 'cache_compare') {
+            return `border-r border-[#232846]/40 text-right whitespace-normal ${cacheColumnClass}`
           }
           if (columnId === 'vendor_name') {
             return `border-r border-[#232846]/40 ${vendorColumnInsetClass}`
@@ -129,6 +134,10 @@ export function PricingTable(props: PricingTableProps) {
             getColumnClassName={(columnId) => {
               if (columnId === 'vendor_name') return vendorColumnInsetClass
               if (columnId === 'model_name') return modelIdColumnClass
+              if (columnId === 'official_price' || columnId === 'special_price') {
+                return priceColumnClass
+              }
+              if (columnId === 'cache_compare') return cacheColumnClass
               return undefined
             }}
             onClick={() => handleRowClick(row.original)}
