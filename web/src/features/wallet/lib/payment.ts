@@ -68,18 +68,22 @@ export function submitPaymentForm(
   document.body.removeChild(form)
 }
 
+function normalizePaymentType(paymentType: string | undefined | null): string {
+  return (paymentType || '').trim().toLowerCase()
+}
+
 /**
  * Check if payment method is Stripe
  */
 export function isStripePayment(paymentType: string): boolean {
-  return paymentType === PAYMENT_TYPES.STRIPE
+  return normalizePaymentType(paymentType) === PAYMENT_TYPES.STRIPE
 }
 
 /**
  * Check if payment method is Waffo
  */
 export function isWaffoPayment(paymentType: string): boolean {
-  return paymentType === PAYMENT_TYPES.WAFFO
+  return normalizePaymentType(paymentType) === PAYMENT_TYPES.WAFFO
 }
 
 /**
@@ -90,7 +94,7 @@ export function isWaffoPayment(paymentType: string): boolean {
  * special-cased in payment dispatch logic.
  */
 export function isWaffoPancakePayment(paymentType: string): boolean {
-  return paymentType === PAYMENT_TYPES.WAFFO_PANCAKE
+  return normalizePaymentType(paymentType) === PAYMENT_TYPES.WAFFO_PANCAKE
 }
 
 export interface PaymentProcessors {
@@ -106,10 +110,10 @@ export async function dispatchSelectedPayment(
   processors: PaymentProcessors
 ): Promise<boolean> {
   if (isWaffoPayment(paymentMethod.type)) {
-    if (waffoMethodIndex === null) {
-      return false
-    }
-    return processors.waffo(topupAmount, waffoMethodIndex)
+    // Index may be null when the user clicked a PayMethods entry with type=waffo
+    // instead of a Card/Apple row. Backend accepts omitted index (auto-select).
+    const index = waffoMethodIndex ?? 0
+    return processors.waffo(topupAmount, index)
   }
 
   if (isWaffoPancakePayment(paymentMethod.type)) {

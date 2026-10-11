@@ -64,23 +64,27 @@ describe('payment dispatch', () => {
     assert.deepEqual(calls, ['waffo:120:3'])
   })
 
-  test('does not create a Waffo order without a selected method index', async () => {
-    let called = false
+  test('falls back to index 0 for Waffo when confirm has no method index', async () => {
+    const calls: string[] = []
     const success = await dispatchSelectedPayment(
-      { name: 'Waffo Card', type: PAYMENT_TYPES.WAFFO },
+      { name: 'Waffo', type: 'Waffo' },
       120,
       null,
       {
-        regular: async () => false,
-        waffo: async () => {
-          called = true
+        regular: async () => {
+          calls.push('regular')
+          return false
+        },
+        waffo: async (amount, index) => {
+          calls.push(`waffo:${amount}:${index}`)
           return true
         },
         waffoPancake: async () => false,
       }
     )
 
-    assert.equal(success, false)
-    assert.equal(called, false)
+    assert.equal(success, true)
+    assert.deepEqual(calls, ['waffo:120:0'])
   })
 })
+

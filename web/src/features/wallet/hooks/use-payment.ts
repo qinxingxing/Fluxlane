@@ -27,6 +27,8 @@ import {
   calculateWaffoPancakeAmount,
   requestPayment,
   requestStripePayment,
+  requestWaffoPayment,
+  requestWaffoPancakePayment,
   isApiSuccess,
 } from '../api'
 import {
@@ -36,6 +38,26 @@ import {
   submitPaymentForm,
 } from '../lib'
 import type { AmountRequest, AmountResponse } from '../types'
+
+function paymentUrlFromData(data: unknown): string | null {
+  if (!data || typeof data !== 'object') {
+    return null
+  }
+  if ('payment_url' in data && typeof data.payment_url === 'string') {
+    return data.payment_url
+  }
+  return null
+}
+
+function paymentErrorDetail(response: {
+  message?: string
+  data?: unknown
+}): string {
+  if (typeof response.data === 'string' && response.data.trim()) {
+    return response.data
+  }
+  return response.message || i18next.t('Payment request failed')
+}
 
 // ============================================================================
 // Payment Hook
@@ -110,9 +132,52 @@ export function usePayment() {
     async (topupAmount: number, paymentType: string) => {
       try {
         setProcessing(true)
+        const amount = Math.floor(topupAmount)
+
+        // Classic Waffo must never hit Epay /api/user/pay — even if confirm
+        // fell through to the regular processor with type=waffo.
+        if (isWaffoPayment(paymentType)) {
+          const response = await requestWaffoPayment({
+            amount,
+            pay_method_index: 0,
+          })
+          if (!isApiSuccess(response)) {
+            toast.error(paymentErrorDetail(response))
+            return false
+          }
+          const paymentUrl = paymentUrlFromData(response.data)
+          if (paymentUrl) {
+            window.open(paymentUrl, '_blank')
+            toast.success(i18next.t('Redirecting to payment page...'))
+            return true
+          }
+          toast.error(i18next.t('Payment request failed'))
+          return false
+        }
+
+        if (isWaffoPancakePayment(paymentType)) {
+          const response = await requestWaffoPancakePayment({ amount })
+          if (!isApiSuccess(response)) {
+            toast.error(paymentErrorDetail(response))
+            return false
+          }
+          const checkoutUrl =
+            response.data &&
+            typeof response.data === 'object' &&
+            'checkout_url' in response.data &&
+            typeof response.data.checkout_url === 'string'
+              ? response.data.checkout_url
+              : null
+          if (checkoutUrl) {
+            toast.success(i18next.t('Redirecting to payment page...'))
+            window.location.href = checkoutUrl
+            return true
+          }
+          toast.error(i18next.t('Payment request failed'))
+          return false
+        }
 
         const isStripe = isStripePayment(paymentType)
-        const amount = Math.floor(topupAmount)
 
         const response = isStripe
           ? await requestStripePayment({
@@ -125,7 +190,7 @@ export function usePayment() {
             })
 
         if (!isApiSuccess(response)) {
-          toast.error(response.message || i18next.t('Payment request failed'))
+          toast.error(paymentErrorDetail(response))
           return false
         }
 

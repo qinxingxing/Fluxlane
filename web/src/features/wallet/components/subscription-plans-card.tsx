@@ -69,14 +69,16 @@ interface SubscriptionPlansCardProps {
 }
 
 function getEpayMethods(payMethods: PaymentMethod[] = []): PaymentMethod[] {
-  return payMethods.filter(
-    (m) =>
-      m?.type &&
-      m.type !== 'stripe' &&
-      m.type !== 'creem' &&
-      m.type !== 'waffo' &&
-      m.type !== 'waffo_pancake'
-  )
+  return payMethods.filter((m) => {
+    const type = (m?.type || '').trim().toLowerCase()
+    return (
+      !!type &&
+      type !== 'stripe' &&
+      type !== 'creem' &&
+      type !== 'waffo' &&
+      type !== 'waffo_pancake'
+    )
+  })
 }
 
 function getBillingPreferenceLabel(

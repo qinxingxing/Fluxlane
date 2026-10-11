@@ -58,9 +58,19 @@ func TestFilterTopUpPayMethods_UsesPayMethodsAsSourceOfTruth(t *testing.T) {
 	}
 
 	methods, enableWaffo := filterTopUpPayMethods(operation_setting.PayMethods)
-	require.Len(t, methods, 1, "classic waffo must not appear in pay_methods (Epay list)")
+	require.Len(t, methods, 2)
 	assert.Equal(t, "alipay", methods[0]["type"])
+	assert.Equal(t, model.PaymentMethodWaffo, methods[1]["type"])
 	assert.True(t, enableWaffo)
+
+	operation_setting.PayMethods = []map[string]string{
+		{"name": "Waffo", "type": "Waffo"},
+	}
+	methods, enableWaffo = filterTopUpPayMethods(operation_setting.PayMethods)
+	require.Len(t, methods, 1, "type Waffo (any case) must normalize into pay_methods")
+	assert.Equal(t, model.PaymentMethodWaffo, methods[0]["type"])
+	assert.True(t, enableWaffo)
+	assert.True(t, isReservedEpayPaymentMethod("Waffo"))
 
 	operation_setting.PayMethods = []map[string]string{
 		{"name": "Alipay", "type": "alipay"},

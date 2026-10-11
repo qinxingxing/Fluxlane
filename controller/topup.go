@@ -30,21 +30,24 @@ var reservedEpayPaymentMethods = map[string]struct{}{
 	model.PaymentMethodWaffoPancake: {},
 }
 
+func normalizePayMethodType(methodType string) string {
+	return strings.ToLower(strings.TrimSpace(methodType))
+}
+
 func isReservedEpayPaymentMethod(methodType string) bool {
-	_, ok := reservedEpayPaymentMethods[strings.TrimSpace(methodType)]
+	_, ok := reservedEpayPaymentMethods[normalizePayMethodType(methodType)]
 	return ok
 }
 
 // filterTopUpPayMethods keeps admin PayMethods as the wallet source of truth.
-// Stripe / Waffo Pancake appear in pay_methods only when listed and ready.
-// Classic Waffo is gated by a PayMethods entry with type=waffo, but is NOT
-// returned in pay_methods — the wallet uses enable_waffo_topup + waffo_pay_methods
-// instead. Credentials alone must never re-inject a removed method.
+// Stripe / Waffo / Waffo Pancake appear in pay_methods only when listed and ready.
+// Classic Waffo also sets enable_waffo_topup so Card/Apple rows stay available.
+// Credentials alone must never re-inject a removed method.
 func filterTopUpPayMethods(configured []map[string]string) ([]map[string]string, bool) {
 	payMethods := make([]map[string]string, 0, len(configured))
 	enableWaffo := false
 	for _, method := range configured {
-		methodType := strings.TrimSpace(method["type"])
+		methodType := normalizePayMethodType(method["type"])
 		switch methodType {
 		case "stripe":
 			if isStripeTopUpEnabled() {
@@ -55,10 +58,23 @@ func filterTopUpPayMethods(configured []map[string]string) ([]map[string]string,
 				payMethods = append(payMethods, method)
 			}
 		case model.PaymentMethodWaffo:
-			// Enable the dedicated Waffo section only; never expose type=waffo to
-			// the Epay/pay_methods click path (that yields "支付方式不存在" / wrong gateway).
 			if isWaffoTopUpEnabled() {
 				enableWaffo = true
+				// Normalize type so the wallet always sees lowercase "waffo".
+				normalized := map[string]string{
+					"name": method["name"],
+					"type": model.PaymentMethodWaffo,
+				}
+				if color := method["color"]; color != "" {
+					normalized["color"] = color
+				}
+				if icon := method["icon"]; icon != "" {
+					normalized["icon"] = icon
+				}
+				if minTopup := method["min_topup"]; minTopup != "" {
+					normalized["min_topup"] = minTopup
+				}
+				payMethods = append(payMethods, normalized)
 			}
 		default:
 			if methodType != "" && !isReservedEpayPaymentMethod(methodType) {
@@ -191,6 +207,15 @@ func RequestEpay(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
 		return
 	}
+
+	// Older consoles POST type=waffo to /api/user/pay. Route to classic Waffo
+	// checkout instead of Epay so confirm still opens a Waffo payment URL.
+	if normalizePayMethodType(req.PaymentMethod) == model.PaymentMethodWaffo {
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付入口收到 Waffo，转发至 Waffo 收银台 user_id=%d amount=%d", c.GetInt("id"), req.Amount))
+		processWaffoPay(c, WaffoPayRequest{Amount: req.Amount})
+		return
+	}
+
 	if req.Amount < getMinTopup() {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", getMinTopup())})
 		return

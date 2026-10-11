@@ -171,8 +171,14 @@ export function Wallet(props: WalletProps) {
 
   // Handle payment method selection
   const handlePaymentMethodSelect = async (method: PaymentMethod) => {
-    setSelectedPaymentMethod(method)
-    setSelectedWaffoMethodIndex(null)
+    const isWaffo = method.type.trim().toLowerCase() === PAYMENT_TYPES.WAFFO
+    setSelectedPaymentMethod(
+      isWaffo
+        ? { ...method, type: PAYMENT_TYPES.WAFFO }
+        : method
+    )
+    // Keep a usable Waffo method index so confirm never falls through to Epay.
+    setSelectedWaffoMethodIndex(isWaffo ? 0 : null)
     setPaymentLoading(method.type)
 
     try {
@@ -183,7 +189,10 @@ export function Wallet(props: WalletProps) {
       }
 
       // Calculate payment amount and show confirmation dialog
-      await calculatePaymentAmount(topupAmount, method.type)
+      await calculatePaymentAmount(
+        topupAmount,
+        isWaffo ? PAYMENT_TYPES.WAFFO : method.type
+      )
       setConfirmDialogOpen(true)
     } finally {
       setPaymentLoading(null)
