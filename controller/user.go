@@ -221,7 +221,7 @@ func Register(c *gin.Context) {
 	user.Username = strings.TrimSpace(user.Username)
 	user.Email = model.NormalizeEmail(user.Email)
 	phone, phoneErr := model.NormalizePhone(user.Phone)
-	if phoneErr != nil {
+	if phoneErr != nil || phone == "" {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
@@ -242,7 +242,7 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
 		return
 	}
-	if phone != "" && model.IsPhoneAlreadyTaken(phone) {
+	if model.IsPhoneAlreadyTaken(phone) {
 		common.ApiErrorI18n(c, i18n.MsgUserPhoneAlreadyTaken)
 		return
 	}

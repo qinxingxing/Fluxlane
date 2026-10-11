@@ -56,12 +56,20 @@ describe('registerFormSchema', () => {
     assert.equal(result.success, false)
   })
 
-  test('accepts a blank phone number when the email code is present', () => {
+  test('rejects a blank phone number', () => {
     const result = registerFormSchema.safeParse({
       ...validRegistration,
       phone: '',
     })
-    assert.equal(result.success, true)
+    assert.equal(result.success, false)
+    if (!result.success) {
+      assert.equal(
+        result.error.issues.some(
+          (issue) => issue.message === 'Please enter your phone number'
+        ),
+        true
+      )
+    }
   })
 
   test('rejects a missing email verification code', () => {
@@ -72,7 +80,7 @@ describe('registerFormSchema', () => {
     assert.equal(result.success, false)
   })
 
-  test('accepts username, email, optional phone, email code, and matching passwords', () => {
+  test('accepts username, email, phone, email code, and matching passwords', () => {
     const result = registerFormSchema.safeParse(validRegistration)
     assert.equal(result.success, true)
   })

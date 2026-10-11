@@ -39,7 +39,7 @@ export const registerFormSchema = z
       .email({ message: 'Please enter a valid email address' })
       .max(50, 'Please enter a valid email address'),
     countryCode: z.enum(['+86', '+1', '+852', '+65']),
-    phone: z.string().trim(),
+    phone: z.string().trim().min(1, 'Please enter your phone number'),
     verificationCode: z
       .string()
       .trim()
@@ -55,15 +55,10 @@ export const registerFormSchema = z
     message: "Passwords don't match.",
     path: ['confirmPassword'],
   })
-  .refine(
-    (data) =>
-      data.phone.length === 0 ||
-      isRegistrationPhone(data.countryCode, data.phone),
-    {
-      message: 'Please enter a valid phone number',
-      path: ['phone'],
-    }
-  )
+  .refine((data) => isRegistrationPhone(data.countryCode, data.phone), {
+    message: 'Please enter a valid phone number',
+    path: ['phone'],
+  })
 
 export const forgotPasswordFormSchema = z.object({
   email: z.string().email({

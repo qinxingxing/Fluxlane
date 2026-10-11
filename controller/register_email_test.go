@@ -123,7 +123,7 @@ func TestRegisterStoresEmailAndUnverifiedPhone(t *testing.T) {
 	assert.Equal(t, phone, user.Phone)
 }
 
-func TestRegisterAllowsAMissingPhone(t *testing.T) {
+func TestRegisterRejectsAMissingPhone(t *testing.T) {
 	setupRegisterTestDB(t)
 	require.NoError(t, common.RegisterVerificationCodeWithKey("nophone@example.com", "654321", common.EmailVerificationPurpose))
 
@@ -134,12 +134,12 @@ func TestRegisterAllowsAMissingPhone(t *testing.T) {
 		"verification_code":"654321"
 	}`)
 
-	require.Equal(t, http.StatusOK, recorder.Code)
-	require.Contains(t, recorder.Body.String(), `"success":true`)
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), `"success":false`)
+	assert.Contains(t, recorder.Body.String(), "common.invalid_params")
 
-	user, err := model.GetUniqueUserByEmail("nophone@example.com")
-	require.NoError(t, err)
-	assert.Equal(t, "", user.Phone)
+	_, err := model.GetUniqueUserByEmail("nophone@example.com")
+	assert.Error(t, err)
 }
 
 func TestRegisterRejectsAPhoneThatIsAlreadyUsed(t *testing.T) {

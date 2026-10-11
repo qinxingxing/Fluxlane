@@ -189,16 +189,12 @@ export function SignUpForm({
       return
     }
 
-    let phone = ''
-    if (data.phone.trim()) {
-      const builtPhone = buildRegistrationPhone(data.countryCode, data.phone)
-      if (!builtPhone) {
-        form.setError('phone', {
-          message: t('Please enter a valid phone number'),
-        })
-        return
-      }
-      phone = builtPhone
+    const phone = buildRegistrationPhone(data.countryCode, data.phone)
+    if (!phone) {
+      form.setError('phone', {
+        message: t('Please enter a valid phone number'),
+      })
+      return
     }
 
     if (!validateTurnstile()) return
@@ -466,6 +462,7 @@ export function SignUpForm({
                         type='tel'
                         autoComplete='tel-national'
                         inputMode='numeric'
+                        aria-required='true'
                         className={authFieldClassName}
                         {...field}
                       />
