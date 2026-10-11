@@ -212,7 +212,7 @@ func RequestEpay(c *gin.Context) {
 	// checkout instead of Epay so confirm still opens a Waffo payment URL.
 	if normalizePayMethodType(req.PaymentMethod) == model.PaymentMethodWaffo {
 		logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付入口收到 Waffo，转发至 Waffo 收银台 user_id=%d amount=%d", c.GetInt("id"), req.Amount))
-		processWaffoPay(c, WaffoPayRequest{Amount: req.Amount})
+		processWaffoPay(c, WaffoPayRequest{Amount: req.Amount}, true)
 		return
 	}
 

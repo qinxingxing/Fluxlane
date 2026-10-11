@@ -143,12 +143,13 @@ func RequestWaffoPay(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
 		return
 	}
-	processWaffoPay(c, req)
+	processWaffoPay(c, req, false)
 }
 
 // processWaffoPay creates a classic Waffo checkout order.
 // Also used when /api/user/pay receives payment_method=waffo from older consoles.
-func processWaffoPay(c *gin.Context, req WaffoPayRequest) {
+// epayCompat returns top-level "url" + empty data for legacy submitPaymentForm.
+func processWaffoPay(c *gin.Context, req WaffoPayRequest, epayCompat bool) {
 	if !setting.WaffoEnabled {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Waffo 支付未启用"})
 		return
@@ -306,6 +307,16 @@ func processWaffoPay(c *gin.Context, req WaffoPayRequest) {
 		paymentUrl = orderData.OrderAction
 	}
 
+	if epayCompat {
+		// Legacy wallet posts here via /api/user/pay then submitPaymentForm(url, data).
+		// Empty data avoids sending Waffo-unknown form fields to the checkout URL.
+		c.JSON(http.StatusOK, gin.H{
+			"message": "success",
+			"url":     paymentUrl,
+			"data":    gin.H{},
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "success",
 		"data": gin.H{
