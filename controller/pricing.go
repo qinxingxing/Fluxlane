@@ -33,6 +33,26 @@ func filterPricingByUsableGroups(pricing []model.Pricing, usableGroup map[string
 	return filtered
 }
 
+func pricingGroupRatios(pricing []model.Pricing, usableGroup map[string]string, groupRatio map[string]float64) map[string]float64 {
+	mounted := make(map[string]struct{})
+	for _, item := range pricing {
+		for _, group := range item.EnableGroup {
+			mounted[group] = struct{}{}
+		}
+	}
+	displayed := make(map[string]float64, len(groupRatio))
+	for name, ratio := range groupRatio {
+		if _, ok := usableGroup[name]; ok {
+			displayed[name] = ratio
+			continue
+		}
+		if _, ok := mounted[name]; ok {
+			displayed[name] = ratio
+		}
+	}
+	return displayed
+}
+
 func GetPricing(c *gin.Context) {
 	pricing := model.GetPricing()
 	userId, exists := c.Get("id")
@@ -57,12 +77,7 @@ func GetPricing(c *gin.Context) {
 
 	usableGroup = service.GetUserUsableGroups(group)
 	pricing = filterPricingByUsableGroups(pricing, usableGroup)
-	// check groupRatio contains usableGroup
-	for group := range ratio_setting.GetGroupRatioCopy() {
-		if _, ok := usableGroup[group]; !ok {
-			delete(groupRatio, group)
-		}
-	}
+	groupRatio = pricingGroupRatios(pricing, usableGroup, groupRatio)
 
 	c.JSON(200, gin.H{
 		"success":            true,

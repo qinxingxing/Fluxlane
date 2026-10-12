@@ -34,6 +34,7 @@ auth.user_banned: "User has been banned"
 auth.insufficient_privilege: "Unauthorized, insufficient privileges"
 
 # Token messages
+token.group_official_only: "API keys can only use the official group"
 token.name_too_long: "Token name is too long"
 token.quota_negative: "Quota value cannot be negative"
 token.quota_exceed_max: "Quota value exceeds valid range, maximum is {{.Max}}"

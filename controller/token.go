@@ -299,6 +299,9 @@ func AddToken(c *gin.Context) {
 		})
 		return
 	}
+	if !assignCustomerTokenGroup(c, &token) {
+		return
+	}
 	if token.Group == "auto" {
 		if !setTokenAutoGroups(c, &token, request.AutoGroups.Groups) {
 			return
@@ -407,7 +410,10 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.AllowIps = token.AllowIps
 		cleanToken.Group = token.Group
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
-		if token.Group != "auto" {
+		if !assignCustomerTokenGroup(c, cleanToken) {
+			return
+		}
+		if cleanToken.Group != "auto" {
 			cleanToken.CrossGroupRetry = false
 			_ = cleanToken.SetAutoGroups(nil)
 		} else if request.AutoGroups.Set {
@@ -449,6 +455,20 @@ func DeleteTokenBatch(c *gin.Context) {
 		"message": "",
 		"data":    count,
 	})
+}
+
+func assignCustomerTokenGroup(c *gin.Context, token *model.Token) bool {
+	if c.GetInt("role") >= common.RoleAdminUser {
+		return true
+	}
+	if token.Group != "" && token.Group != service.OfficialGroupName {
+		common.ApiErrorI18n(c, i18n.MsgTokenGroupOfficialOnly)
+		return false
+	}
+	token.Group = service.OfficialGroupName
+	token.CrossGroupRetry = false
+	_ = token.SetAutoGroups(nil)
+	return true
 }
 
 func GetTokenKeysBatch(c *gin.Context) {

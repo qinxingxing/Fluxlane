@@ -27,6 +27,13 @@ type options struct {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "group-factor" {
+		if err := runGroupFactor(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "group-factor: %s\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "unpriced-official-08: %s\n", err)
 		os.Exit(1)
