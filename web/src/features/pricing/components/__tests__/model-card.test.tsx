@@ -183,7 +183,7 @@ describe('model marketplace card', () => {
     container.remove()
   })
 
-  test('shows list price and a 6折 special price on the claude-fable-5 card', async () => {
+  test('shows official and platform prices from the official group on the claude-fable-5 card', async () => {
     const container = document.createElement('div')
     document.body.append(container)
     const root = createRoot(container)
@@ -212,14 +212,18 @@ describe('model marketplace card', () => {
     assert.ok(prices)
     const list = container.querySelector('[data-price-tier="list"]')
     const special = container.querySelector('[data-price-tier="special"]')
-    assert.match(list?.textContent ?? '', /Official pricing/)
-    assert.match(list?.textContent ?? '', /Input \$10/)
-    assert.match(list?.textContent ?? '', /Output \$50/)
-    assert.equal((list?.textContent ?? '').includes('6折'), false)
+    const listText = list?.textContent ?? ''
+    assert.match(listText, /Official pricing/)
+    assert.match(listText, /Input \$10(?!\d)/)
+    assert.match(listText, /Output \$50(?!\d)/)
+    assert.equal(listText.includes('9.5折'), false)
+    assert.equal(listText.includes('6折'), false)
     const specialText = special?.textContent ?? ''
     assert.match(specialText, /Platform pricing/)
-    assert.match(specialText, /Input \$6\s*6折/)
-    assert.match(specialText, /Output \$30\s*6折/)
+    assert.match(specialText, /Input \$10/)
+    assert.match(specialText, /Output \$50/)
+    assert.match(specialText, /9\.5折/)
+    assert.equal(specialText.includes('6折'), false)
     assert.equal(specialText.includes('Platform pricing6折'), false)
     assert.equal(specialText.includes('0.6'), false)
     assert.equal(specialText.includes('%'), false)

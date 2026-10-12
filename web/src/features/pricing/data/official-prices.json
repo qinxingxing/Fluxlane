@@ -1,0 +1,420 @@
+{
+  "models": {
+    "claude-fable-5": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 10 + cr * 1 + cc * 12.5 + cc1h * 20 + c * 50)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "claude-fable-5-1": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 10 + cr * 0.25 + cc * 12.5 + cc1h * 20 + c * 50)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "claude-haiku-4-5-20251001": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1 + cr * 0.1 + cc * 1.25 + cc1h * 2 + c * 5)",
+      "model_ratio": 0.5,
+      "completion_ratio": 5
+    },
+    "claude-haiku-5-5": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 100000 ? tier(\"0_100k\", p * 0.1 + cr * 0.01 + cc * 0.125 + cc1h * 0.2 + c * 0.5) : tier(\"100k_plus\", p * 0.5 + cr * 0.05 + cc * 0.625 + cc1h * 1 + c * 2.5)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "claude-opus-4-250514": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 15 + cr * 1.5 + cc * 18.75 + cc1h * 30 + c * 75)",
+      "model_ratio": 37.5,
+      "completion_ratio": 5
+    },
+    "claude-opus-4-6": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 5 + cr * 0.5 + cc * 6.25 + cc1h * 10 + c * 25)",
+      "model_ratio": 2.5,
+      "completion_ratio": 5
+    },
+    "claude-opus-4-7": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 5 + cr * 0.5 + cc * 6.25 + cc1h * 10 + c * 25)",
+      "model_ratio": 2.5,
+      "completion_ratio": 5
+    },
+    "claude-opus-4-8": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 5 + cr * 0.5 + cc * 6.25 + cc1h * 10 + c * 25)",
+      "model_ratio": 2.5,
+      "completion_ratio": 5
+    },
+    "claude-opus-5": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 5 + cr * 0.5 + cc * 6.25 + cc1h * 10 + c * 25)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "claude-opus-5-5": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 4 + cr * 0.2 + cc * 5 + cc1h * 8 + c * 20)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "claude-sonnet-4-20250514": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 1.5,
+      "completion_ratio": 5
+    },
+    "claude-sonnet-4-5-20250929": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 3 + cr * 0.3 + cc * 3.75 + cc1h * 6 + c * 15)",
+      "model_ratio": 1.5,
+      "completion_ratio": 5
+    },
+    "claude-sonnet-4-6": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 3 + cr * 0.3 + cc * 3.75 + cc1h * 6 + c * 15)",
+      "model_ratio": 37.5,
+      "completion_ratio": 5
+    },
+    "claude-sonnet-5": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 2 + cr * 0.2 + cc * 2.5 + cc1h * 4 + c * 10)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "claude-sonnet-5-5": {
+      "group": "Anthropic",
+      "factor": 0.95,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 2 + cr * 0.1 + cc * 2.5 + cc1h * 4 + c * 10)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "deepseek-v4-flash": {
+      "group": "DeepSeek",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "weekday(\"UTC\") >= 1 && weekday(\"UTC\") <= 5 && ((hour(\"UTC\") >= 1 && hour(\"UTC\") < 4) || (hour(\"UTC\") >= 6 && hour(\"UTC\") < 10)) ? tier(\"peak\", p * 0.3 + cr * 0.006 + c * 1.2) : tier(\"off_peak\", p * 0.15 + cr * 0.003 + c * 0.6)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "deepseek-v4-flash-0731": {
+      "group": "DeepSeek",
+      "factor": 0.8,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.08,
+      "completion_ratio": 3.15
+    },
+    "deepseek-v4-pro": {
+      "group": "DeepSeek",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "weekday(\"UTC\") >= 1 && weekday(\"UTC\") <= 5 && ((hour(\"UTC\") >= 1 && hour(\"UTC\") < 4) || (hour(\"UTC\") >= 6 && hour(\"UTC\") < 10)) ? tier(\"peak\", p * 1.32 + cr * 0.044 + c * 3.96) : tier(\"off_peak\", p * 0.66 + cr * 0.022 + c * 1.98)",
+      "model_ratio": 0.5655,
+      "completion_ratio": 2
+    },
+    "deepseek-v4-pro-0813": {
+      "group": "DeepSeek",
+      "factor": 0.8,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.66,
+      "completion_ratio": 1
+    },
+    "deepseek-v4.1-flash": {
+      "group": "DeepSeek",
+      "factor": 0.8,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.1575,
+      "completion_ratio": 4
+    },
+    "glm-4.7": {
+      "group": "智谱",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.6 + cr * 0.11 + cc * 0 + c * 2.2)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "glm-5.2": {
+      "group": "智谱",
+      "factor": 0.8,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.525,
+      "completion_ratio": 1
+    },
+    "glm-5.3": {
+      "group": "智谱",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.4 + cr * 0.26 + cc * 0 + c * 4.4)",
+      "model_ratio": 0.5465,
+      "completion_ratio": 3.577310155535
+    },
+    "glm-5.3-flash": {
+      "group": "智谱",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.15 + cr * 0.03 + cc * 0 + c * 0.5)",
+      "model_ratio": 0.079,
+      "completion_ratio": 3.322784810127
+    },
+    "gpt-4.1": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 1,
+      "completion_ratio": 2
+    },
+    "gpt-4.1-mini": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.2,
+      "completion_ratio": 2
+    },
+    "gpt-4o-mini-tts": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.6 + ao * 12)",
+      "model_ratio": 0,
+      "completion_ratio": 0
+    },
+    "gpt-5": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.625,
+      "completion_ratio": 8
+    },
+    "gpt-5-codex": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.25 + cr * 0.125 + c * 10)",
+      "model_ratio": 37.5,
+      "completion_ratio": 8
+    },
+    "gpt-5-mini": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.125,
+      "completion_ratio": 8
+    },
+    "gpt-5-nano": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.025,
+      "completion_ratio": 8
+    },
+    "gpt-5.1": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.25 + cr * 0.125 + c * 10)",
+      "model_ratio": 37.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.1-codex": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.25 + cr * 0.125 + c * 10)",
+      "model_ratio": 37.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.1-codex-mini": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.25 + cr * 0.025 + c * 2)",
+      "model_ratio": 37.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.2": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.75 + cr * 0.175 + c * 14)",
+      "model_ratio": 37.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.4": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 2.5 + cr * 0.25 + c * 15) : tier(\"272k_plus\", p * 5 + cr * 0.5 + c * 22.5)",
+      "model_ratio": 37.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.4-mini": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.75 + cr * 0.075 + c * 4.5)",
+      "model_ratio": 37.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.6-luna": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 0.2 + cr * 0.02 + cc * 0.25 + c * 1.2) : tier(\"272k_plus\", p * 0.4 + cr * 0.04 + cc * 0.5 + c * 1.8)",
+      "model_ratio": 0.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.6-sol": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 4 + cr * 0.4 + cc * 5 + c * 20) : tier(\"272k_plus\", p * 8 + cr * 0.8 + cc * 10 + c * 30)",
+      "model_ratio": 2.5,
+      "completion_ratio": 6
+    },
+    "gpt-5.6-terra": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 2 + cr * 0.2 + cc * 2.5 + c * 12) : tier(\"272k_plus\", p * 4 + cr * 0.4 + cc * 5 + c * 18)",
+      "model_ratio": 1.25,
+      "completion_ratio": 6
+    },
+    "gpt-6-astra": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 10 + cr * 1 + cc * 12.5 + c * 50) : tier(\"272k_plus\", p * 20 + cr * 2 + cc * 25 + c * 75)",
+      "model_ratio": 37.5,
+      "completion_ratio": 2
+    },
+    "gpt-6-luna": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 0.1 + cr * 0.01 + cc * 0.125 + c * 0.5) : tier(\"272k_plus\", p * 0.2 + cr * 0.02 + cc * 0.25 + c * 0.75)",
+      "model_ratio": 37.5,
+      "completion_ratio": 2
+    },
+    "gpt-6-sol": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 2 + cr * 0.2 + cc * 2.5 + c * 10) : tier(\"272k_plus\", p * 4 + cr * 0.4 + cc * 5 + c * 15)",
+      "model_ratio": 37.5,
+      "completion_ratio": 2
+    },
+    "gpt-6.1-sol": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "len <= 272000 ? tier(\"0_272k\", p * 2 + cr * 0.1 + cc * 2.5 + c * 10) : tier(\"272k_plus\", p * 4 + cr * 0.2 + cc * 5 + c * 15)",
+      "model_ratio": 37.5,
+      "completion_ratio": 2
+    },
+    "kimi-k2.5": {
+      "group": "Kimi",
+      "factor": 0.8,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.25,
+      "completion_ratio": 5.4
+    },
+    "kimi-k2.6": {
+      "group": "Kimi",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.95 + cr * 0.16 + c * 4)",
+      "model_ratio": 0.499,
+      "completion_ratio": 4.208416833667
+    },
+    "kimi-k2.7-code": {
+      "group": "Kimi",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 0.95 + cr * 0.19 + c * 4)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "kimi-k2.7-code-highspeed": {
+      "group": "Kimi",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.9 + cr * 0.38 + c * 8)",
+      "model_ratio": 37.5,
+      "completion_ratio": 1
+    },
+    "kimi-k3": {
+      "group": "Kimi",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 3 + cr * 0.3 + cc * 3 + c * 15)",
+      "model_ratio": 1.339,
+      "completion_ratio": 5
+    },
+    "minimax-m2.5": {
+      "group": "DeepSeek",
+      "factor": 0.8,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.15,
+      "completion_ratio": 4
+    },
+    "o3": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 1,
+      "completion_ratio": 4
+    },
+    "o4-mini": {
+      "group": "Openai",
+      "factor": 0.9,
+      "billing_mode": "",
+      "billing_expr": "",
+      "model_ratio": 0.55,
+      "completion_ratio": 1
+    }
+  }
+}

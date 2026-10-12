@@ -19,11 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 import { ArrowLeftRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { formatDiscountOffPercent, type ChannelKey } from '../lib/dual-price'
 import {
-  formatDiscountOffPercent,
-  getChannelOffer,
-  type ChannelKey,
-} from '../lib/dual-price'
+  channelDiscountRatio,
+  channelPriceBasis,
+} from '../lib/official-catalog'
 import {
   getDynamicPricingSummary,
   isDynamicPricingModel,
@@ -91,16 +91,16 @@ function ratesForChannel(
   dynamicLabel: string,
   labelFor: (key: string) => string
 ): ChannelRates | null {
-  const offer = getChannelOffer(model, channel)
-  if (!offer) return null
+  const basis = channelPriceBasis(model, channel)
+  if (!basis) return null
 
-  if (isDynamicPricingModel(model)) {
-    const summary = getDynamicPricingSummary(model, {
+  if (isDynamicPricingModel(basis.model)) {
+    const summary = getDynamicPricingSummary(basis.model, {
       tokenUnit: options.tokenUnit,
       showRechargePrice: options.showRechargePrice,
       priceRate: options.priceRate,
       usdExchangeRate: options.usdExchangeRate,
-      groupRatioMultiplier: offer.ratio,
+      groupRatioMultiplier: basis.ratio,
     })
     if (!summary || summary.isSpecialExpression) {
       return { input: null, output: null, extra: [], fallback: dynamicLabel }
@@ -124,15 +124,15 @@ function ratesForChannel(
     }
   }
 
-  if (!isTokenBasedModel(model)) {
+  if (!isTokenBasedModel(basis.model)) {
     return {
       input: stripTrailingZeros(
         formatRequestPrice(
-          model,
+          basis.model,
           options.showRechargePrice,
           options.priceRate,
           options.usdExchangeRate,
-          offer.group
+          basis.group
         )
       ),
       output: null,
@@ -142,26 +142,31 @@ function ratesForChannel(
   }
 
   const extra: RateLine[] = []
-  if (model.cache_ratio != null) {
+  if (basis.model.cache_ratio != null) {
     extra.push({
       key: 'cache',
       label: labelFor('Cache Read'),
-      formatted: formatTokenPrice(model, 'cache', offer.group, options),
+      formatted: formatTokenPrice(basis.model, 'cache', basis.group, options),
       cache: true,
     })
   }
-  if (model.create_cache_ratio != null) {
+  if (basis.model.create_cache_ratio != null) {
     extra.push({
       key: 'create-cache',
       label: labelFor('Cache Write'),
-      formatted: formatTokenPrice(model, 'create_cache', offer.group, options),
+      formatted: formatTokenPrice(
+        basis.model,
+        'create_cache',
+        basis.group,
+        options
+      ),
       cache: true,
     })
   }
 
   return {
-    input: formatTokenPrice(model, 'input', offer.group, options),
-    output: formatTokenPrice(model, 'output', offer.group, options),
+    input: formatTokenPrice(basis.model, 'input', basis.group, options),
+    output: formatTokenPrice(basis.model, 'output', basis.group, options),
     extra,
     fallback: null,
   }
@@ -210,8 +215,10 @@ function ChannelCard(props: {
   options: RateOptions
 }) {
   const { t } = useTranslation()
-  const offer = getChannelOffer(props.model, props.channel)
-  const discount = offer ? formatDiscountOffPercent(offer.ratio) : null
+  const discount =
+    props.channel === 'special'
+      ? formatDiscountOffPercent(channelDiscountRatio(props.model) ?? 1)
+      : null
   const rates = ratesForChannel(
     props.model,
     props.channel,
@@ -320,7 +327,7 @@ export function ChannelRateCards(props: {
   )
 
   return (
-    <section className='flex flex-col gap-4'>
+    <section className='flex flex-col gap-5'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <div className='flex items-center gap-2'>
           <ArrowLeftRight className='size-5 text-[#a2e7ff]' aria-hidden='true' />

@@ -27,11 +27,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
+import { formatDiscountOffPercent, type ChannelKey } from '../lib/dual-price'
 import {
-  formatDiscountOffPercent,
-  getChannelOffer,
-  type ChannelKey,
-} from '../lib/dual-price'
+  channelDiscountRatio,
+  channelPriceBasis,
+} from '../lib/official-catalog'
 import {
   getDynamicPricingSummary,
   isDynamicPricingModel,
@@ -79,16 +79,16 @@ function quoteChannel(
   options: QuoteOptions,
   dynamicLabel: string
 ): ChannelQuote | null {
-  const offer = getChannelOffer(model, channel)
-  if (!offer) return null
+  const basis = channelPriceBasis(model, channel)
+  if (!basis) return null
 
-  if (isDynamicPricingModel(model)) {
-    const summary = getDynamicPricingSummary(model, {
+  if (isDynamicPricingModel(basis.model)) {
+    const summary = getDynamicPricingSummary(basis.model, {
       tokenUnit: options.tokenUnit,
       showRechargePrice: options.showRechargePrice,
       priceRate: options.priceRate,
       usdExchangeRate: options.usdExchangeRate,
-      groupRatioMultiplier: offer.ratio,
+      groupRatioMultiplier: basis.ratio,
     })
     if (!summary || summary.isSpecialExpression) {
       return { amounts: [], cache: null, fallback: dynamicLabel }
@@ -106,16 +106,16 @@ function quoteChannel(
     }
   }
 
-  if (!isTokenBasedModel(model)) {
+  if (!isTokenBasedModel(basis.model)) {
     return {
       amounts: [
         {
           formatted: formatRequestPrice(
-            model,
+            basis.model,
             options.showRechargePrice,
             options.priceRate,
             options.usdExchangeRate,
-            offer.group
+            basis.group
           ),
           tag: null,
         },
@@ -126,17 +126,17 @@ function quoteChannel(
   }
 
   const cache =
-    model.cache_ratio == null
+    basis.model.cache_ratio == null
       ? null
       : stripTrailingZeros(
           formatPrice(
-            model,
+            basis.model,
             'cache',
             options.tokenUnit,
             options.showRechargePrice,
             options.priceRate,
             options.usdExchangeRate,
-            offer.group
+            basis.group
           )
         )
 
@@ -144,25 +144,25 @@ function quoteChannel(
     amounts: [
       {
         formatted: formatPrice(
-          model,
+          basis.model,
           'input',
           options.tokenUnit,
           options.showRechargePrice,
           options.priceRate,
           options.usdExchangeRate,
-          offer.group
+          basis.group
         ),
         tag: 'in',
       },
       {
         formatted: formatPrice(
-          model,
+          basis.model,
           'output',
           options.tokenUnit,
           options.showRechargePrice,
           options.priceRate,
           options.usdExchangeRate,
-          offer.group
+          basis.group
         ),
         tag: 'out',
       },
@@ -380,10 +380,8 @@ export function ChannelPriceCell(props: {
 }
 
 export function ChannelDiscountBadge(props: { model: PricingModel }) {
-  const list = getChannelOffer(props.model, 'list')
-  const special = getChannelOffer(props.model, 'special')
-  const discount =
-    list && special ? formatDiscountOffPercent(special.ratio) : null
+  const ratio = channelDiscountRatio(props.model)
+  const discount = ratio == null ? null : formatDiscountOffPercent(ratio)
   if (!discount) return <EmptyPrice />
 
   return (

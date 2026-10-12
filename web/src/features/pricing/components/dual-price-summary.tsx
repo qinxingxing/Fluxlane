@@ -21,10 +21,14 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 import {
-  formatDualPriceDiscount,
+  formatDiscountFold,
   getFableDualPriceOffers,
   type DualPriceOffer,
 } from '../lib/dual-price'
+import {
+  channelDiscountRatio,
+  channelPriceBasis,
+} from '../lib/official-catalog'
 import {
   getDynamicPricingSummary,
   type DynamicPriceEntry,
@@ -46,14 +50,20 @@ export function DualPriceSummary(props: {
   const offers = getFableDualPriceOffers(props.model)
   if (!offers) return null
 
+  const discountRatio = channelDiscountRatio(props.model)
+  const platformFold =
+    discountRatio == null ? null : formatDiscountFold(discountRatio)
   const rows = offers.map((offer) => {
-    const summary = getDynamicPricingSummary(props.model, {
-      tokenUnit: props.tokenUnit,
-      showRechargePrice: props.showRechargePrice,
-      priceRate: props.priceRate,
-      usdExchangeRate: props.usdExchangeRate,
-      groupRatioMultiplier: offer.ratio,
-    })
+    const basis = channelPriceBasis(props.model, offer.key)
+    const summary = basis
+      ? getDynamicPricingSummary(basis.model, {
+          tokenUnit: props.tokenUnit,
+          showRechargePrice: props.showRechargePrice,
+          priceRate: props.priceRate,
+          usdExchangeRate: props.usdExchangeRate,
+          groupRatioMultiplier: basis.ratio,
+        })
+      : null
     const entries =
       props.fields === 'cache'
         ? (summary?.entries.filter(
@@ -84,7 +94,7 @@ export function DualPriceSummary(props: {
               emphasize={row.offer.key === 'special'}
               fold={
                 row.offer.key === 'special'
-                  ? formatDualPriceDiscount(row.offer.ratio)
+                  ? platformFold
                   : null
               }
             />
@@ -111,9 +121,10 @@ export function DualPriceSummary(props: {
                   </div>
                   <div className='text-foreground mt-1 font-mono text-base font-semibold tabular-nums'>
                     {entry.formatted}
-                    {row.offer.key === 'special' ? (
+                    {row.offer.key === 'special' &&
+                    platformFold ? (
                       <span className='text-primary ml-1.5 text-xs font-semibold'>
-                        {formatDualPriceDiscount(row.offer.ratio)}
+                        {platformFold}
                       </span>
                     ) : null}
                   </div>
@@ -152,9 +163,9 @@ export function DualPriceSummary(props: {
                 {t(entry.shortLabel)}{' '}
                 <strong className='text-foreground font-semibold'>
                   {entry.formatted}
-                  {isSpecial ? (
+                  {isSpecial && platformFold ? (
                     <span className='text-primary ml-1 text-[11px]'>
-                      {formatDualPriceDiscount(row.offer.ratio)}
+                      {platformFold}
                     </span>
                   ) : null}
                 </strong>

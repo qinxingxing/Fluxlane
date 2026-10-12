@@ -23,7 +23,6 @@ const FABLE_DUAL_PRICE_MODEL = 'claude-fable-5'
 const OFFICIAL_GROUP = '官方'
 const SPECIAL_GROUP_MARK = '特价'
 const DEFAULT_LIST_RATIO = 1
-const DEFAULT_SPECIAL_RATIO = 0.6
 
 export type DualPriceOffer = {
   key: 'list' | 'special'
@@ -37,6 +36,14 @@ function readPositiveRatio(value: unknown): number | null {
     : null
 }
 
+function isOfficialGroupName(name: string): boolean {
+  return name.includes(OFFICIAL_GROUP) && !name.includes(SPECIAL_GROUP_MARK)
+}
+
+function isPlatformGroupName(name: string): boolean {
+  return !name.includes(SPECIAL_GROUP_MARK) && !isOfficialGroupName(name)
+}
+
 function isSameChannelGroup(left: string, right: string): boolean {
   if (left === right) return true
   const leftSpecial = left.includes(SPECIAL_GROUP_MARK)
@@ -44,31 +51,50 @@ function isSameChannelGroup(left: string, right: string): boolean {
   if (leftSpecial && rightSpecial) {
     return left.includes(right) || right.includes(left)
   }
-  const leftOfficial = left.includes(OFFICIAL_GROUP) && !leftSpecial
-  const rightOfficial = right.includes(OFFICIAL_GROUP) && !rightSpecial
+  const leftOfficial = isOfficialGroupName(left)
+  const rightOfficial = isOfficialGroupName(right)
   if (leftOfficial && rightOfficial) {
     return left.includes(right) || right.includes(left)
   }
   return false
 }
 
-function ratioEntries(model: PricingModel): Array<[string, number]> {
+function lookupGroupRatio(model: PricingModel, groupName: string): number | null {
   const ratios = model.group_ratio ?? {}
-  const enabled = model.enable_groups ?? []
-  const parsed = Object.entries(ratios).flatMap(([name, ratio]) => {
+  const exact = readPositiveRatio(ratios[groupName])
+  if (exact != null) return exact
+  for (const [name, ratio] of Object.entries(ratios)) {
+    if (!isSameChannelGroup(name, groupName)) continue
     const value = readPositiveRatio(ratio)
-    return value == null ? [] : [[name, value] as [string, number]]
-  })
-  if (enabled.length === 0) return parsed
-  const enabledEntries = parsed.filter(([name]) =>
-    enabled.some((group) => isSameChannelGroup(name, group))
-  )
-  return enabledEntries.length > 0 ? enabledEntries : parsed
+    if (value != null) return value
+  }
+  return null
+}
+
+function officialOffer(
+  model: PricingModel
+): { group: string; ratio: number } | null {
+  const name = (model.enable_groups ?? []).find(isOfficialGroupName)
+  if (!name) return null
+  const ratio = lookupGroupRatio(model, name)
+  return ratio == null ? null : { group: name, ratio }
+}
+
+function platformOffer(
+  model: PricingModel
+): { group: string; ratio: number } | null {
+  for (const name of model.enable_groups ?? []) {
+    if (!isPlatformGroupName(name)) continue
+    const ratio = lookupGroupRatio(model, name)
+    if (ratio != null) return { group: name, ratio }
+  }
+  return officialOffer(model)
 }
 
 /**
- * claude-fable-5 is sold on two groups: official list price, and a special
- * group priced at a fraction of that list (currently 60%).
+ * Official pricing reads the 官方 group. Platform pricing reads the model's
+ * own group, such as DeepSeek at 0.8, and falls back to 官方 when that is
+ * the only group.
  */
 export function getFableDualPriceOffers(
   model: PricingModel
@@ -76,24 +102,20 @@ export function getFableDualPriceOffers(
   if (model.model_name !== FABLE_DUAL_PRICE_MODEL) return null
   if (!isDynamicPricingModel(model)) return null
 
-  const entries = ratioEntries(model)
-  const official = entries.find(
-    ([name]) => name === OFFICIAL_GROUP || name.includes(OFFICIAL_GROUP)
-  )
-  const special = entries.find(
-    ([name, ratio]) => name.includes(SPECIAL_GROUP_MARK) && ratio < 1
-  )
+  const listRatio = getChannelOffer(model, 'list')?.ratio ?? DEFAULT_LIST_RATIO
+  const platformRatio =
+    getChannelOffer(model, 'special')?.ratio ?? listRatio
 
   return [
     {
       key: 'list',
       labelKey: 'Official pricing',
-      ratio: official?.[1] ?? DEFAULT_LIST_RATIO,
+      ratio: listRatio,
     },
     {
       key: 'special',
       labelKey: 'Platform pricing',
-      ratio: special?.[1] ?? DEFAULT_SPECIAL_RATIO,
+      ratio: platformRatio,
     },
   ]
 }
@@ -126,20 +148,11 @@ export function modelHasChannelRates(model: PricingModel): boolean {
 
 export type ChannelKey = 'list' | 'special'
 
-/** The official or special group this model is actually sold on. */
+/** Official pricing uses 官方. Platform pricing uses the model's own group. */
 export function getChannelOffer(
   model: PricingModel,
   channel: ChannelKey
 ): { group: string; ratio: number } | null {
-  const entries = ratioEntries(model)
-  if (channel === 'list') {
-    const official = entries.find(
-      ([name]) => name === OFFICIAL_GROUP || name.includes(OFFICIAL_GROUP)
-    )
-    return official ? { group: official[0], ratio: official[1] } : null
-  }
-  const special = entries.find(
-    ([name, ratio]) => name.includes(SPECIAL_GROUP_MARK) && ratio < 1
-  )
-  return special ? { group: special[0], ratio: special[1] } : null
+  if (channel === 'list') return officialOffer(model)
+  return platformOffer(model)
 }
