@@ -43,6 +43,27 @@ describe('public and console domain routing', () => {
     )
   })
 
+  test('sends apex and www account routes to the console origin', () => {
+    assert.equal(getDomainRedirect('https://fluxlane.ai/'), null)
+    assert.equal(getDomainRedirect('https://fluxlane.ai/pricing'), null)
+    assert.equal(
+      getDomainRedirect('https://fluxlane.ai/pricing/gpt-5.5'),
+      null
+    )
+    assert.equal(
+      getDomainRedirect('https://fluxlane.ai/sign-in'),
+      'https://console.fluxlane.ai/sign-in'
+    )
+    assert.equal(
+      getDomainRedirect('https://fluxlane.ai/sign-up?redirect=%2Fwallet'),
+      'https://console.fluxlane.ai/sign-up?redirect=%2Fwallet'
+    )
+    assert.equal(
+      getDomainRedirect('https://www.fluxlane.ai/sign-up'),
+      'https://console.fluxlane.ai/sign-up'
+    )
+  })
+
   test('sends the console homepage to sign-in on production and Pages Preview', () => {
     assert.equal(
       getDomainRedirect('https://console.fluxlane.ai/'),

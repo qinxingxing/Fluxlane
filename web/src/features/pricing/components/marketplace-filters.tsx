@@ -61,7 +61,7 @@ export function ProviderFilterBar(props: {
           PROVIDER {t('Provider filter')}
         </span>
         <span className='hidden font-mono text-[11px] text-[#4a4455] sm:inline'>
-          {t('Filter across channels and major model providers.')}
+          {t('Filter by major model providers.')}
         </span>
       </div>
       <div className='flex flex-wrap items-center gap-1.5'>

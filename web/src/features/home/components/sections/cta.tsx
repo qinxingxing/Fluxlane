@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
 import { Button } from '@/components/ui/button'
+import { consoleSiteHref } from '@/lib/domain-routing'
 
 interface CTAProps {
   className?: string
@@ -30,6 +31,7 @@ interface CTAProps {
 
 export function CTA(props: CTAProps) {
   const { t } = useTranslation()
+  const signUpHref = consoleSiteHref('/sign-up')
 
   if (props.isAuthenticated) {
     return null
@@ -66,7 +68,16 @@ export function CTA(props: CTAProps) {
           )}
         </p>
         <div className='mt-8 flex flex-wrap items-center justify-center gap-3'>
-          <Button className='group rounded-lg' render={<Link to='/sign-up' />}>
+          <Button
+            className='group rounded-lg'
+            render={
+              signUpHref.startsWith('https://') ? (
+                <a href={signUpHref} />
+              ) : (
+                <Link to={signUpHref} />
+              )
+            }
+          >
             {t('Get Started')}
             <ArrowRight className='ml-1 size-3.5 transition-transform duration-200 group-hover:translate-x-0.5' />
           </Button>

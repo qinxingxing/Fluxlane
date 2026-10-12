@@ -28,8 +28,9 @@ Publish `web/dist` to Cloudflare Pages. When the Pages project root is `web`,
 use `bun run build` as the build command and `dist` as the output directory.
 
 Public `_redirects` (generated) does **not** include a global SPA fallback.
-Unknown www paths are real 404s. Console builds keep `/* /index.html 200` and
-site-wide noindex.
+Unknown www paths are real 404s. Console builds keep `/* /index.html 200`
+for client routes, but `/static/*` 404s instead of falling through to that
+shell, plus site-wide noindex.
 
 ## Backend
 

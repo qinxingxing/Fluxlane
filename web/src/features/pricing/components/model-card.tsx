@@ -284,14 +284,16 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
 
       <div className='border-border/60 flex items-end justify-between gap-3 border-t pt-4'>
         <div className='flex min-w-0 flex-wrap items-center gap-2'>
-          {(dualPriceOffers ? groups : groups.slice(0, 1)).map((group) => (
-            <span
-              key={group}
-              className='bg-muted text-muted-foreground rounded-md px-2 py-1 text-[11px] font-semibold tracking-wider uppercase'
-            >
-              {group}
-            </span>
-          ))}
+          {dualPriceOffers
+            ? null
+            : groups.slice(0, 1).map((group) => (
+                <span
+                  key={group}
+                  className='bg-muted text-muted-foreground rounded-md px-2 py-1 text-[11px] font-semibold tracking-wider uppercase'
+                >
+                  {group}
+                </span>
+              ))}
           <ModelBillingModeBadge
             model={props.model}
             className='border-primary/20 bg-primary/10 rounded-md border px-2 py-1 text-[11px] tracking-wider uppercase'

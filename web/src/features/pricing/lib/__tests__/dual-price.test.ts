@@ -54,8 +54,8 @@ describe('fable dual price offers', () => {
     const offers = getFableDualPriceOffers(fableModel())
 
     assert.deepEqual(offers, [
-      { key: 'list', labelKey: 'List price', ratio: 1 },
-      { key: 'special', labelKey: 'Special price', ratio: 0.6 },
+      { key: 'list', labelKey: 'Official pricing', ratio: 1 },
+      { key: 'special', labelKey: 'Platform pricing', ratio: 0.6 },
     ])
   })
 

@@ -212,29 +212,28 @@ describe('model marketplace card', () => {
     assert.ok(prices)
     const list = container.querySelector('[data-price-tier="list"]')
     const special = container.querySelector('[data-price-tier="special"]')
-    assert.match(list?.textContent ?? '', /List price/)
+    assert.match(list?.textContent ?? '', /Official pricing/)
     assert.match(list?.textContent ?? '', /Input \$10/)
     assert.match(list?.textContent ?? '', /Output \$50/)
     assert.equal((list?.textContent ?? '').includes('6折'), false)
     const specialText = special?.textContent ?? ''
-    assert.match(specialText, /Special price/)
+    assert.match(specialText, /Platform pricing/)
     assert.match(specialText, /Input \$6\s*6折/)
     assert.match(specialText, /Output \$30\s*6折/)
-    assert.equal(specialText.includes('Special price6折'), false)
+    assert.equal(specialText.includes('Platform pricing6折'), false)
     assert.equal(specialText.includes('0.6'), false)
     assert.equal(specialText.includes('%'), false)
     const note = container.querySelector('[data-slot="channel-note"]')
     assert.match(
       note?.getAttribute('aria-label') ?? '',
-      /price is higher, but service is stable/
+      /provider's list price/
     )
     assert.match(
       note?.getAttribute('aria-label') ?? '',
-      /stability is not guaranteed/
+      /Fluxlane's price for this model/
     )
     const cardText = container.textContent ?? ''
-    assert.ok(cardText.includes('官方'))
-    assert.ok(cardText.includes('Claude/OpenAI特价'))
+    assert.equal(cardText.includes('Claude/OpenAI特价'), false)
     assert.equal(container.querySelectorAll('[data-price-tier]').length, 2)
 
     root.unmount()

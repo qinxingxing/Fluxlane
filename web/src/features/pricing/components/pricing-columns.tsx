@@ -71,7 +71,7 @@ export function usePricingColumns(
       id: 'official_price',
       header: () => (
         <ChannelColumnTitle
-          title={t('Official channel')}
+          title={t('Official pricing')}
           unit={tokenUnitLabel}
           align='end'
           note='list'
@@ -91,7 +91,7 @@ export function usePricingColumns(
       id: 'special_price',
       header: () => (
         <ChannelColumnTitle
-          title={t('Special channel')}
+          title={t('Platform pricing')}
           unit={tokenUnitLabel}
           align='end'
           note='special'

@@ -27,7 +27,7 @@ const DEFAULT_SPECIAL_RATIO = 0.6
 
 export type DualPriceOffer = {
   key: 'list' | 'special'
-  labelKey: 'List price' | 'Special price'
+  labelKey: 'Official pricing' | 'Platform pricing'
   ratio: number
 }
 
@@ -87,12 +87,12 @@ export function getFableDualPriceOffers(
   return [
     {
       key: 'list',
-      labelKey: 'List price',
+      labelKey: 'Official pricing',
       ratio: official?.[1] ?? DEFAULT_LIST_RATIO,
     },
     {
       key: 'special',
-      labelKey: 'Special price',
+      labelKey: 'Platform pricing',
       ratio: special?.[1] ?? DEFAULT_SPECIAL_RATIO,
     },
   ]

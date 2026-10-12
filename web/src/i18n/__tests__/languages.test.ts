@@ -20,6 +20,7 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import {
+  INTERFACE_LANGUAGE_OPTIONS,
   INTERFACE_LANGUAGE_STORAGE_KEY,
   applyInterfaceLanguage,
   convertDetectedLanguage,
@@ -28,26 +29,38 @@ import {
   resolveInterfaceLanguage,
 } from '../languages'
 
+describe('INTERFACE_LANGUAGE_OPTIONS', () => {
+  test('only offers English and Simplified Chinese in the switcher', () => {
+    assert.deepEqual(
+      INTERFACE_LANGUAGE_OPTIONS.map((lang) => lang.code),
+      ['zhCN', 'en']
+    )
+  })
+})
+
 describe('resolveInterfaceLanguage', () => {
-  test('keeps cached i18next codes instead of remapping zhTW to simplified Chinese', () => {
+  test('keeps supported interface codes', () => {
     assert.equal(resolveInterfaceLanguage('zhCN'), 'zhCN')
-    assert.equal(resolveInterfaceLanguage('zhTW'), 'zhTW')
-    assert.equal(convertDetectedLanguage('zhTW'), 'zhTW')
+    assert.equal(resolveInterfaceLanguage('en'), 'en')
   })
 
-  test('maps browser Chinese tags onto zhCN or zhTW', () => {
+  test('maps all Chinese tags onto zhCN', () => {
     assert.equal(resolveInterfaceLanguage('zh'), 'zhCN')
     assert.equal(resolveInterfaceLanguage('zh-CN'), 'zhCN')
     assert.equal(resolveInterfaceLanguage('zh_cn'), 'zhCN')
     assert.equal(resolveInterfaceLanguage('zh-Hans'), 'zhCN')
-    assert.equal(resolveInterfaceLanguage('zh-TW'), 'zhTW')
-    assert.equal(resolveInterfaceLanguage('zh-Hant-TW'), 'zhTW')
+    assert.equal(resolveInterfaceLanguage('zh-TW'), 'zhCN')
+    assert.equal(resolveInterfaceLanguage('zh-Hant-TW'), 'zhCN')
+    assert.equal(resolveInterfaceLanguage('zhTW'), 'zhCN')
+    assert.equal(convertDetectedLanguage('zhTW'), 'zhCN')
   })
 
-  test('maps regional tags onto the matching supported language', () => {
-    assert.equal(resolveInterfaceLanguage('fr-FR'), 'fr')
+  test('rejects languages that are no longer in the switcher', () => {
+    assert.equal(resolveInterfaceLanguage('fr-FR'), undefined)
+    assert.equal(resolveInterfaceLanguage('ja-JP'), undefined)
+    assert.equal(resolveInterfaceLanguage('ru'), undefined)
+    assert.equal(resolveInterfaceLanguage('vi'), undefined)
     assert.equal(resolveInterfaceLanguage('en-US'), 'en')
-    assert.equal(resolveInterfaceLanguage('ja-JP'), 'ja')
     assert.equal(resolveInterfaceLanguage('pt-BR'), undefined)
     assert.equal(resolveInterfaceLanguage(''), undefined)
     assert.equal(resolveInterfaceLanguage(null), undefined)
@@ -57,7 +70,8 @@ describe('resolveInterfaceLanguage', () => {
 describe('normalizeInterfaceLanguage', () => {
   test('falls back to simplified Chinese when the locale is missing or unsupported', () => {
     assert.equal(normalizeInterfaceLanguage('zh'), 'zhCN')
-    assert.equal(normalizeInterfaceLanguage('zhTW'), 'zhTW')
+    assert.equal(normalizeInterfaceLanguage('zhTW'), 'zhCN')
+    assert.equal(normalizeInterfaceLanguage('fr'), 'zhCN')
     assert.equal(normalizeInterfaceLanguage('pt-BR'), 'zhCN')
     assert.equal(normalizeInterfaceLanguage(undefined), 'zhCN')
   })
@@ -66,7 +80,7 @@ describe('normalizeInterfaceLanguage', () => {
 describe('detectInitialLanguage', () => {
   test('uses an explicit stored preference', () => {
     assert.equal(detectInitialLanguage({ storedLanguage: 'zh' }), 'zhCN')
-    assert.equal(detectInitialLanguage({ storedLanguage: 'zhTW' }), 'zhTW')
+    assert.equal(detectInitialLanguage({ storedLanguage: 'zhTW' }), 'zhCN')
     assert.equal(detectInitialLanguage({ storedLanguage: 'en' }), 'en')
   })
 
@@ -119,7 +133,12 @@ describe('applyInterfaceLanguage', () => {
         'en'
       )
       assert.deepEqual(order, ['persist:en', 'change:en'])
-      assert.equal(detectInitialLanguage({ storedLanguage: store.get(INTERFACE_LANGUAGE_STORAGE_KEY) }), 'en')
+      assert.equal(
+        detectInitialLanguage({
+          storedLanguage: store.get(INTERFACE_LANGUAGE_STORAGE_KEY),
+        }),
+        'en'
+      )
     } finally {
       Object.defineProperty(globalThis, 'window', {
         configurable: true,

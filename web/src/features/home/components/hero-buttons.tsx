@@ -21,6 +21,7 @@ import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { consoleSiteHref } from '@/lib/domain-routing'
 
 interface HeroButtonsProps {
   isAuthenticated: boolean
@@ -29,11 +30,18 @@ interface HeroButtonsProps {
 /**
  * Hero section action buttons
  */
+function consoleRender(href: string) {
+  return href.startsWith('https://') ? <a href={href} /> : <Link to={href} />
+}
+
 export function HeroButtons({ isAuthenticated }: HeroButtonsProps) {
   const { t } = useTranslation()
+  const dashboardHref = consoleSiteHref('/dashboard')
+  const signUpHref = consoleSiteHref('/sign-up')
+  const signInHref = consoleSiteHref('/sign-in')
   if (isAuthenticated) {
     return (
-      <Button size='lg' render={<Link to='/dashboard' />}>
+      <Button size='lg' render={consoleRender(dashboardHref)}>
         {t('Go to Dashboard')} <ArrowRight className='ml-2 h-5 w-5' />
       </Button>
     )
@@ -41,11 +49,11 @@ export function HeroButtons({ isAuthenticated }: HeroButtonsProps) {
 
   return (
     <>
-      <Button size='lg' render={<Link to='/sign-up' />}>
+      <Button size='lg' render={consoleRender(signUpHref)}>
         {t('Get Started')}
         <ArrowRight className='ml-2 h-5 w-5' />
       </Button>
-      <Button size='lg' variant='outline' render={<Link to='/sign-in' />}>
+      <Button size='lg' variant='outline' render={consoleRender(signInHref)}>
         {t('Sign In')}
       </Button>
     </>

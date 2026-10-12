@@ -1,9 +1,15 @@
 /* Copyright (C) 2023-2026 QuantumNous */
 
 const PUBLIC_HOSTNAME = 'www.fluxlane.ai'
+const APEX_HOSTNAME = 'fluxlane.ai'
 const CONSOLE_HOSTNAME = 'console.fluxlane.ai'
 const CONSOLE_ORIGIN = `https://${CONSOLE_HOSTNAME}`
 const PUBLIC_ORIGIN = `https://${PUBLIC_HOSTNAME}`
+
+/** www and the apex both serve the public site. Auth stays on the console origin. */
+function isPublicHostname(hostname: string): boolean {
+  return hostname === PUBLIC_HOSTNAME || hostname === APEX_HOSTNAME
+}
 
 const PUBLIC_PATHS = new Set([
   '/',
@@ -54,11 +60,11 @@ export function publicSiteHref(path: string): string {
   return path
 }
 
-/** Resolve a console link for the current host: absolute on www, relative elsewhere. */
+/** Resolve a console link: absolute on the public site, relative on the console and in local dev. */
 export function consoleSiteHref(path: string): string {
   if (
     typeof window !== 'undefined' &&
-    window.location.hostname === PUBLIC_HOSTNAME
+    isPublicHostname(window.location.hostname)
   ) {
     return `${CONSOLE_ORIGIN}${path}`
   }
@@ -75,7 +81,7 @@ export function getDomainRedirect(href: string): string | null {
   }
 
   const pathname = normalizePathname(current.pathname)
-  if (current.hostname === PUBLIC_HOSTNAME && !isPublicSitePath(pathname)) {
+  if (isPublicHostname(current.hostname) && !isPublicSitePath(pathname)) {
     return `${CONSOLE_ORIGIN}${current.pathname}${current.search}${current.hash}`
   }
 

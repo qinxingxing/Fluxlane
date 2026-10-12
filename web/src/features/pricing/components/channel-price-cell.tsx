@@ -44,10 +44,8 @@ import {
 } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
 
-const OFFICIAL_NOTE =
-  'Official channel, the price is higher, but service is stable.'
-const SPECIAL_NOTE =
-  'Special channel: the price is lower and capacity is plentiful, but stability is not guaranteed.'
+const OFFICIAL_NOTE = "Official pricing is the provider's list price."
+const PLATFORM_NOTE = "Platform pricing is Fluxlane's price for this model."
 
 type NoteChannel = 'list' | 'special' | 'both'
 
@@ -305,7 +303,7 @@ export function ChannelNote(props: { channel?: NoteChannel }) {
   const { t } = useTranslation()
   const channel = props.channel ?? 'both'
   const official = t(OFFICIAL_NOTE)
-  const special = t(SPECIAL_NOTE)
+  const special = t(PLATFORM_NOTE)
   let label = `${official} ${special}`
   if (channel === 'list') label = official
   if (channel === 'special') label = special
@@ -330,7 +328,7 @@ export function ChannelNote(props: { channel?: NoteChannel }) {
           {channel !== 'special' ? (
             <p>
               <span className='font-semibold text-[#a2e7ff]'>
-                {t('Official channel')}
+                {t('Official pricing')}
               </span>
               <span className='mt-0.5 block font-normal text-[#ccc3d7]'>
                 {official}
@@ -340,7 +338,7 @@ export function ChannelNote(props: { channel?: NoteChannel }) {
           {channel !== 'list' ? (
             <p>
               <span className='font-semibold text-[#cebdff]'>
-                {t('Special channel')}
+                {t('Platform pricing')}
               </span>
               <span className='mt-0.5 block font-normal text-[#ccc3d7]'>
                 {special}

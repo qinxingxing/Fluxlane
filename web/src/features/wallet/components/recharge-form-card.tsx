@@ -34,6 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { FLUXLANE_SUPPORT_EMAIL } from '@/features/legal/fluxlane-terms'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -392,6 +393,24 @@ export function RechargeFormCard({
                       )}
                     </AlertDescription>
                   </Alert>
+                )}
+                {(hasStandardPaymentMethods || hasWaffoPaymentMethods) && (
+                  <div className='text-muted-foreground space-y-1.5 text-xs leading-relaxed'>
+                    <p>
+                      {t(
+                        'Public preview: online payment is available via Waffo Pancake, with tax-compliant invoices issued by Waffo. Fluxlane is adding more payment options and will issue invoices directly once they are live.'
+                      )}
+                    </p>
+                    <p>
+                      {t('Having payment issues? Contact us at')}{' '}
+                      <a
+                        href={`mailto:${FLUXLANE_SUPPORT_EMAIL}`}
+                        className='text-foreground/90 underline-offset-2 hover:underline'
+                      >
+                        {FLUXLANE_SUPPORT_EMAIL}
+                      </a>
+                    </p>
+                  </div>
                 )}
               </div>
 

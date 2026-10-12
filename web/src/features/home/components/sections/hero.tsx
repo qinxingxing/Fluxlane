@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { useStatus } from '@/hooks/use-status'
+import { consoleSiteHref } from '@/lib/domain-routing'
 import { publicDocsLink } from '@/lib/fluxlane-brand'
 
 import { HeroTerminalDemo } from '../hero-terminal-demo'
@@ -50,6 +51,8 @@ export function Hero(props: HeroProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
   const docsUrl = publicDocsLink(status?.docs_link as string | undefined)
+  const dashboardHref = consoleSiteHref('/dashboard')
+  const signUpHref = consoleSiteHref('/sign-up')
 
   const renderDocsButton = () => {
     const isExternal = docsUrl.startsWith('http')
@@ -140,7 +143,13 @@ export function Hero(props: HeroProps) {
               <>
                 <Button
                   className='group h-11 rounded-lg px-5 text-sm font-medium'
-                  render={<Link to='/dashboard' />}
+                  render={
+                    dashboardHref.startsWith('https://') ? (
+                      <a href={dashboardHref} />
+                    ) : (
+                      <Link to={dashboardHref} />
+                    )
+                  }
                 >
                   {t('Go to Dashboard')}
                   <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
@@ -151,7 +160,13 @@ export function Hero(props: HeroProps) {
               <>
                 <Button
                   className='group h-11 rounded-lg px-5 text-sm font-medium'
-                  render={<Link to='/sign-up' />}
+                  render={
+                    signUpHref.startsWith('https://') ? (
+                      <a href={signUpHref} />
+                    ) : (
+                      <Link to={signUpHref} />
+                    )
+                  }
                 >
                   {t('Get Started')}
                   <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />

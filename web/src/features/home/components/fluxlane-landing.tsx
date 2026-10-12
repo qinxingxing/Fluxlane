@@ -82,7 +82,7 @@ export function FluxlaneLanding({ isAuthenticated }: FluxlaneLandingProps) {
         <section className='relative mx-auto flex max-w-7xl flex-col items-center px-6 py-20 text-center md:py-28'>
           <div className='absolute inset-x-1/4 top-12 h-72 rounded-full bg-violet-600/20 blur-[110px]' />
           <p className='relative mb-5 rounded-full border border-cyan-300/20 bg-cyan-300/5 px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.16em] text-cyan-300 uppercase'>
-            Fluxlane · AI Application Infrastructure
+            {t('Public Preview')}
           </p>
           <h1 className='relative max-w-4xl text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.08] font-bold tracking-[-0.035em]'>
             一个 API 网关接入

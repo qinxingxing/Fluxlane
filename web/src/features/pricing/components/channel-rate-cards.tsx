@@ -220,7 +220,7 @@ function ChannelCard(props: {
     (key) => t(key)
   )
   const special = props.channel === 'special'
-  const title = special ? t('Special channel') : t('Official channel')
+  const title = special ? t('Platform pricing') : t('Official pricing')
   const priceDiscount = special ? discount : null
 
   return (
@@ -240,11 +240,6 @@ function ChannelCard(props: {
             <ChannelNote channel={props.channel} />
           </div>
         </div>
-        {!special && offer ? (
-          <span className='rounded-md bg-[#2e3351] px-2.5 py-1 font-mono text-[12px] font-semibold tracking-wider text-[#a2e7ff] uppercase'>
-            {t('Stable baseline')}
-          </span>
-        ) : null}
       </div>
 
       {rates?.fallback ? (
@@ -330,7 +325,7 @@ export function ChannelRateCards(props: {
         <div className='flex items-center gap-2'>
           <ArrowLeftRight className='size-5 text-[#a2e7ff]' aria-hidden='true' />
           <h2 className='text-2xl font-semibold text-[#dee0ff]'>
-            {t('Dual-channel rates')}
+            {t('Model Pricing')}
           </h2>
           <span className='font-mono text-sm text-[#4a4455]'>
             {t('Settled per {{unit}} tokens', { unit: tokenUnitLabel })}

@@ -16,14 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+/** Header / profile language switcher — www and console share this list. */
 export const INTERFACE_LANGUAGE_OPTIONS = [
   { code: 'zhCN', label: '简体中文' },
   { code: 'en', label: 'English' },
-  { code: 'fr', label: 'Français' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'ja', label: '日本語' },
-  { code: 'vi', label: 'Tiếng Việt' },
-  { code: 'zhTW', label: '繁體中文' },
 ] as const
 
 export type InterfaceLanguageCode =
@@ -149,28 +145,19 @@ function readStoredLanguage(): string | null {
 }
 
 /**
- * Map a browser-detected locale onto the interface language codes this project
- * uses with i18next (`zhCN` / `zhTW`).
- *
- * Browsers report standard BCP-47 tags (`zh-CN`, `zh-TW`, `zh-Hant`, `zh`, ...),
- * but `supportedLngs`/resources use the non-standard camelCase codes, so without
- * this mapping a Chinese browser would never match and fall back to English.
- * Non-Chinese codes are returned unchanged so i18next's own `supportedLngs`
- * matching still applies (e.g. `fr-FR` -> `fr`, `ja` -> `ja`).
+ * Map a browser-detected or stored locale onto interface language codes
+ * (`zhCN` / `en`). Any Chinese tag (including legacy `zhTW`) resolves to
+ * Simplified Chinese because the switcher only offers English and 简体中文.
+ * Non-Chinese codes are returned unchanged for `supportedLngs` matching.
  */
 export function convertDetectedLanguage(value: string): string {
-  const lower = value.trim().replaceAll('_', '-').toLowerCase()
-  if (!lower.startsWith('zh')) return value
-  if (
-    lower === 'zhtw' ||
-    lower === 'zh-tw' ||
-    lower === 'zh-hk' ||
-    lower === 'zh-mo' ||
-    lower.startsWith('zh-hant')
-  ) {
-    return 'zhTW'
-  }
-  return 'zhCN'
+  const trimmed = value.trim()
+  if (!trimmed) return value
+  // Legacy interface code from when Traditional Chinese was selectable.
+  if (trimmed === 'zhTW') return 'zhCN'
+  const lower = trimmed.replaceAll('_', '-').toLowerCase()
+  if (lower.startsWith('zh')) return 'zhCN'
+  return value
 }
 
 /**

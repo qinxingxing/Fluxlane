@@ -16,11 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { PublicButton } from '@/components/layout/components/public-button'
 import { useStatus } from '@/hooks/use-status'
+import { consoleSiteHref } from '@/lib/domain-routing'
 import { publicDocsLink } from '@/lib/fluxlane-brand'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +28,7 @@ import { aboutPageLayout } from '../lib/layout'
 import { AboutGatewayVisual } from './about-gateway-visual'
 
 export function AboutHero() {
+  const signUpHref = consoleSiteHref('/sign-up')
   const { t } = useTranslation()
   const { status } = useStatus()
   const docsUrl = publicDocsLink(
@@ -55,7 +56,7 @@ export function AboutHero() {
           <PublicButton
             data-about-cta-primary
             size='lg'
-            render={<Link to='/sign-up' />}
+            render={<a href={signUpHref} />}
           >
             {t('Create account')}
           </PublicButton>

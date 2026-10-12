@@ -64,7 +64,7 @@ export const i18nReady = i18n.use(initReactI18next).init({
   resources,
   lng: initialLanguage,
   fallbackLng: ['zhCN', 'en'],
-  supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
+  supportedLngs: ['en', 'zhCN'],
   load: 'currentOnly',
   nsSeparator: false, // Allow literal colons in keys (e.g., URLs, labels)
   debug: import.meta.env.DEV,
