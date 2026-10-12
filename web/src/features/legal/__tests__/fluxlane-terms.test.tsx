@@ -30,7 +30,7 @@ import {
 describe('Fluxlane terms of service', () => {
   test('treats the Git-published terms as enabled even when admin text is empty', () => {
     assert.equal(FLUXLANE_TERMS_EFFECTIVE_DATE, '10 October 2026')
-    assert.equal(FLUXLANE_SUPPORT_EMAIL, 'support@fluxlane.ai')
+    assert.equal(FLUXLANE_SUPPORT_EMAIL, 'service@fluxlane.ai')
     assert.equal(isUserAgreementEnabled(null), true)
     assert.equal(isUserAgreementEnabled({}), true)
     assert.equal(isUserAgreementEnabled({ user_agreement_enabled: false }), true)
@@ -42,6 +42,6 @@ describe('Fluxlane terms of service', () => {
     assert.match(html, /<h1[^>]*>Terms of Service<\/h1>/)
     assert.match(html, /FLUX LANE PTE\. LTD\./)
     assert.match(html, /href="https:\/\/www\.fluxlane\.ai\/privacy-policy"/)
-    assert.match(html, /href="mailto:support@fluxlane\.ai"/)
+    assert.match(html, /href="mailto:service@fluxlane\.ai"/)
   })
 })

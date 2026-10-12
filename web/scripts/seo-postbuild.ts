@@ -902,7 +902,7 @@ function validateOutput(renderedRoutes: string[]): void {
       ['contact new window', 'target="_blank"'],
       ['terms link', 'href="/user-agreement"'],
       ['privacy link', 'href="/privacy-policy"'],
-      ['support email', 'mailto:support@fluxlane.ai'],
+      ['support email', 'mailto:service@fluxlane.ai'],
       ['console link', 'https://console.fluxlane.ai'],
     ]
     for (const [label, needle] of footerLinks) {

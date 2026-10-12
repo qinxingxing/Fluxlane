@@ -201,9 +201,9 @@ describe('public footer', () => {
     assert.equal(hrefs.has('https://www.accesstechnologyventures.com'), true)
     assert.equal(host.textContent?.includes('Unified API gateway'), true)
     assert.equal(host.textContent?.includes('Backed by'), true)
-    assert.equal(hrefs.has('mailto:support@fluxlane.ai'), true)
+    assert.equal(hrefs.has('mailto:service@fluxlane.ai'), true)
     assert.equal(host.textContent?.includes('Contact us'), true)
-    assert.equal(host.textContent?.includes('support@fluxlane.ai'), true)
+    assert.equal(host.textContent?.includes('service@fluxlane.ai'), true)
   })
 
   test('places Terms of Service immediately before Privacy Policy', async () => {

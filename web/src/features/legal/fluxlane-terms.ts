@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 export const FLUXLANE_TERMS_EFFECTIVE_DATE = '10 October 2026'
-export const FLUXLANE_SUPPORT_EMAIL = 'support@fluxlane.ai'
+export const FLUXLANE_SUPPORT_EMAIL = 'service@fluxlane.ai'
 export const FLUXLANE_TERMS_PUBLISHED = true
 
 export function isUserAgreementEnabled(

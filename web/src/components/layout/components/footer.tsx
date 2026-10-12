@@ -59,7 +59,7 @@ interface FooterProps {
 }
 
 const ACCESS_VENTURES_URL = 'https://www.accesstechnologyventures.com'
-const SUPPORT_EMAIL = 'support@fluxlane.ai'
+const SUPPORT_EMAIL = 'service@fluxlane.ai'
 
 function SupportContact(props: { leadingSeparator?: boolean }) {
   const { t } = useTranslation()
