@@ -20,6 +20,7 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import { DEFAULT_CONFIG, DEFAULT_PARAMETER_ENABLED } from '../../constants'
+import { isPlaygroundParameterSent } from '../parameters/playground-parameters'
 import type { Message } from '../../types'
 import { buildChatCompletionPayload } from './payload-builder'
 
@@ -60,5 +61,60 @@ describe('playground chat payload', () => {
     assert.equal(payload.frequency_penalty, undefined)
     assert.equal(payload.presence_penalty, undefined)
     assert.deepEqual(payload.messages, [{ role: 'user', content: '你好' }])
+  })
+
+  test('omits temperature and top_p for Claude Sonnet 5', () => {
+    const payload = buildChatCompletionPayload(
+      [message],
+      { ...DEFAULT_CONFIG, model: 'claude-sonnet-5-5', max_tokens: 128 },
+      { ...DEFAULT_PARAMETER_ENABLED, max_tokens: true }
+    )
+
+    assert.equal(payload.model, 'claude-sonnet-5-5')
+    assert.equal(payload.temperature, undefined)
+    assert.equal(payload.top_p, undefined)
+    assert.equal(payload.max_tokens, 128)
+    assert.equal(payload.max_completion_tokens, undefined)
+    assert.equal(payload.frequency_penalty, 0)
+    assert.equal(payload.presence_penalty, 0)
+
+    const familyPayload = buildChatCompletionPayload(
+      [message],
+      { ...DEFAULT_CONFIG, model: 'anthropic/claude-sonnet-5' },
+      DEFAULT_PARAMETER_ENABLED
+    )
+    assert.equal(familyPayload.temperature, undefined)
+    assert.equal(familyPayload.top_p, undefined)
+    assert.equal(familyPayload.frequency_penalty, 0)
+  })
+
+  test('keeps sampling parameters for earlier Claude Sonnet models', () => {
+    const payload = buildChatCompletionPayload(
+      [message],
+      { ...DEFAULT_CONFIG, model: 'claude-sonnet-4-6' },
+      DEFAULT_PARAMETER_ENABLED
+    )
+
+    assert.equal(payload.temperature, 0.7)
+    assert.equal(payload.top_p, 1)
+  })
+
+  test('keeps temperature and top_p switches off only for Claude Sonnet 5', () => {
+    assert.equal(
+      isPlaygroundParameterSent('temperature', 'claude-sonnet-5-5', true),
+      false
+    )
+    assert.equal(
+      isPlaygroundParameterSent('top_p', 'claude-sonnet-5-5', true),
+      false
+    )
+    assert.equal(
+      isPlaygroundParameterSent('frequency_penalty', 'claude-sonnet-5-5', true),
+      true
+    )
+    assert.equal(
+      isPlaygroundParameterSent('temperature', 'claude-sonnet-4-6', true),
+      true
+    )
   })
 })

@@ -23,6 +23,7 @@ import type {
   ParameterEnabled,
 } from '../../types'
 import { formatMessageForAPI, isValidMessage } from '../message/message-utils'
+import { modelRejectsTemperatureAndTopP } from '../parameters/playground-parameters'
 
 /**
  * Build API request payload from messages and config
@@ -44,12 +45,14 @@ export function buildChatCompletionPayload(
     stream: config.stream,
   }
   const omitsLegacySampling = config.model.startsWith('gpt-6')
+  const omitsTemperatureAndTopP =
+    omitsLegacySampling || modelRejectsTemperatureAndTopP(config.model)
 
-  if (!omitsLegacySampling && parameterEnabled.temperature) {
+  if (!omitsTemperatureAndTopP && parameterEnabled.temperature) {
     payload.temperature = config.temperature
   }
 
-  if (!omitsLegacySampling && parameterEnabled.top_p) {
+  if (!omitsTemperatureAndTopP && parameterEnabled.top_p) {
     payload.top_p = config.top_p
   }
 

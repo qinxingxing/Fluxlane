@@ -117,6 +117,23 @@ export function normalizeParameterNumberValue(
   return Number(clamped.toFixed(precision))
 }
 
+export function modelRejectsTemperatureAndTopP(model: string): boolean {
+  const name = model.trim().toLowerCase().split('/').pop() ?? ''
+  return name.startsWith('claude-sonnet-5')
+}
+
+export function isPlaygroundParameterSent(
+  key: PlaygroundParameterKey,
+  model: string,
+  enabled: boolean
+): boolean {
+  if (!enabled) return false
+  if (key === 'temperature' || key === 'top_p') {
+    return !modelRejectsTemperatureAndTopP(model)
+  }
+  return true
+}
+
 export function getParameterControlValueText(
   key: PlaygroundParameterKey,
   value: ParameterValue

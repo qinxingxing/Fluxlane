@@ -47,6 +47,8 @@ import { cn } from '@/lib/utils'
 import {
   getParameterControlValueText,
   normalizeParameterNumberValue,
+  isPlaygroundParameterSent,
+  modelRejectsTemperatureAndTopP,
   PLAYGROUND_PARAMETER_CONTROLS,
   PLAYGROUND_PARAMETER_PANEL_SCROLL_CLASS,
   type PlaygroundParameterKey,
@@ -102,7 +104,14 @@ function PlaygroundParameterContent({
       )}
     >
       {PLAYGROUND_PARAMETER_CONTROLS.map((control) => {
-        const enabled = parameterEnabled[control.key]
+        const samplingLocked =
+          (control.key === 'temperature' || control.key === 'top_p') &&
+          modelRejectsTemperatureAndTopP(config.model)
+        const enabled = isPlaygroundParameterSent(
+          control.key,
+          config.model,
+          parameterEnabled[control.key]
+        )
         const value = config[control.key]
         const controlId = `playground-${control.key}`
 
@@ -140,7 +149,7 @@ function PlaygroundParameterContent({
                   parameter: t(control.labelKey),
                 })}
                 checked={enabled}
-                disabled={disabled}
+                disabled={disabled || samplingLocked}
                 onCheckedChange={(checked) =>
                   onParameterEnabledChange(control.key, checked)
                 }
@@ -198,8 +207,12 @@ function PlaygroundParameterContent({
 export function PlaygroundParameterPanel(props: PlaygroundParameterPanelProps) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
-  const activeCount = PLAYGROUND_PARAMETER_CONTROLS.filter(
-    (control) => props.parameterEnabled[control.key]
+  const activeCount = PLAYGROUND_PARAMETER_CONTROLS.filter((control) =>
+    isPlaygroundParameterSent(
+      control.key,
+      props.config.model,
+      props.parameterEnabled[control.key]
+    )
   ).length
 
   const trigger = (
