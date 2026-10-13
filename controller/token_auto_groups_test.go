@@ -9,6 +9,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
@@ -70,6 +71,29 @@ func newTokenAutoGroupsAuthenticatedContext(t *testing.T, method string, target 
 	ctx.Set("role", common.RoleAdminUser)
 	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
 	return ctx, recorder
+}
+
+func TestAssignCustomerTokenGroupDefaultsBlankGroupToOfficial(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+
+	ctx.Set("role", common.RoleCommonUser)
+	customerToken := &model.Token{CrossGroupRetry: true}
+	require.True(t, assignCustomerTokenGroup(ctx, customerToken))
+	assert.Equal(t, service.OfficialGroupName, customerToken.Group)
+	assert.False(t, customerToken.CrossGroupRetry)
+	assert.Empty(t, customerToken.AutoGroups)
+
+	ctx.Set("role", common.RoleAdminUser)
+	adminBlank := &model.Token{}
+	require.True(t, assignCustomerTokenGroup(ctx, adminBlank))
+	assert.Equal(t, service.OfficialGroupName, adminBlank.Group)
+
+	adminChosen := &model.Token{Group: "vip", CrossGroupRetry: true}
+	require.True(t, assignCustomerTokenGroup(ctx, adminChosen))
+	assert.Equal(t, "vip", adminChosen.Group)
+	assert.True(t, adminChosen.CrossGroupRetry)
 }
 
 func TestAddTokenEmptyAutoGroupsInheritGlobalAuto(t *testing.T) {

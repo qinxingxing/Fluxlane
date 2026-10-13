@@ -63,13 +63,23 @@ describe('API key Auto group form mapping', () => {
     assert.equal(apiKeySchema.parse(legacyApiKey).auto_groups, null)
   })
 
-  test('creates an Auto token that inherits the global order', () => {
-    const defaults = getApiKeyFormDefaultValues(true)
+  test('defaults a new key to the official group', () => {
+    const defaults = getApiKeyFormDefaultValues()
 
-    assert.equal(defaults.group, 'auto')
-    assert.equal(defaults.auto_groups_mode, 'inherit')
-    assert.deepEqual(defaults.auto_groups, [])
+    assert.equal(defaults.group, '官方')
+    assert.equal(defaults.cross_group_retry, false)
+    assert.equal(transformFormDataToPayload(defaults).group, '官方')
     assert.deepEqual(transformFormDataToPayload(defaults).auto_groups, [])
+  })
+
+  test('saves a blank group as the official group', () => {
+    const payload = transformFormDataToPayload({
+      ...getApiKeyFormDefaultValues(),
+      group: '   ',
+    })
+
+    assert.equal(payload.group, '官方')
+    assert.equal(payload.cross_group_retry, false)
   })
 
   test('maps omitted, null, and empty snapshots to inheritance on edit', () => {
@@ -129,7 +139,8 @@ describe('API key Auto group form mapping', () => {
 
   test('submits a valid custom snapshot in its configured order', () => {
     const custom = {
-      ...getApiKeyFormDefaultValues(true),
+      ...getApiKeyFormDefaultValues(),
+      group: 'auto',
       auto_groups_mode: 'custom' as const,
       auto_groups: ['vip', 'default'],
     }
@@ -141,7 +152,10 @@ describe('API key Auto group form mapping', () => {
   })
 
   test('submits an empty array for inheritance and for non-Auto groups', () => {
-    const inherited = getApiKeyFormDefaultValues(true)
+    const inherited = {
+      ...getApiKeyFormDefaultValues(),
+      group: 'auto',
+    }
     assert.deepEqual(transformFormDataToPayload(inherited).auto_groups, [])
 
     const nonAuto = {
@@ -156,8 +170,9 @@ describe('API key Auto group form mapping', () => {
 
   test('rejects snapshots over the configured limit', () => {
     const result = getApiKeyFormSchema(t, 1).safeParse({
-      ...getApiKeyFormDefaultValues(true),
+      ...getApiKeyFormDefaultValues(),
       name: 'limited token',
+      group: 'auto',
       auto_groups_mode: 'custom',
       auto_groups: ['default', 'vip'],
     })
@@ -173,8 +188,9 @@ describe('API key Auto group form mapping', () => {
 
   test('rejects duplicate custom groups', () => {
     const result = getApiKeyFormSchema(t).safeParse({
-      ...getApiKeyFormDefaultValues(true),
+      ...getApiKeyFormDefaultValues(),
       name: 'duplicate token',
+      group: 'auto',
       auto_groups_mode: 'custom',
       auto_groups: ['vip', 'vip'],
     })

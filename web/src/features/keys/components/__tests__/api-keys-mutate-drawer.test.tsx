@@ -102,6 +102,7 @@ function installApiFixtures(createdPayloads: Array<Record<string, unknown>>) {
           data: {
             success: true,
             data: {
+              官方: { desc: 'Official access', ratio: 1 },
               auto: { desc: 'Automatic routing', ratio: 'auto' },
               default: { desc: 'Standard access', ratio: 1 },
               vip: { desc: 'Priority access', ratio: 2 },
@@ -177,6 +178,7 @@ async function renderCreateDrawer(): Promise<void> {
     {
       success: true,
       data: {
+        官方: { desc: 'Official access', ratio: 1 },
         auto: { desc: 'Automatic routing', ratio: 'auto' },
         default: { desc: 'Standard access', ratio: 1 },
         vip: { desc: 'Priority access', ratio: 2 },
@@ -284,26 +286,17 @@ after(() => {
 })
 
 describe('API keys mutate drawer Auto group integration', () => {
-  test('inherits the root Auto order and sends an empty override for every batch-created key', async () => {
+  test('saves the official group when the creator leaves the group unchanged', async () => {
     const createdPayloads: Array<Record<string, unknown>> = []
     installApiFixtures(createdPayloads)
     await renderCreateDrawer()
 
     const groupTrigger = getControlByLabel<HTMLButtonElement>('Group')
-    assert.equal(groupTrigger.textContent?.includes('auto'), true)
+    assert.equal(groupTrigger.textContent?.includes('官方'), true)
     assert.equal(
-      document.body.textContent?.includes(
-        'Using the complete global Auto order (2 groups)'
-      ),
-      true
+      document.body.textContent?.includes('Auto group order'),
+      false
     )
-    assert.deepEqual(
-      [
-        ...document.querySelectorAll('[data-slot="global-auto-order-name"]'),
-      ].map((item) => item.textContent),
-      ['vip', 'default']
-    )
-    assert.equal(findButton('Restore global Auto', true).disabled, true)
 
     await changeInput(getControlByLabel<HTMLInputElement>('Name'), 'batch')
     await changeInput(getControlByLabel<HTMLInputElement>('Quantity'), '2')
@@ -318,9 +311,9 @@ describe('API keys mutate drawer Auto group integration', () => {
     assert.equal(createdPayloads.length, 2)
     assert.equal(createdPayloads[0]?.name, 'batch')
     for (const payload of createdPayloads) {
-      assert.equal(payload.group, 'auto')
+      assert.equal(payload.group, '官方')
       assert.deepEqual(payload.auto_groups, [])
-      assert.equal(payload.cross_group_retry, true)
+      assert.equal(payload.cross_group_retry, false)
     }
   })
 
@@ -329,6 +322,10 @@ describe('API keys mutate drawer Auto group integration', () => {
     installApiFixtures(createdPayloads)
     await renderCreateDrawer()
 
+    await selectComboboxOption(
+      getControlByLabel<HTMLButtonElement>('Group'),
+      'Automatic routing'
+    )
     const autoOrderControl = getControlByLabel<HTMLElement>('Auto group order')
     const addGroupTrigger = autoOrderControl.querySelector<HTMLButtonElement>(
       'button[role="combobox"]'
