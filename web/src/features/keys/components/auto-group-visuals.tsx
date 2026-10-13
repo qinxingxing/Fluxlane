@@ -68,6 +68,13 @@ export function AutoGroupFrame(props: AutoGroupFrameProps) {
   )
 }
 
+function discountOffPercent(ratio: number): string | null {
+  if (!(ratio > 0) || ratio >= 1) return null
+  const percent = Math.round((1 - ratio) * 100)
+  if (!Number.isFinite(percent) || percent <= 0 || percent >= 100) return null
+  return `-${percent}%`
+}
+
 function getRatioBadgeClassName(ratio: GroupRatio, isAuto: boolean): string {
   if (isAuto || typeof ratio !== 'number') {
     return 'border-primary/30 bg-primary/10 text-primary'
@@ -97,10 +104,16 @@ export function GroupRatioBadge(props: GroupRatioBadgeProps) {
     return null
   }
 
-  const label =
-    typeof props.ratio === 'number'
-      ? `${props.ratio}x ${t('Ratio')}`
-      : `${t('Auto')} ${t('Ratio')}`
+  const discount =
+    typeof props.ratio === 'number' ? discountOffPercent(props.ratio) : null
+  const label = discount
+    ? t('Discount {{percent}}', { percent: discount })
+    : typeof props.ratio === 'number'
+      ? props.ratio === 1
+        ? null
+        : `${props.ratio}x`
+      : t('Auto')
+  if (!label) return null
   const badge = (
     <Badge
       variant='outline'
@@ -114,14 +127,14 @@ export function GroupRatioBadge(props: GroupRatioBadgeProps) {
   )
 
   if (!props.isAuto) {
-    return <span className='max-w-24 shrink-0 sm:max-w-none'>{badge}</span>
+    return <span className='max-w-40 shrink-0 sm:max-w-none'>{badge}</span>
   }
 
   return (
     <AutoGroupFrame
       effect='ratio'
       shouldReduceMotion={props.shouldReduceMotion ?? false}
-      className='max-w-24 sm:max-w-none'
+      className='max-w-40 sm:max-w-none'
     >
       {badge}
     </AutoGroupFrame>

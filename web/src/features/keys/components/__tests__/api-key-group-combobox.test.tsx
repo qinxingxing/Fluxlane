@@ -80,6 +80,7 @@ await i18n.use(initReactI18next).init({
       translation: {
         Auto: 'Auto',
         Ratio: 'Ratio',
+        'Discount {{percent}}': 'Discount {{percent}}',
         'Search...': 'Search...',
         'No group found.': 'No group found.',
         'Select a group': 'Select a group',
@@ -102,6 +103,7 @@ const options = [
   },
   { value: 'default', label: 'default', desc: 'User group', ratio: 1 },
   { value: 'vip', label: 'vip', desc: 'Priority group', ratio: 3 },
+  { value: 'Anthropic', label: 'Anthropic', desc: 'Anthropic', ratio: 0.95 },
 ]
 
 function Harness(props: { initialValue: string }) {
@@ -173,7 +175,7 @@ describe('API key group combobox Auto effect', () => {
       '[data-auto-group-effect="ratio"]'
     )
     assert.ok(triggerRatio)
-    assert.equal(triggerRatio.textContent, 'Auto Ratio')
+    assert.equal(triggerRatio.textContent, 'Auto')
     assert.equal(triggerRatio.textContent?.includes('Auto'), true)
     assert.equal(triggerRatio.textContent?.includes('x'), false)
     assert.equal(trigger.textContent?.includes('自动'), false)
@@ -195,7 +197,7 @@ describe('API key group combobox Auto effect', () => {
       '[data-auto-group-effect="ratio"]'
     )
     assert.ok(optionRatio)
-    assert.equal(optionRatio.textContent, 'Auto Ratio')
+    assert.equal(optionRatio.textContent, 'Auto')
     assert.ok(optionRatio.querySelector('[data-auto-group-flow-border]'))
 
     const defaultOption = getCommandItem('User group')
@@ -204,7 +206,11 @@ describe('API key group combobox Auto effect', () => {
       defaultOption.querySelector('[data-auto-group-flow-border]'),
       null
     )
-    assert.equal(defaultOption.textContent?.includes('1x Ratio'), true)
+    assert.equal(defaultOption.textContent?.includes('1x'), false)
+    assert.equal(defaultOption.textContent?.includes('Ratio'), false)
+    const anthropicOption = getCommandItem('Anthropic')
+    assert.equal(anthropicOption.textContent?.includes('Discount -5%'), true)
+    assert.equal(anthropicOption.textContent?.includes('0.95x'), false)
     assert.equal(
       defaultOption.querySelector('[data-auto-group-effect="ratio"]'),
       null

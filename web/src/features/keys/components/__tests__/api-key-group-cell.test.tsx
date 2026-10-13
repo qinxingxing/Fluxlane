@@ -141,7 +141,7 @@ describe('API key group table cell', () => {
       '[data-auto-group-effect="ratio"]'
     )
     assert.ok(ratio)
-    assert.equal(ratio.textContent, 'Auto Ratio')
+    assert.equal(ratio.textContent, 'Auto')
     assert.equal(ratio.textContent?.includes('x'), false)
     assert.equal(container.textContent?.includes('自动'), false)
     assert.equal(container.textContent?.includes('Cross-group'), true)
