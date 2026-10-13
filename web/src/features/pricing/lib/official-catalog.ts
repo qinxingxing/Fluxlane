@@ -65,10 +65,29 @@ function withOfficialPrice(
   }
 }
 
+function isOfficialGroup(name: string): boolean {
+  return name.includes(OFFICIAL_GROUP) && !name.includes('特价')
+}
+
 /**
- * Official column reads the stored list price. Platform column reads the live
- * model price. Both use ratio 1 because the group factor is already baked
- * into the live price.
+ * Platform price uses the model's vendor group ratio. The stored factor is
+ * only a fallback before that group is mounted.
+ */
+function platformMultiplier(
+  model: PricingModel,
+  stored: OfficialPrice
+): { group: string; ratio: number } {
+  const offer = getChannelOffer(model, 'special')
+  if (offer && !isOfficialGroup(offer.group) && offer.ratio > 0) {
+    return offer
+  }
+  if (stored.factor > 0) return { group: stored.group, ratio: stored.factor }
+  return { group: OFFICIAL_GROUP, ratio: 1 }
+}
+
+/**
+ * Official column reads the stored list price at ratio 1. Platform column
+ * reads the same list price multiplied by the model's group ratio.
  */
 export function channelPriceBasis(
   model: PricingModel,
@@ -76,14 +95,12 @@ export function channelPriceBasis(
 ): ChannelPriceBasis | null {
   const stored = officialPriceFor(model.model_name)
   if (stored) {
+    const priced = withOfficialPrice(model, stored)
     if (channel === 'list') {
-      return {
-        model: withOfficialPrice(model, stored),
-        ratio: 1,
-        group: OFFICIAL_GROUP,
-      }
+      return { model: priced, ratio: 1, group: OFFICIAL_GROUP }
     }
-    return { model, ratio: 1, group: OFFICIAL_GROUP }
+    const platform = platformMultiplier(model, stored)
+    return { model: priced, ratio: platform.ratio, group: platform.group }
   }
 
   const offer = getChannelOffer(model, channel)
@@ -91,10 +108,14 @@ export function channelPriceBasis(
   return { model, ratio: offer.ratio, group: offer.group }
 }
 
-/** Discount column reads the vendor group factor stored with the list price. */
+/** Discount column is the vendor group ratio applied to the official price. */
 export function channelDiscountRatio(model: PricingModel): number | null {
   const stored = officialPriceFor(model.model_name)
-  if (stored) return stored.factor
+  if (stored) {
+    const ratio = platformMultiplier(model, stored).ratio
+    if (!(ratio > 0) || ratio >= 1) return null
+    return ratio
+  }
 
   const list = getChannelOffer(model, 'list')
   const special = getChannelOffer(model, 'special')

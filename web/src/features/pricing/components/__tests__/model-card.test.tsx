@@ -220,8 +220,8 @@ describe('model marketplace card', () => {
     assert.equal(listText.includes('6折'), false)
     const specialText = special?.textContent ?? ''
     assert.match(specialText, /Platform pricing/)
-    assert.match(specialText, /Input \$10/)
-    assert.match(specialText, /Output \$50/)
+    assert.match(specialText, /Input \$9\.5/)
+    assert.match(specialText, /Output \$47\.5/)
     assert.match(specialText, /9\.5折/)
     assert.equal(specialText.includes('6折'), false)
     assert.equal(specialText.includes('Platform pricing6折'), false)

@@ -111,6 +111,16 @@ describe('fable dual price offers', () => {
     )
   })
 
+  test('reads the GLM group ratio when the mounted group is still named 智谱', () => {
+    const glm = fableModel({
+      model_name: 'glm-5.2',
+      enable_groups: ['GLM'],
+      group_ratio: { 智谱: 0.8, 官方: 1 },
+    })
+    assert.equal(getChannelOffer(glm, 'special')?.group, 'GLM')
+    assert.equal(getChannelOffer(glm, 'special')?.ratio, 0.8)
+  })
+
   test('prices a model on the DeepSeek group at that group ratio', () => {
     const deepseek = fableModel({
       model_name: 'deepseek-v4-pro',
@@ -194,8 +204,9 @@ describe('fable dual price offers', () => {
     const platform = channelPriceBasis(model, 'special')
     assert.equal(list?.ratio, 1)
     assert.match(list?.model.billing_expr ?? '', /p \* 1\.32/)
-    assert.equal(platform?.ratio, 1)
-    assert.match(platform?.model.billing_expr ?? '', /p \* 1\.056/)
+    assert.equal(platform?.group, 'DeepSeek')
+    assert.equal(platform?.ratio, 0.8)
+    assert.match(platform?.model.billing_expr ?? '', /p \* 1\.32/)
     assert.equal(channelDiscountRatio(model), 0.8)
     assert.equal(officialPriceFor('claude-fable-5')?.factor, 0.95)
   })

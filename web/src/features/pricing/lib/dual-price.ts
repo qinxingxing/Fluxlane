@@ -44,8 +44,13 @@ function isPlatformGroupName(name: string): boolean {
   return !name.includes(SPECIAL_GROUP_MARK) && !isOfficialGroupName(name)
 }
 
+function isGlmGroupName(name: string): boolean {
+  return name === 'GLM' || name === '智谱' || name === '智普'
+}
+
 function isSameChannelGroup(left: string, right: string): boolean {
   if (left === right) return true
+  if (isGlmGroupName(left) && isGlmGroupName(right)) return true
   const leftSpecial = left.includes(SPECIAL_GROUP_MARK)
   const rightSpecial = right.includes(SPECIAL_GROUP_MARK)
   if (leftSpecial && rightSpecial) {

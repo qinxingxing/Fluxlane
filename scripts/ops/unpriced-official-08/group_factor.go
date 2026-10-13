@@ -97,7 +97,7 @@ func loadOfficialCatalog(path string) (map[string]officialEntry, error) {
 func runGroupFactor(args []string) error {
 	fs := flag.NewFlagSet("group-factor", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-	apply := fs.Bool("apply", false, "把模型价格写成官方价 × 分组系数")
+	apply := fs.Bool("apply", false, "把模型价格写回官方价")
 	file := fs.String("file", officialCatalogPath, "官方价 JSON")
 	timeout := fs.Duration("timeout", 3*time.Minute, "整次运行和单次 HTTP 的超时")
 	if err := fs.Parse(args); err != nil {
@@ -201,19 +201,19 @@ func buildGroupPlans(catalog map[string]officialEntry, live map[string]livePrice
 			plan.OfficialExpr = entry.BillingExpr
 			plan.ScaledExpr = scaled
 			switch strings.TrimSpace(current.BillingExpr) {
-			case "", entry.BillingExpr:
-				plan.AlreadyApplied = false
-			case scaled:
+			case entry.BillingExpr:
 				plan.AlreadyApplied = strings.TrimSpace(current.BillingMode) == tieredMode
+			case "", scaled:
+				plan.AlreadyApplied = false
 			default:
 				problems = append(problems, fmt.Sprintf("%s 的线上表达式既不是官方价，也不是官方价 × %s", name, entry.Factor.String()))
 			}
 		} else {
 			switch {
 			case current.ModelRatio.Equal(entry.ModelRatio.Decimal):
-				plan.AlreadyApplied = false
-			case current.ModelRatio.Equal(plan.ScaledRatio):
 				plan.AlreadyApplied = true
+			case current.ModelRatio.Equal(plan.ScaledRatio):
+				plan.AlreadyApplied = false
 			default:
 				problems = append(problems, fmt.Sprintf("%s 的线上倍率 %s 对不上官方价 %s", name, current.ModelRatio.String(), entry.ModelRatio.String()))
 			}
@@ -228,19 +228,19 @@ func buildGroupPlans(catalog map[string]officialEntry, live map[string]livePrice
 
 func writeGroupPlans(out *os.File, plans []groupPlan, unpublished []string, apply bool) {
 	pending := 0
-	fmt.Fprintf(out, "模型价格 = 官方价 × 分组系数（%d 个模型）\n", len(plans))
+	fmt.Fprintf(out, "模型价格 = 官方价（%d 个模型）\n", len(plans))
 	for _, plan := range plans {
-		state := "待写入"
+		state := "待写回官方价"
 		if plan.AlreadyApplied {
-			state = "已是目标价"
+			state = "已是官方价"
 		} else {
 			pending++
 		}
-		if plan.ScaledExpr != "" {
+		if plan.OfficialExpr != "" {
 			fmt.Fprintf(out, "%s  %s  %s × %s  %s\n", state, plan.Name, plan.Group, plan.Factor.String(), summarizeExpr(plan))
 			continue
 		}
-		fmt.Fprintf(out, "%s  %s  %s  model_ratio %s × %s = %s\n", state, plan.Name, plan.Group, plan.OfficialRatio.String(), plan.Factor.String(), plan.ScaledRatio.String())
+		fmt.Fprintf(out, "%s  %s  %s  model_ratio %s → %s\n", state, plan.Name, plan.Group, plan.ScaledRatio.String(), plan.OfficialRatio.String())
 	}
 	fmt.Fprintf(out, "待写入 %d，已是目标价 %d，apply=%t\n", pending, len(plans)-pending, apply)
 	if len(unpublished) > 0 {
@@ -257,9 +257,9 @@ func summarizeExpr(plan groupPlan) string {
 	if err != nil || len(scaled) == 0 {
 		return "表达式"
 	}
-	summary := fmt.Sprintf("%s p %s -> %s，c %s -> %s", official[0].Label, coeff(official[0], "p"), coeff(scaled[0], "p"), coeff(official[0], "c"), coeff(scaled[0], "c"))
+	summary := fmt.Sprintf("%s 线上 p %s → 官方 p %s，c %s → %s", official[0].Label, coeff(scaled[0], "p"), coeff(official[0], "p"), coeff(scaled[0], "c"), coeff(official[0], "c"))
 	if coeff(official[0], "ao") != "-" {
-		summary += fmt.Sprintf("，ao %s -> %s", coeff(official[0], "ao"), coeff(scaled[0], "ao"))
+		summary += fmt.Sprintf("，ao %s → %s", coeff(scaled[0], "ao"), coeff(official[0], "ao"))
 	}
 	return summary
 }
@@ -280,7 +280,7 @@ func applyGroupPlans(ctx context.Context, gw *gateway, plans []groupPlan) error 
 		}
 	}
 	if len(pending) == 0 {
-		fmt.Fprintln(os.Stdout, "线上价格已经是官方价 × 分组系数，未改动。")
+		fmt.Fprintln(os.Stdout, "线上价格已经是官方价，未改动。")
 		return nil
 	}
 	current, err := gw.getOptions(ctx)
@@ -306,8 +306,8 @@ func applyGroupPlans(ctx context.Context, gw *gateway, plans []groupPlan) error 
 	ratioChanged := false
 	modeChanged := false
 	for _, plan := range pending {
-		if plan.ScaledExpr != "" {
-			exprMap[plan.Name] = plan.ScaledExpr
+		if plan.OfficialExpr != "" {
+			exprMap[plan.Name] = plan.OfficialExpr
 			exprChanged = true
 			if modeMap[plan.Name] != tieredMode {
 				modeMap[plan.Name] = tieredMode
@@ -315,7 +315,7 @@ func applyGroupPlans(ctx context.Context, gw *gateway, plans []groupPlan) error 
 			}
 			continue
 		}
-		ratioMap[plan.Name] = json.RawMessage(plan.ScaledRatio.String())
+		ratioMap[plan.Name] = json.RawMessage(plan.OfficialRatio.String())
 		ratioChanged = true
 	}
 	if exprChanged {
@@ -408,14 +408,14 @@ func confirmGroupOptions(ctx context.Context, gw *gateway, exprMap map[string]st
 			}
 		}
 		for _, plan := range pending {
-			if plan.ScaledExpr != "" {
-				if gotExpr[plan.Name] != plan.ScaledExpr {
+			if plan.OfficialExpr != "" {
+				if gotExpr[plan.Name] != plan.OfficialExpr {
 					problems = append(problems, fmt.Sprintf("%s 的表达式尚未同步", plan.Name))
 				}
 				continue
 			}
 			got, err := decimal.NewFromString(strings.TrimSpace(string(gotRatio[plan.Name])))
-			if err != nil || !got.Equal(plan.ScaledRatio) {
+			if err != nil || !got.Equal(plan.OfficialRatio) {
 				problems = append(problems, fmt.Sprintf("%s 的模型倍率尚未同步，读到 %s", plan.Name, string(gotRatio[plan.Name])))
 			}
 		}
@@ -466,17 +466,17 @@ func confirmGroupPricing(ctx context.Context, gw *gateway, plans []groupPlan) er
 				problems = append(problems, fmt.Sprintf("%s 写入后不在定价列表", plan.Name))
 				continue
 			}
-			if plan.ScaledExpr != "" {
-				if current.BillingExpr != plan.ScaledExpr {
-					problems = append(problems, fmt.Sprintf("%s 的展示表达式尚未变成目标价", plan.Name))
+			if plan.OfficialExpr != "" {
+				if current.BillingExpr != plan.OfficialExpr {
+					problems = append(problems, fmt.Sprintf("%s 的展示表达式尚未变成官方价", plan.Name))
 				}
 				if strings.TrimSpace(current.BillingMode) != tieredMode {
 					problems = append(problems, fmt.Sprintf("%s 的计费模式是 %q，期望 %s", plan.Name, current.BillingMode, tieredMode))
 				}
 				continue
 			}
-			if !current.ModelRatio.Equal(plan.ScaledRatio) {
-				problems = append(problems, fmt.Sprintf("%s 的展示倍率是 %s，期望 %s", plan.Name, current.ModelRatio.String(), plan.ScaledRatio.String()))
+			if !current.ModelRatio.Equal(plan.OfficialRatio) {
+				problems = append(problems, fmt.Sprintf("%s 的展示倍率是 %s，期望 %s", plan.Name, current.ModelRatio.String(), plan.OfficialRatio.String()))
 			}
 		}
 		if len(problems) == 0 {
@@ -498,7 +498,7 @@ func confirmGroupPricing(ctx context.Context, gw *gateway, plans []groupPlan) er
 
 func updatedExpr(plans []groupPlan, name string) (groupPlan, bool) {
 	for _, plan := range plans {
-		if plan.Name == name && plan.ScaledExpr != "" {
+		if plan.Name == name && plan.OfficialExpr != "" {
 			return plan, true
 		}
 	}
@@ -507,7 +507,7 @@ func updatedExpr(plans []groupPlan, name string) (groupPlan, bool) {
 
 func updatedRatio(plans []groupPlan, name string) (groupPlan, bool) {
 	for _, plan := range plans {
-		if plan.Name == name && plan.ScaledExpr == "" {
+		if plan.Name == name && plan.OfficialExpr == "" {
 			return plan, true
 		}
 	}

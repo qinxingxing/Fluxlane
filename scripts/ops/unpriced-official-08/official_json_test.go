@@ -32,7 +32,7 @@ func TestCatalogScalesOfficialPriceByGroupFactor(t *testing.T) {
 	assert.True(t, quoteCoeff(fableQuotes, "standard", "c").Equal(decimal.RequireFromString("47.5")))
 
 	glm := catalog["glm-5.2"]
-	assert.Equal(t, "智谱", glm.Group)
+	assert.Equal(t, "GLM", glm.Group)
 	assert.True(t, glm.ModelRatio.Mul(glm.Factor.Decimal).Equal(decimal.RequireFromString("0.42")))
 }
 
@@ -53,8 +53,31 @@ func TestEmptyLiveExpressionIsPricedFromOfficial(t *testing.T) {
 	assert.Empty(t, unpublished)
 	require.Len(t, plans, 1)
 	assert.False(t, plans[0].AlreadyApplied)
-	assert.Contains(t, plans[0].ScaledExpr, "p * 1.125")
-	assert.Contains(t, plans[0].ScaledExpr, "c * 9")
+	assert.Contains(t, plans[0].OfficialExpr, "p * 1.25")
+	assert.Contains(t, plans[0].OfficialExpr, "c * 10")
+}
+
+func TestScaledLiveExpressionRestoresOfficialPrice(t *testing.T) {
+	catalog := map[string]officialEntry{
+		"gpt-5.1": {
+			Group:       "Openai",
+			Factor:      jsonDecimal{Decimal: decimal.RequireFromString("0.9")},
+			BillingExpr: `tier("standard", p * 1.25 + cr * 0.125 + c * 10)`,
+			ModelRatio:  jsonDecimal{Decimal: decimal.RequireFromString("37.5")},
+		},
+	}
+	live := map[string]livePrice{
+		"gpt-5.1": {
+			BillingExpr: `tier("standard", p * 1.125 + cr * 0.1125 + c * 9)`,
+			BillingMode: tieredMode,
+			ModelRatio:  decimal.RequireFromString("37.5"),
+		},
+	}
+	plans, _, err := buildGroupPlans(catalog, live)
+	require.NoError(t, err)
+	require.Len(t, plans, 1)
+	assert.False(t, plans[0].AlreadyApplied)
+	assert.Equal(t, catalog["gpt-5.1"].BillingExpr, plans[0].OfficialExpr)
 }
 
 func quoteCoeff(quotes []TierQuote, label, name string) decimal.Decimal {

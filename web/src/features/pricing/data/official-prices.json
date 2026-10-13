@@ -161,7 +161,7 @@
       "completion_ratio": 4
     },
     "glm-4.7": {
-      "group": "智谱",
+      "group": "GLM",
       "factor": 0.8,
       "billing_mode": "tiered_expr",
       "billing_expr": "tier(\"standard\", p * 0.6 + cr * 0.11 + cc * 0 + c * 2.2)",
@@ -169,7 +169,7 @@
       "completion_ratio": 1
     },
     "glm-5.2": {
-      "group": "智谱",
+      "group": "GLM",
       "factor": 0.8,
       "billing_mode": "",
       "billing_expr": "",
@@ -177,7 +177,7 @@
       "completion_ratio": 1
     },
     "glm-5.3": {
-      "group": "智谱",
+      "group": "GLM",
       "factor": 0.8,
       "billing_mode": "tiered_expr",
       "billing_expr": "tier(\"standard\", p * 1.4 + cr * 0.26 + cc * 0 + c * 4.4)",
@@ -185,7 +185,7 @@
       "completion_ratio": 3.577310155535
     },
     "glm-5.3-flash": {
-      "group": "智谱",
+      "group": "GLM",
       "factor": 0.8,
       "billing_mode": "tiered_expr",
       "billing_expr": "tier(\"standard\", p * 0.15 + cr * 0.03 + cc * 0 + c * 0.5)",
