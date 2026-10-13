@@ -43,24 +43,29 @@ export function buildChatCompletionPayload(
     messages: processedMessages,
     stream: config.stream,
   }
+  const omitsLegacySampling = config.model.startsWith('gpt-6')
 
-  if (parameterEnabled.temperature) {
+  if (!omitsLegacySampling && parameterEnabled.temperature) {
     payload.temperature = config.temperature
   }
 
-  if (parameterEnabled.top_p) {
+  if (!omitsLegacySampling && parameterEnabled.top_p) {
     payload.top_p = config.top_p
   }
 
   if (parameterEnabled.max_tokens) {
-    payload.max_tokens = config.max_tokens
+    if (omitsLegacySampling) {
+      payload.max_completion_tokens = config.max_tokens
+    } else {
+      payload.max_tokens = config.max_tokens
+    }
   }
 
-  if (parameterEnabled.frequency_penalty) {
+  if (!omitsLegacySampling && parameterEnabled.frequency_penalty) {
     payload.frequency_penalty = config.frequency_penalty
   }
 
-  if (parameterEnabled.presence_penalty) {
+  if (!omitsLegacySampling && parameterEnabled.presence_penalty) {
     payload.presence_penalty = config.presence_penalty
   }
 
