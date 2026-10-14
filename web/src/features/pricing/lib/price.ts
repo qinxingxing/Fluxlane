@@ -102,6 +102,17 @@ function hasRatio(value: number | null | undefined): boolean {
   return value !== undefined && value !== null && Number.isFinite(Number(value))
 }
 
+function resolveDisplayRatio(
+  model: PricingModel,
+  selectedGroup: string | undefined,
+  ratioOverride: number | undefined
+): number {
+  if (typeof ratioOverride === 'number' && Number.isFinite(ratioOverride)) {
+    return ratioOverride
+  }
+  return getDisplayGroupRatio(model, selectedGroup)
+}
+
 /**
  * Apply recharge rate to price
  *
@@ -148,13 +159,18 @@ export function formatPrice(
   showWithRecharge = false,
   priceRate = 1,
   usdExchangeRate = 1,
-  selectedGroup?: string
+  selectedGroup?: string,
+  ratioOverride?: number
 ): string {
   if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
     return '-'
   }
 
-  const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
+  const displayGroupRatio = resolveDisplayRatio(
+    model,
+    selectedGroup,
+    ratioOverride
+  )
 
   let priceInUSD = calculateTokenPrice(model, type, displayGroupRatio)
   priceInUSD = applyRechargeRate(
@@ -247,13 +263,18 @@ export function formatRequestPrice(
   showWithRecharge = false,
   priceRate = 1,
   usdExchangeRate = 1,
-  selectedGroup?: string
+  selectedGroup?: string,
+  ratioOverride?: number
 ): string {
   if (model.quota_type !== QUOTA_TYPE_VALUES.REQUEST) {
     return '-'
   }
 
-  const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
+  const displayGroupRatio = resolveDisplayRatio(
+    model,
+    selectedGroup,
+    ratioOverride
+  )
 
   let priceInUSD = (model.model_price || 0) * displayGroupRatio
 

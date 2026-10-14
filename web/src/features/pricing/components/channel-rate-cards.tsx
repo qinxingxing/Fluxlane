@@ -68,7 +68,7 @@ type RateOptions = {
 function formatTokenPrice(
   model: PricingModel,
   type: PriceType,
-  group: string,
+  ratio: number,
   options: RateOptions
 ): string {
   return stripTrailingZeros(
@@ -79,7 +79,8 @@ function formatTokenPrice(
       options.showRechargePrice,
       options.priceRate,
       options.usdExchangeRate,
-      group
+      undefined,
+      ratio
     )
   )
 }
@@ -132,7 +133,8 @@ function ratesForChannel(
           options.showRechargePrice,
           options.priceRate,
           options.usdExchangeRate,
-          basis.group
+          undefined,
+          basis.ratio
         )
       ),
       output: null,
@@ -146,7 +148,7 @@ function ratesForChannel(
     extra.push({
       key: 'cache',
       label: labelFor('Cache Read'),
-      formatted: formatTokenPrice(basis.model, 'cache', basis.group, options),
+      formatted: formatTokenPrice(basis.model, 'cache', basis.ratio, options),
       cache: true,
     })
   }
@@ -157,7 +159,7 @@ function ratesForChannel(
       formatted: formatTokenPrice(
         basis.model,
         'create_cache',
-        basis.group,
+        basis.ratio,
         options
       ),
       cache: true,
@@ -165,8 +167,8 @@ function ratesForChannel(
   }
 
   return {
-    input: formatTokenPrice(basis.model, 'input', basis.group, options),
-    output: formatTokenPrice(basis.model, 'output', basis.group, options),
+    input: formatTokenPrice(basis.model, 'input', basis.ratio, options),
+    output: formatTokenPrice(basis.model, 'output', basis.ratio, options),
     extra,
     fallback: null,
   }

@@ -115,7 +115,8 @@ function quoteChannel(
             options.showRechargePrice,
             options.priceRate,
             options.usdExchangeRate,
-            basis.group
+            undefined,
+            basis.ratio
           ),
           tag: null,
         },
@@ -136,7 +137,8 @@ function quoteChannel(
             options.showRechargePrice,
             options.priceRate,
             options.usdExchangeRate,
-            basis.group
+            undefined,
+            basis.ratio
           )
         )
 
@@ -150,7 +152,8 @@ function quoteChannel(
           options.showRechargePrice,
           options.priceRate,
           options.usdExchangeRate,
-          basis.group
+          undefined,
+          basis.ratio
         ),
         tag: 'in',
       },
@@ -162,7 +165,8 @@ function quoteChannel(
           options.showRechargePrice,
           options.priceRate,
           options.usdExchangeRate,
-          basis.group
+          undefined,
+          basis.ratio
         ),
         tag: 'out',
       },

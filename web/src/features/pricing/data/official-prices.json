@@ -168,6 +168,22 @@
       "model_ratio": 37.5,
       "completion_ratio": 1
     },
+    "glm-5": {
+      "group": "GLM",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1 + cr * 0.2 + cc * 0 + c * 3.2)",
+      "model_ratio": 0.5,
+      "completion_ratio": 3.2
+    },
+    "glm-5.1": {
+      "group": "GLM",
+      "factor": 0.8,
+      "billing_mode": "tiered_expr",
+      "billing_expr": "tier(\"standard\", p * 1.4 + cr * 0.26 + cc * 0 + c * 4.4)",
+      "model_ratio": 0.7,
+      "completion_ratio": 3.142857142857
+    },
     "glm-5.2": {
       "group": "GLM",
       "factor": 0.8,

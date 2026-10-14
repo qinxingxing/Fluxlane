@@ -32,6 +32,7 @@ import {
   channelPriceBasis,
   officialPriceFor,
 } from '../official-catalog'
+import { formatPrice } from '../price'
 
 const fableExpr =
   'tier("standard", p * 10 + cr * 1 + cc * 12.5 + cc1h * 20 + c * 50)'
@@ -215,6 +216,66 @@ describe('fable dual price offers', () => {
     assert.equal(formatDualPriceDiscount(0.6), '6折')
     assert.equal(formatDiscountFold(0.6), '6折')
     assert.equal(formatDiscountFold(1), null)
+  })
+
+  test('keeps a ratio model official price at the saved list price', () => {
+    const model = fableModel({
+      model_name: 'gpt-5',
+      billing_mode: undefined,
+      billing_expr: undefined,
+      model_ratio: 0.9,
+      completion_ratio: 8,
+      enable_groups: ['Openai'],
+      group_ratio: { Openai: 0.9 },
+    })
+    const list = channelPriceBasis(model, 'list')
+    const platform = channelPriceBasis(model, 'special')
+    assert.ok(list)
+    assert.ok(platform)
+    assert.equal(list.ratio, 1)
+    assert.equal(list.model.model_ratio, 0.625)
+    assert.equal(platform.ratio, 0.9)
+    const official = formatPrice(
+      list.model,
+      'input',
+      'M',
+      false,
+      1,
+      1,
+      undefined,
+      list.ratio
+    )
+    const grouped = formatPrice(
+      platform.model,
+      'input',
+      'M',
+      false,
+      1,
+      1,
+      undefined,
+      platform.ratio
+    )
+    assert.equal(official.includes('1.25'), true)
+    assert.equal(grouped.includes('1.125'), true)
+  })
+
+  test('stores GLM-5.1 from the provider list price', () => {
+    const stored = officialPriceFor('glm-5.1')
+    assert.equal(stored?.group, 'GLM')
+    assert.match(stored?.billing_expr ?? '', /p \* 1\.4/)
+    assert.match(stored?.billing_expr ?? '', /c \* 4\.4/)
+    const model = fableModel({
+      model_name: 'glm-5.1',
+      enable_groups: ['GLM'],
+      group_ratio: { GLM: 0.8 },
+    })
+    const list = channelPriceBasis(model, 'list')
+    const platform = channelPriceBasis(model, 'special')
+    assert.equal(list?.ratio, 1)
+    assert.match(list?.model.billing_expr ?? '', /p \* 1\.4/)
+    assert.equal(platform?.group, 'GLM')
+    assert.equal(platform?.ratio, 0.8)
+    assert.equal(channelDiscountRatio(model), 0.8)
   })
 
   test('writes the backend group ratio as a percent off the list price', () => {
