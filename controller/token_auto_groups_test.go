@@ -84,12 +84,16 @@ func TestAssignCustomerTokenGroupDefaultsBlankGroupToOfficial(t *testing.T) {
 		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsable))
 		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalRatios))
 	})
-	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"Openai":"OpenAI","DeepSeek":"DeepSeek"}`))
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"Openai":0.9,"DeepSeek":0.8,"官方":1,"vip":1}`))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"Openai":"OpenAI","DeepSeek":"DeepSeek","Anthropic":"Anthropic"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"Openai":0.9,"DeepSeek":0.8,"Anthropic":0.95,"官方":1,"vip":1}`))
 
 	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/token/", nil)
 	ctx.Set("role", common.RoleCommonUser)
 	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
+
+	blankToken := &model.Token{}
+	require.True(t, assignCustomerTokenGroup(ctx, blankToken))
+	assert.Equal(t, service.DefaultTokenGroup, blankToken.Group)
 
 	customerToken := &model.Token{Group: "Openai", CrossGroupRetry: true}
 	require.True(t, assignCustomerTokenGroup(ctx, customerToken))

@@ -102,6 +102,7 @@ function installApiFixtures(createdPayloads: Array<Record<string, unknown>>) {
           data: {
             success: true,
             data: {
+              Anthropic: { desc: 'Anthropic access', ratio: 0.95 },
               官方: { desc: 'Official access', ratio: 1 },
               auto: { desc: 'Automatic routing', ratio: 'auto' },
               default: { desc: 'Standard access', ratio: 1 },
@@ -178,6 +179,7 @@ async function renderCreateDrawer(): Promise<void> {
     {
       success: true,
       data: {
+        Anthropic: { desc: 'Anthropic access', ratio: 0.95 },
         官方: { desc: 'Official access', ratio: 1 },
         auto: { desc: 'Automatic routing', ratio: 'auto' },
         default: { desc: 'Standard access', ratio: 1 },
@@ -286,13 +288,13 @@ after(() => {
 })
 
 describe('API keys mutate drawer Auto group integration', () => {
-  test('saves the official group when the creator leaves the group unchanged', async () => {
+  test('saves the Anthropic group when the creator leaves the group unchanged', async () => {
     const createdPayloads: Array<Record<string, unknown>> = []
     installApiFixtures(createdPayloads)
     await renderCreateDrawer()
 
     const groupTrigger = getControlByLabel<HTMLButtonElement>('Group')
-    assert.equal(groupTrigger.textContent?.includes('官方'), true)
+    assert.equal(groupTrigger.textContent?.includes('Anthropic'), true)
     assert.equal(
       document.body.textContent?.includes('Auto group order'),
       false
@@ -311,7 +313,7 @@ describe('API keys mutate drawer Auto group integration', () => {
     assert.equal(createdPayloads.length, 2)
     assert.equal(createdPayloads[0]?.name, 'batch')
     for (const payload of createdPayloads) {
-      assert.equal(payload.group, '官方')
+      assert.equal(payload.group, 'Anthropic')
       assert.deepEqual(payload.auto_groups, [])
       assert.equal(payload.cross_group_retry, false)
     }

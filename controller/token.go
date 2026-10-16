@@ -465,7 +465,10 @@ func assignCustomerTokenGroup(c *gin.Context, token *model.Token) bool {
 		}
 		return true
 	}
-	if token.Group == "" || token.Group == "auto" {
+	if token.Group == "" {
+		token.Group = service.DefaultTokenGroup
+	}
+	if token.Group == "auto" {
 		return true
 	}
 	userGroup, err := getTokenRequestUserGroup(c)

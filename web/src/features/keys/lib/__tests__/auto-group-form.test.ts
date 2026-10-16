@@ -63,22 +63,22 @@ describe('API key Auto group form mapping', () => {
     assert.equal(apiKeySchema.parse(legacyApiKey).auto_groups, null)
   })
 
-  test('defaults a new key to the official group', () => {
+  test('defaults a new key to the Anthropic group', () => {
     const defaults = getApiKeyFormDefaultValues()
 
-    assert.equal(defaults.group, '官方')
+    assert.equal(defaults.group, 'Anthropic')
     assert.equal(defaults.cross_group_retry, false)
-    assert.equal(transformFormDataToPayload(defaults).group, '官方')
+    assert.equal(transformFormDataToPayload(defaults).group, 'Anthropic')
     assert.deepEqual(transformFormDataToPayload(defaults).auto_groups, [])
   })
 
-  test('saves a blank group as the official group', () => {
+  test('saves a blank group as the Anthropic group', () => {
     const payload = transformFormDataToPayload({
       ...getApiKeyFormDefaultValues(),
       group: '   ',
     })
 
-    assert.equal(payload.group, '官方')
+    assert.equal(payload.group, 'Anthropic')
     assert.equal(payload.cross_group_retry, false)
   })
 

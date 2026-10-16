@@ -249,7 +249,7 @@ export function ApiKeysMutateDrawer({
   const isFormInitialized = initializedTarget === formTarget
   const selectedGroup = form.watch('group')
 
-  // Keep a blank or unavailable group on 官方 when that group is selectable.
+  // Keep a blank or unavailable group on Anthropic when that group is selectable.
   useEffect(() => {
     if (groups.length === 0) return
     const currentGroup = selectedGroup
