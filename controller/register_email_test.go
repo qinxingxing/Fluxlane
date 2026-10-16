@@ -123,6 +123,30 @@ func TestRegisterStoresEmailAndUnverifiedPhone(t *testing.T) {
 	assert.Equal(t, phone, user.Phone)
 }
 
+func TestRegisterDefaultTokenUsesAnthropicGroup(t *testing.T) {
+	setupRegisterTestDB(t)
+	constant.GenerateDefaultToken = true
+	require.NoError(t, model.DB.AutoMigrate(&model.Token{}))
+	require.NoError(t, common.RegisterVerificationCodeWithKey("anthropic@example.com", "123456", common.EmailVerificationPurpose))
+
+	recorder := performRegister(t, `{
+		"username":"anthropicuser",
+		"password":"password12",
+		"email":"anthropic@example.com",
+		"phone":"+8613800138001",
+		"verification_code":"123456"
+	}`)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Contains(t, recorder.Body.String(), `"success":true`)
+
+	user, err := model.GetUniqueUserByEmail("anthropic@example.com")
+	require.NoError(t, err)
+	var token model.Token
+	require.NoError(t, model.DB.Where("user_id = ?", user.Id).First(&token).Error)
+	assert.Equal(t, "Anthropic", token.Group)
+}
+
 func TestRegisterRejectsAMissingPhone(t *testing.T) {
 	setupRegisterTestDB(t)
 	require.NoError(t, common.RegisterVerificationCodeWithKey("nophone@example.com", "654321", common.EmailVerificationPurpose))

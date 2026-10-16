@@ -459,19 +459,25 @@ func DeleteTokenBatch(c *gin.Context) {
 
 func assignCustomerTokenGroup(c *gin.Context, token *model.Token) bool {
 	token.Group = strings.TrimSpace(token.Group)
-	if token.Group == "" {
-		token.Group = service.OfficialGroupName
-	}
 	if c.GetInt("role") >= common.RoleAdminUser {
+		if token.Group == "" {
+			token.Group = service.OfficialGroupName
+		}
 		return true
 	}
-	if token.Group != service.OfficialGroupName {
-		common.ApiErrorI18n(c, i18n.MsgTokenGroupOfficialOnly)
+	if token.Group == "" || token.Group == "auto" {
+		return true
+	}
+	userGroup, err := getTokenRequestUserGroup(c)
+	if err != nil {
+		common.ApiError(c, err)
 		return false
 	}
-	token.CrossGroupRetry = false
-	_ = token.SetAutoGroups(nil)
-	return true
+	if service.IsUserSelectableGroup(userGroup, token.Group) {
+		return true
+	}
+	common.ApiErrorI18n(c, i18n.MsgTokenGroupNotSelectable, map[string]any{"Group": token.Group})
+	return false
 }
 
 func GetTokenKeysBatch(c *gin.Context) {

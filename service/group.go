@@ -11,7 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const OfficialGroupName = "官方"
+const (
+	OfficialGroupName = "官方"
+	DefaultTokenGroup = "Anthropic"
+)
 
 func GetUserUsableGroups(userGroup string) map[string]string {
 	groupsCopy := setting.GetUserUsableGroupsCopy()

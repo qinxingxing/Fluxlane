@@ -36,6 +36,7 @@ auth.insufficient_privilege: "無權進行此操作，權限不足"
 
 # Token messages
 token.group_official_only: "令牌只能使用官方分組"
+token.group_not_selectable: "分組 {{.Group}} 未對目前使用者開放"
 token.name_too_long: "令牌名稱過長"
 token.quota_negative: "額度值不能為負數"
 token.quota_exceed_max: "額度值超出有效範圍，最大值為 {{.Max}}"

@@ -78,12 +78,27 @@ func TestAssignCustomerTokenGroupDefaultsBlankGroupToOfficial(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
 
+	originalUsable := setting.UserUsableGroups2JSONString()
+	originalRatios := ratio_setting.GroupRatio2JSONString()
+	t.Cleanup(func() {
+		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsable))
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalRatios))
+	})
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"Openai":"OpenAI","DeepSeek":"DeepSeek"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"Openai":0.9,"DeepSeek":0.8,"官方":1,"vip":1}`))
+
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/token/", nil)
 	ctx.Set("role", common.RoleCommonUser)
-	customerToken := &model.Token{CrossGroupRetry: true}
+	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
+
+	customerToken := &model.Token{Group: "Openai", CrossGroupRetry: true}
 	require.True(t, assignCustomerTokenGroup(ctx, customerToken))
-	assert.Equal(t, service.OfficialGroupName, customerToken.Group)
-	assert.False(t, customerToken.CrossGroupRetry)
-	assert.Empty(t, customerToken.AutoGroups)
+	assert.Equal(t, "Openai", customerToken.Group)
+	assert.True(t, customerToken.CrossGroupRetry)
+
+	hiddenGroup := &model.Token{Group: "vip"}
+	require.False(t, assignCustomerTokenGroup(ctx, hiddenGroup))
+	assert.Equal(t, "vip", hiddenGroup.Group)
 
 	ctx.Set("role", common.RoleAdminUser)
 	adminBlank := &model.Token{}

@@ -3,7 +3,6 @@ package controller
 import (
 	"net/http"
 
-	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
@@ -30,12 +29,6 @@ func GetUserGroups(c *gin.Context) {
 	userId := c.GetInt("id")
 	userGroup, _ = model.GetUserGroup(userId, false)
 	userUsableGroups := service.GetUserUsableGroups(userGroup)
-	if c.GetInt("role") < common.RoleAdminUser {
-		userUsableGroups = map[string]string{}
-		if desc, ok := service.GetUserUsableGroups(userGroup)[service.OfficialGroupName]; ok {
-			userUsableGroups[service.OfficialGroupName] = desc
-		}
-	}
 	for groupName, _ := range ratio_setting.GetGroupRatioCopy() {
 		// UserUsableGroups contains the groups that the user can use
 		if desc, ok := userUsableGroups[groupName]; ok {
