@@ -32,6 +32,7 @@ const defaultAuthSettings: AuthSettings = {
   EmailDomainRestrictionEnabled: false,
   EmailAliasRestrictionEnabled: false,
   EmailDomainWhitelist: '',
+  EmailDomainBlacklist: 'maxxspace.com',
   ServerAddress: '',
   GitHubOAuthEnabled: false,
   GitHubClientId: '',

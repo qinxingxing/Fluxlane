@@ -194,6 +194,37 @@ describe('registration page', () => {
     assert.equal(submit?.className.includes('from-violet-600'), true)
     assert.equal(host.querySelector('[data-slot="status-badge"]'), null)
   })
+
+  test('shows the blocked domain message before sending a verification code', async () => {
+    const host = await renderSignUp()
+    const email = host.querySelector('input[type="email"]')
+    assert.ok(email)
+
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )?.set
+    await act(async () => {
+      valueSetter?.call(email, '  User@MaxXspace.COM ')
+      email.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+
+    const sendCode = [...host.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('Send code')
+    )
+    assert.ok(sendCode)
+    assert.equal(sendCode?.hasAttribute('disabled'), false)
+    await act(async () => {
+      sendCode?.click()
+    })
+
+    assert.equal(
+      host.textContent?.includes(
+        'This email domain is not supported for registration. Please use another email.'
+      ),
+      true
+    )
+  })
 })
 
 describe('sign-in page', () => {

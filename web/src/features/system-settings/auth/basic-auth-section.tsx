@@ -52,6 +52,7 @@ const basicAuthSchema = z.object({
   EmailDomainRestrictionEnabled: z.boolean(),
   EmailAliasRestrictionEnabled: z.boolean(),
   EmailDomainWhitelist: z.string(),
+  EmailDomainBlacklist: z.string(),
 })
 
 type BasicAuthFormValues = z.infer<typeof basicAuthSchema>
@@ -71,6 +72,10 @@ export function BasicAuthSection({ defaultValues }: BasicAuthSectionProps) {
         .map((domain) => domain.trim())
         .filter(Boolean)
         .join('\n'),
+      EmailDomainBlacklist: defaultValues.EmailDomainBlacklist.split(',')
+        .map((domain) => domain.trim())
+        .filter(Boolean)
+        .join('\n'),
     }),
     [defaultValues]
   )
@@ -86,14 +91,23 @@ export function BasicAuthSection({ defaultValues }: BasicAuthSectionProps) {
     const updates: Array<{ key: string; value: string | boolean }> = []
 
     Object.entries(data).forEach(([key, value]) => {
-      if (key === 'EmailDomainWhitelist') {
+      if (key === 'EmailDomainWhitelist' || key === 'EmailDomainBlacklist') {
         if (typeof value !== 'string') return
         const domains = value
           .split('\n')
-          .map((domain) => domain.trim())
+          .map((domain) => {
+            const trimmed = domain.trim()
+            return key === 'EmailDomainBlacklist'
+              ? trimmed.toLowerCase()
+              : trimmed
+          })
           .filter(Boolean)
           .join(',')
-        if (domains !== defaultValues.EmailDomainWhitelist) {
+        const previous =
+          key === 'EmailDomainBlacklist'
+            ? defaultValues.EmailDomainBlacklist
+            : defaultValues.EmailDomainWhitelist
+        if (domains !== previous) {
           updates.push({ key, value: domains })
         }
       } else if (value !== defaultValues[key as keyof typeof defaultValues]) {
@@ -256,6 +270,25 @@ export function BasicAuthSection({ defaultValues }: BasicAuthSectionProps) {
                 <FormDescription>
                   {t(
                     'One domain per line (only used when domain restriction is enabled)'
+                  )}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='EmailDomainBlacklist'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Email Domain Blacklist')}</FormLabel>
+                <FormControl>
+                  <Textarea placeholder='maxxspace.com' rows={4} {...field} />
+                </FormControl>
+                <FormDescription>
+                  {t(
+                    'One domain per line. New registrations from these domains are rejected. Existing accounts are not disabled.'
                   )}
                 </FormDescription>
                 <FormMessage />

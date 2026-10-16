@@ -57,6 +57,7 @@ func InitOptionMap() {
 	common.OptionMap["EmailDomainRestrictionEnabled"] = strconv.FormatBool(common.EmailDomainRestrictionEnabled)
 	common.OptionMap["EmailAliasRestrictionEnabled"] = strconv.FormatBool(common.EmailAliasRestrictionEnabled)
 	common.OptionMap["EmailDomainWhitelist"] = strings.Join(common.EmailDomainWhitelist, ",")
+	common.OptionMap["EmailDomainBlacklist"] = strings.Join(common.EmailDomainBlacklist, ",")
 	common.OptionMap["SMTPServer"] = ""
 	common.OptionMap["SMTPFrom"] = ""
 	common.OptionMap["SMTPPort"] = strconv.Itoa(common.SMTPPort)
@@ -223,6 +224,9 @@ func validateOptionValue(key string, value string) error {
 }
 
 func UpdateOption(key string, value string) error {
+	if key == "EmailDomainBlacklist" {
+		value = strings.Join(common.NormalizeEmailDomainList(value), ",")
+	}
 	if err := validateOptionValue(key, value); err != nil {
 		return err
 	}
@@ -251,6 +255,10 @@ func UpdateOptionsBulk(values map[string]string) error {
 		return nil
 	}
 	for key, value := range values {
+		if key == "EmailDomainBlacklist" {
+			value = strings.Join(common.NormalizeEmailDomainList(value), ",")
+			values[key] = value
+		}
 		if err := validateOptionValue(key, value); err != nil {
 			return err
 		}
@@ -401,6 +409,9 @@ func updateOptionMap(key string, value string) (err error) {
 	switch key {
 	case "EmailDomainWhitelist":
 		common.EmailDomainWhitelist = strings.Split(value, ",")
+	case "EmailDomainBlacklist":
+		common.EmailDomainBlacklist = common.NormalizeEmailDomainList(value)
+		common.OptionMap["EmailDomainBlacklist"] = strings.Join(common.EmailDomainBlacklist, ",")
 	case "SMTPServer":
 		common.SMTPServer = value
 	case "SMTPPort":

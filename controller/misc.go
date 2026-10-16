@@ -22,6 +22,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func registrationEmailDomainBlacklist() []string {
+	blacklist := common.EmailDomainBlacklist
+	copied := make([]string, len(blacklist))
+	copy(copied, blacklist)
+	return copied
+}
+
 func TestStatus(c *gin.Context) {
 	err := model.PingDB()
 	if err != nil {
@@ -91,6 +98,7 @@ func GetStatus(c *gin.Context) {
 		"demo_site_enabled":             operation_setting.DemoSiteEnabled,
 		"self_use_mode_enabled":         operation_setting.SelfUseModeEnabled,
 		"register_enabled":              common.RegisterEnabled,
+		"email_domain_blacklist":        registrationEmailDomainBlacklist(),
 		"password_login_enabled":        common.PasswordLoginEnabled,
 		"password_register_enabled":     common.PasswordRegisterEnabled,
 		"default_use_auto_group":        setting.DefaultUseAutoGroup,
@@ -237,6 +245,10 @@ func GetHomePageContent(c *gin.Context) {
 
 func SendEmailVerification(c *gin.Context) {
 	email := model.NormalizeEmail(c.Query("email"))
+	if common.IsRegistrationEmailDomainBlocked(email) {
+		common.ApiErrorI18n(c, i18n.MsgUserEmailDomainNotSupported)
+		return
+	}
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return

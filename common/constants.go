@@ -86,6 +86,11 @@ var EmailDomainWhitelist = []string{
 	"yahoo.com",
 	"foxmail.com",
 }
+
+// EmailDomainBlacklist blocks new registration only. Existing accounts are left unchanged.
+var EmailDomainBlacklist = []string{
+	"maxxspace.com",
+}
 var EmailLoginAuthServerList = []string{
 	"smtp.sendcloud.net",
 	"smtp.azurecomm.net",

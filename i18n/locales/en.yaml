@@ -80,6 +80,7 @@ user.email_verification_required: "Email verification is enabled, please enter e
 user.phone_verification_required: "Enter a valid phone number and verification code"
 user.verification_code_error: "Verification code is incorrect or has expired"
 user.email_already_taken: "Email address is already in use"
+user.email_domain_not_supported: "This email domain is not supported for registration. Please use another email."
 user.phone_already_taken: "This phone number is already in use"
 user.sms_not_configured: "SMS verification is not configured"
 user.sms_send_failed: "Failed to send the verification code"

@@ -206,6 +206,8 @@ func HandleOAuth(c *gin.Context) {
 			common.ApiErrorI18n(c, i18n.MsgUserRegisterDisabled)
 		case *OAuthEmailAlreadyTakenError:
 			common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
+		case *OAuthEmailDomainBlockedError:
+			common.ApiErrorI18n(c, i18n.MsgUserEmailDomainNotSupported)
 		default:
 			common.ApiError(c, err)
 		}
@@ -356,6 +358,9 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	}
 	if oauthUser.Email != "" {
 		user.Email = model.NormalizeEmail(oauthUser.Email)
+		if common.IsRegistrationEmailDomainBlocked(user.Email) {
+			return nil, &OAuthEmailDomainBlockedError{}
+		}
 		if err := model.EnsureEmailAvailable(user.Email, 0); err != nil {
 			if errors.Is(err, model.ErrEmailAlreadyTaken) {
 				return nil, &OAuthEmailAlreadyTakenError{}
@@ -451,6 +456,12 @@ type OAuthEmailAlreadyTakenError struct{}
 
 func (e *OAuthEmailAlreadyTakenError) Error() string {
 	return "email is already in use"
+}
+
+type OAuthEmailDomainBlockedError struct{}
+
+func (e *OAuthEmailDomainBlockedError) Error() string {
+	return "email domain is not supported for registration"
 }
 
 // handleOAuthError handles OAuth errors and returns translated message

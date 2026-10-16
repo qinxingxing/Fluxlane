@@ -92,6 +92,7 @@ const (
 	MsgUserPhoneVerificationRequired = "user.phone_verification_required"
 	MsgUserVerificationCodeError     = "user.verification_code_error"
 	MsgUserEmailAlreadyTaken         = "user.email_already_taken"
+	MsgUserEmailDomainNotSupported   = "user.email_domain_not_supported"
 	MsgUserPhoneAlreadyTaken         = "user.phone_already_taken"
 	MsgUserSMSNotConfigured          = "user.sms_not_configured"
 	MsgUserSMSSendFailed             = "user.sms_send_failed"

@@ -129,6 +129,7 @@ export type AuthSettings = {
   EmailDomainRestrictionEnabled: boolean
   EmailAliasRestrictionEnabled: boolean
   EmailDomainWhitelist: string
+  EmailDomainBlacklist: string
   ServerAddress: string
   GitHubOAuthEnabled: boolean
   GitHubClientId: string

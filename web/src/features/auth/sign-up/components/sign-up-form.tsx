@@ -65,6 +65,10 @@ import { useEmailVerification } from '@/features/auth/hooks/use-email-verificati
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { evaluatePasswordStrength } from '@/features/auth/lib/password-strength'
 import {
+  isBlockedRegistrationEmail,
+  registrationEmailDomainBlacklist,
+} from '@/features/auth/lib/registration-email-domain'
+import {
   REGISTRATION_COUNTRY_CODES,
   buildRegistrationPhone,
 } from '@/features/auth/lib/registration-phone'
@@ -105,8 +109,12 @@ export function SignUpForm({
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
+  const blockedEmailMessage = t(
+    'This email domain is not supported for registration. Please use another email.'
+  )
 
   const { status } = useStatus()
+  const blockedEmailDomains = registrationEmailDomainBlacklist(status)
   const {
     isTurnstileEnabled,
     turnstileSiteKey,
@@ -189,6 +197,12 @@ export function SignUpForm({
       return
     }
 
+    if (isBlockedRegistrationEmail(data.email, blockedEmailDomains)) {
+      form.setError('email', { message: blockedEmailMessage })
+      toast.error(blockedEmailMessage)
+      return
+    }
+
     const phone = buildRegistrationPhone(data.countryCode, data.phone)
     if (!phone) {
       form.setError('phone', {
@@ -226,6 +240,11 @@ export function SignUpForm({
 
   async function handleSendVerificationCode() {
     const email = emailValue.trim()
+    if (isBlockedRegistrationEmail(email, blockedEmailDomains)) {
+      form.setError('email', { message: blockedEmailMessage })
+      toast.error(blockedEmailMessage)
+      return
+    }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       form.setError('email', {
         message: t('Please enter a valid email address'),

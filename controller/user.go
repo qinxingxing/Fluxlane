@@ -219,6 +219,10 @@ func Register(c *gin.Context) {
 	}
 	user.Username = strings.TrimSpace(user.Username)
 	user.Email = model.NormalizeEmail(user.Email)
+	if common.IsRegistrationEmailDomainBlocked(user.Email) {
+		common.ApiErrorI18n(c, i18n.MsgUserEmailDomainNotSupported)
+		return
+	}
 	phone, phoneErr := model.NormalizePhone(user.Phone)
 	if phoneErr != nil || phone == "" {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
