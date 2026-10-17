@@ -141,44 +141,6 @@ func newAwsStreamResponse(request *http.Request, body io.ReadCloser) *http.Respo
 	}
 }
 
-func TestDoAwsClientRequest_DropsClientAnthropicBetaHeader(t *testing.T) {
-	t.Parallel()
-
-	gin.SetMode(gin.TestMode)
-	recorder := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
-	ctx.Request.Header.Set("anthropic-beta", "prompt-caching-2024-07-31,prompt-caching-scope-2026-01-05,redact-thinking-2026-02-12,advisor-tool-2026-03-01")
-
-	info := &relaycommon.RelayInfo{
-		OriginModelName: "claude-3-5-sonnet-20240620",
-		IsStream:        false,
-		ChannelMeta: &relaycommon.ChannelMeta{
-			ApiKey:            "access-key|secret-key|us-east-1",
-			UpstreamModelName: "claude-3-5-sonnet-20240620",
-		},
-	}
-
-	requestBody := bytes.NewBufferString(`{"messages":[{"role":"user","content":[{"type":"text","text":"hello","cache_control":{"type":"ephemeral"}}]}],"max_tokens":16,"tools":[{"name":"ping","input_schema":{"type":"object"}}]}`)
-	adaptor := &Adaptor{}
-
-	_, err := doAwsClientRequest(ctx, info, adaptor, requestBody)
-	require.NoError(t, err)
-
-	awsReq, ok := adaptor.AwsReq.(*bedrockruntime.InvokeModelInput)
-	require.True(t, ok)
-
-	var payload map[string]any
-	require.NoError(t, common.Unmarshal(awsReq.Body, &payload))
-	_, exists := payload["anthropic_beta"]
-	assert.False(t, exists)
-
-	encoded, err := common.Marshal(payload)
-	require.NoError(t, err)
-	assert.Contains(t, string(encoded), `"cache_control":{"type":"ephemeral"}`)
-	assert.Contains(t, string(encoded), `"name":"ping"`)
-}
-
 func TestDoAwsClientRequest_AppliesRuntimeHeaderOverrideToAnthropicBeta(t *testing.T) {
 	t.Parallel()
 

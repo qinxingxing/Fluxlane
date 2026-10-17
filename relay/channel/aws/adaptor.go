@@ -105,9 +105,6 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *relaycommon.RelayInfo) error {
 	claude.CommonClaudeHeadersOperation(c, req, info)
-	// Bedrock 对客户端带来的 anthropic-beta 任何值都返回 400，并把它写进请求体 anthropic_beta。
-	// 这里丢掉复制过来的客户端头。之后应用的渠道请求头覆盖仍可显式写回。
-	req.Del("anthropic-beta")
 	if a.ClientMode == ClientModeApiKey {
 		req.Set("Authorization", "Bearer "+info.ApiKey)
 	}
