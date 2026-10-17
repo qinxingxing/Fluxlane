@@ -202,7 +202,7 @@
       {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="}}
     ]
   }]
-}'</code></pre><p><b>工具</b></p><p><code>tools</code> 使用 <code>input_schema</code>。模型返回 <code>tool_use</code> 内容块后，在下一次用户消息里用 <code>tool_result</code> 回传。<code>toolu_abc123</code> 需换成上一次响应返回的 id。</p><pre><button class="copy">复制</button><code>curl https://run.fluxlane.ai/v1/messages \
+}'</code></pre><p><b>工具</b></p><p><code>tools</code> 使用 <code>input_schema</code>。模型返回 <code>tool_use</code> 内容块后，在下一次用户消息里用 <code>tool_result</code> 回传。<code>toolu_abc123</code> 需换成上一次响应返回的 id。</p><div class="note">使用 Claude Code 时，实验性 beta 请求头可能让第三方网关返回 400。将环境变量 <code>CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS</code> 设为 <code>1</code>，可关闭 <code>anthropic-beta</code>，并移除相关的实验性请求体字段和工具字段。参见 <a href="https://code.claude.com/docs/en/env-vars" target="_blank" rel="noopener noreferrer">Claude Code 环境变量</a>。</div><pre><button class="copy">复制</button><code>curl https://run.fluxlane.ai/v1/messages \
   -H "x-api-key: sk-你的令牌" \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
